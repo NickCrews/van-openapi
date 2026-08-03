@@ -19,13 +19,18 @@
           // "proxyUrl": "https://proxy.scalar.com",
           // "apiBaseUrl": "https://api.scalar.com"
         },
+        // CORS problems don't allow fetching from the browser,
+        // but still want the user to be bale to enter their creds
+        // so that the cURL examples are generated with the correct auth.
+        hideTestRequestButton: false,
+        hideClientButton: true, // hide "Open in API Client"
         persistAuth: true, // persist auth creds in local storage, so they survive page reloads
         authentication: {
           preferredSecurityScheme: 'basicAuth',
           securitySchemes: {
             basicAuth: {
               username: 'my_fancy_app',
-              password: '07540886-b749-433c-b18d-a3d052f6b759|1',
+              password: '00000000-0000-0000-0000-000000000000|1',
             },
           }
         }
