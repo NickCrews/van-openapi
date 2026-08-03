@@ -19,7 +19,13 @@ An OpenAPI spec has some nice benefits:
 
 ## Layout
 
-- [openapi.json](openapi.json) — the spec (source of truth)
+- [openapi.json](openapi.json) — the spec (source of truth). Descriptions state
+  observed behavior only; where that deviates from the official docs, the
+  comparison lives out of band in `x-docs-discrepancy` fields, and research
+  evidence/confidence notes in `x-provenance` fields (both hidden by most
+  documentation renderers).
+- [DISCREPANCIES.md](DISCREPANCIES.md) — deviations from the official docs,
+  generated from the spec's `x-docs-discrepancy` fields via `make discrepancies`
 - [STATUS.md](STATUS.md) — per-endpoint research status and sandbox field notes
 - `make fuzz` — validate the spec against the sandbox API with [schemathesis](https://schemathesis.readthedocs.io/) (needs `uv`, and `NGP_API_KEY_SANDBOX` in `.env`)
 - `make docs` / `make serve` — build/preview the static [Scalar](https://scalar.com/) docs site in `docs/` (GitHub Pages-ready)

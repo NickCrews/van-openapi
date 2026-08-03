@@ -5,7 +5,12 @@ description: Reverse-engineer an NGP VAN API endpoint into openapi.json by cross
 
 # Reverse-engineer a VAN API endpoint
 
-Golden rule: **observed behavior beats documented behavior.** When they differ, spec the observation and note the discrepancy in the description (prefix with `OBSERVED:`).
+Golden rule: **observed behavior beats documented behavior.** When they differ, spec the observation. Descriptions state observed behavior as plain fact — no "OBSERVED:" prefixes, no comparisons with the official docs. The comparison goes out of band:
+
+- `x-docs-discrepancy` (string, on the operation/parameter/property it qualifies) — what the official docs claim vs. what was observed, with the probe date. Then run `make discrepancies` to regenerate DISCREPANCIES.md.
+- `x-provenance` (object, keys `source`/`lastProbed`/`note`) — research evidence and confidence markers, e.g. "not yet observed live", "only observed as null; type unverified".
+
+Both extensions are hidden by most doc renderers, so consumers see only the clean spec. Behavioral warnings that consumers need (e.g. "-1 hangs the connection") stay in descriptions — phrased as fact.
 
 ## Sources (consult all three)
 
@@ -43,10 +48,12 @@ Golden rule: **observed behavior beats documented behavior.** When they differ, 
      and the `{items, nextPageLink, count}` list envelope pattern (but verify — some endpoints
      return bare arrays, e.g. `/canvassResponses/contactTypes`).
    - Mark nullable fields as `"type": ["X", "null"]` — most VAN response fields are nullable.
-   - Constrain inputs known to 500 the server (e.g. `minimum: 1` on vanId) and document the
-     bug in the field description.
+   - Constrain inputs known to 500 the server (e.g. `minimum: 1` on vanId) and warn about the
+     bug in the field description (as plain fact); put the why-the-spec-is-shaped-this-way
+     rationale in `x-provenance.note`.
 4. `make fuzz` (runs `make validate` first). Fix spec-vs-reality mismatches until green.
    A 500 the fuzzer finds is a real VAN bug: constrain the input if possible, and log it.
 5. Update STATUS.md: bump the endpoint's status (`researched` → `spec'd` → `validated`),
    set today's date, and add any new discoveries to "Field notes".
+   If you added/changed any `x-docs-discrepancy`, run `make discrepancies`.
 6. `make docs` to refresh the published spec copy; `make serve` to eyeball the Scalar page.

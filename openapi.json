@@ -3,7 +3,7 @@
   "info": {
     "title": "NGP VAN API (community OpenAPI spec)",
     "version": "0.1.0",
-    "description": "Community-maintained OpenAPI spec for the NGP VAN API, reverse-engineered from https://docs.ngpvan.com, the NGPVAN/van-cli source, and live probing of the sandbox API. Where observed behavior differs from the official docs, this spec records observed behavior and notes the discrepancy.\n\nSource repository: https://github.com/NickCrews/van-openapi — file issues and corrections there. This spec is not published or endorsed by NGP VAN; for questions about the API itself, contact APIDevelopers@ngpvan.com.\n\nSee [STATUS.md](https://github.com/NickCrews/van-openapi/blob/main/STATUS.md) for per-endpoint research status.",
+    "description": "Community-maintained OpenAPI spec for the NGP VAN API, reverse-engineered from https://docs.ngpvan.com, the NGPVAN/van-cli source, and live probing of the sandbox API. The spec describes the API's actual behavior as observed. Where that behavior deviates from the official docs, the comparison is recorded out of band in `x-docs-discrepancy` fields (hidden by most documentation renderers) and summarized in [DISCREPANCIES.md](https://github.com/NickCrews/van-openapi/blob/main/DISCREPANCIES.md); research evidence and confidence notes live in `x-provenance` fields.\n\nSource repository: https://github.com/NickCrews/van-openapi — file issues and corrections there. This spec is not published or endorsed by NGP VAN; for questions about the API itself, contact APIDevelopers@ngpvan.com.\n\nSee [STATUS.md](https://github.com/NickCrews/van-openapi/blob/main/STATUS.md) for per-endpoint research status.",
     "contact": {
       "name": "van-openapi on GitHub",
       "url": "https://github.com/NickCrews/van-openapi"
@@ -72,7 +72,7 @@
                 },
                 "examples": {
                   "hello": {
-                    "summary": "Observed sandbox response",
+                    "summary": "Echoed message (sandbox)",
                     "value": {
                       "message": "hello",
                       "dateSent": "2026-08-03T16:47:29.8973257Z",
@@ -99,7 +99,8 @@
       "post": {
         "operationId": "findPerson",
         "summary": "Find a person matching the given criteria",
-        "description": "Attempts to match a person in the database. OBSERVED BEHAVIOR (differs from official docs, which imply a 200 with a person object): a match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
+        "description": "Attempts to match a person in the database. A match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
+        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.",
         "tags": [
           "People"
         ],
@@ -165,7 +166,7 @@
                 },
                 "examples": {
                   "matched": {
-                    "summary": "Observed match (sandbox test person)",
+                    "summary": "Match (sandbox test person)",
                     "value": {
                       "vanId": 102714507,
                       "status": "Matched"
@@ -184,7 +185,7 @@
                 },
                 "examples": {
                   "unmatched": {
-                    "summary": "Observed no-match response",
+                    "summary": "No match",
                     "value": {
                       "vanId": null,
                       "status": "Unmatched"
@@ -204,7 +205,10 @@
             "$ref": "#/components/responses/ServerError"
           },
           "200": {
-            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx - and the schemathesis fuzzer) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record. Documented so both redirect-following and raw clients match this spec.",
+            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
+            "x-provenance": {
+              "note": "Documented alongside the raw 302 so both redirect-following clients and raw clients (including the schemathesis fuzzer) conform to this spec."
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -212,7 +216,7 @@
                 },
                 "examples": {
                   "matched": {
-                    "summary": "Observed (sandbox test person, abridged: null-only fields omitted)",
+                    "summary": "Sandbox test person (abridged: null-only fields omitted)",
                     "value": {
                       "vanId": 102714507,
                       "firstName": "Ada",
@@ -302,7 +306,8 @@
           {
             "name": "$top",
             "in": "query",
-            "description": "Limits the number of results. Default 50, maximum 200 (observed via the INVALID_PARAMETER hint; official docs claim default 40).",
+            "description": "Limits the number of results. Default 50, maximum 200.",
+            "x-docs-discrepancy": "Official docs claim a default of 40; the API's own INVALID_PARAMETER hint (observed 2026-08-03) states default 50, maximum 200.",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -322,7 +327,7 @@
                 },
                 "examples": {
                   "empty": {
-                    "summary": "Observed: empty committee",
+                    "summary": "Empty list",
                     "value": {
                       "items": [],
                       "nextPageLink": null,
@@ -330,7 +335,10 @@
                     }
                   },
                   "populated": {
-                    "summary": "Docs-derived (item shape not yet observed live)",
+                    "summary": "Populated list",
+                    "x-provenance": {
+                      "note": "Constructed from official docs; item shape not yet observed live."
+                    },
                     "value": {
                       "items": [
                         {
@@ -397,7 +405,7 @@
             },
             "examples": {
               "invalidParameter": {
-                "summary": "Observed: $top over the max on /surveyQuestions",
+                "summary": "$top over the maximum on /surveyQuestions",
                 "value": {
                   "errors": [
                     {
@@ -424,7 +432,7 @@
             },
             "examples": {
               "wrongMode": {
-                "summary": "Observed: database mode the key lacks",
+                "summary": "Database mode the key lacks",
                 "value": {
                   "errors": [
                     {
@@ -439,7 +447,7 @@
         }
       },
       "ServerError": {
-        "description": "Internal server error. OBSERVED: the API 500s (rather than 400s) on various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Body carries a referenceCode for support.",
+        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Body carries a referenceCode for support.",
         "content": {
           "application/json": {
             "schema": {
@@ -447,7 +455,7 @@
             },
             "examples": {
               "internal": {
-                "summary": "Observed: malformed input that should 400",
+                "summary": "Malformed input",
                 "value": {
                   "errors": [
                     {
@@ -487,7 +495,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Machine-readable error code. Observed: UNAUTHORIZED, INVALID_PARAMETER, NOT_FOUND.",
+            "description": "Machine-readable error code. Known values: UNAUTHORIZED, INVALID_PARAMETER, NOT_FOUND (list likely incomplete).",
             "examples": [
               "INVALID_PARAMETER"
             ]
@@ -536,7 +544,10 @@
             ],
             "minimum": 1,
             "maximum": 2000,
-            "description": "Optional server-side delay before responding. OBSERVED BUG: -1 hangs the server indefinitely (likely interpreted as .NET Timeout.Infinite); other negative values return 500. Spec minimum is 1 so fuzzer boundary probes send 0 (safe) rather than -1."
+            "description": "Optional server-side delay before responding, in milliseconds. Warning: -1 hangs the connection indefinitely; other negative values return 500.",
+            "x-provenance": {
+              "note": "The -1 hang is likely the value being passed straight to .NET as Timeout.Infinite. Spec minimum is 1 so fuzzer boundary probes send 0 (safe) rather than -1."
+            }
           }
         }
       },
@@ -575,7 +586,7 @@
               "null"
             ],
             "minimum": 1,
-            "description": "OBSERVED: vanId 0 causes a 500."
+            "description": "VAN id of the person; a valid vanId overrides all other criteria. Warning: the API returns 500 for vanId 0."
           },
           "firstName": {
             "type": [
@@ -641,7 +652,8 @@
                     "string",
                     "null"
                   ],
-                  "description": "Alpha-2 country code. (Official docs spell this 'countyCode' \u2014 likely a typo, unverified.)"
+                  "description": "Alpha-2 country code.",
+                  "x-docs-discrepancy": "Official docs spell this field 'countyCode' \u2014 likely a typo in the docs; not yet verified live."
                 }
               }
             }
@@ -698,7 +710,11 @@
       },
       "SurveyQuestion": {
         "type": "object",
-        "description": "Item shape from official docs; not yet observed live (sandbox committee has no survey questions and POST /surveyQuestions rejects all type values tried so far).",
+        "description": "A survey question.",
+        "x-provenance": {
+          "source": "docs",
+          "note": "Item shape derived from official docs; not yet observed live — the sandbox committee has no survey questions and POST /surveyQuestions rejects every type value tried so far."
+        },
         "properties": {
           "surveyQuestionId": {
             "type": "integer"
@@ -784,7 +800,11 @@
       },
       "Person": {
         "type": "object",
-        "description": "A person record as returned by GET /people/{vanId}. Field inventory observed live 2026-08-03 on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down.",
+        "description": "A person record as returned by GET /people/{vanId}.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Field inventory observed live on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down."
+        },
         "properties": {
           "vanId": {
             "type": "integer"
@@ -913,7 +933,7 @@
               "null"
             ],
             "format": "date-time",
-            "description": "OBSERVED: \"0001-01-01T00:00:00Z\" (dotnet default) for API-created records."
+            "description": "For API-created records this is \"0001-01-01T00:00:00Z\" (the .NET default date)."
           },
           "emails": {
             "type": [
@@ -943,160 +963,264 @@
             }
           },
           "sourceFileTitle": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "sourceFileFirstName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "sourceFileMiddleName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "sourceFileLastName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "sourceFileSuffix": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "organizationContactCommonName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "organizationContactOfficialName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "additionalSalutation": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "preferredPronoun": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "pronouns": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "namePronunciation": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "additionalEnvelopeName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "contactMethodPreferenceCode": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "contactMethodPreferenceId": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "contactMethodPreferenceName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "assistantName": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "nickname": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "website": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "professionalSuffix": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedRace": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedEthnicity": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedRaces": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedEthnicities": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedGenders": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedSexualOrientations": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedLanguagePreference": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "selfReportedLanguagePreferences": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "recordedAddresses": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "pollingLocation": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "earlyVoteLocation": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "identifiers": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "codes": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "customFields": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "primaryCustomField": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "contributionSummary": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "suppressions": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "caseworkCases": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "caseworkIssues": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "caseworkStories": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "notes": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "scores": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "customProperties": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "electionRecords": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "membershipStatus": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "organizationRoles": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "districts": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "surveyQuestionResponses": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "finderNumber": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "biographyImageUrl": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "biographyText": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "biographyHtml": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           },
           "primaryContact": {
-            "description": "Only observed as null so far; type unverified."
+            "x-provenance": {
+              "note": "Only observed as null so far; type unverified."
+            }
           }
         }
       }

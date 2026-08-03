@@ -13,7 +13,7 @@ AUTH     := default_user:$(NGP_API_KEY_SANDBOX)|1
 # - negative_data_rejection is off: the API tolerantly ignores unknown fields.
 CHECKS := status_code_conformance,content_type_conformance,response_schema_conformance
 
-.PHONY: validate fuzz serve clean
+.PHONY: validate fuzz discrepancies serve clean
 
 ## Lint the spec structurally
 validate:
@@ -28,6 +28,10 @@ fuzz: validate
 		--max-examples 25 \
 		--rate-limit 10/s \
 		--seed 42
+
+## Regenerate DISCREPANCIES.md from x-docs-discrepancy fields in the spec
+discrepancies:
+	python3 scripts/discrepancies.py $(SPEC) > DISCREPANCIES.md
 
 ## Preview the docs site locally (docs/openapi.json is a committed symlink to the spec)
 serve:
