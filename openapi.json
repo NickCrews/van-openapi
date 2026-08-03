@@ -1,0 +1,1101 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NGP VAN API (community OpenAPI spec)",
+    "version": "0.1.0",
+    "description": "Community-maintained OpenAPI spec for the NGP VAN API, reverse-engineered from https://docs.ngpvan.com, the NGPVAN/van-cli source, and live probing of the sandbox API. Where observed behavior differs from the official docs, this spec records observed behavior and notes the discrepancy.\n\nSee STATUS.md in the repo for per-endpoint research status.",
+    "contact": {
+      "name": "NGP VAN API Support",
+      "email": "APIDevelopers@ngpvan.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.securevan.com/v4",
+      "description": "Production / sandbox (the API key determines the committee and database)"
+    }
+  ],
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ],
+  "paths": {
+    "/echoes": {
+      "post": {
+        "operationId": "createEcho",
+        "summary": "Echo a message back",
+        "description": "Test endpoint: echoes the posted message back with a server timestamp. Safe to call freely; useful for verifying auth and connectivity. Accepts an empty body (all fields nullable).",
+        "tags": [
+          "Echoes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EchoRequest"
+              },
+              "examples": {
+                "hello": {
+                  "summary": "Simple echo",
+                  "value": {
+                    "message": "hello"
+                  }
+                },
+                "empty": {
+                  "summary": "Empty body (accepted; everything is nullable)",
+                  "value": {}
+                },
+                "delayed": {
+                  "summary": "Ask the server to wait before responding",
+                  "value": {
+                    "message": "slow reply",
+                    "delayInMilliseconds": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The echoed message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Echo"
+                },
+                "examples": {
+                  "hello": {
+                    "summary": "Observed sandbox response",
+                    "value": {
+                      "message": "hello",
+                      "dateSent": "2026-08-03T16:47:29.8973257Z",
+                      "delayInMilliseconds": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/people/find": {
+      "post": {
+        "operationId": "findPerson",
+        "summary": "Find a person matching the given criteria",
+        "description": "Attempts to match a person in the database. OBSERVED BEHAVIOR (differs from official docs, which imply a 200 with a person object): a match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
+        "tags": [
+          "People"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeopleFindRequest"
+              },
+              "examples": {
+                "nameAndEmail": {
+                  "summary": "Match on name + email",
+                  "value": {
+                    "firstName": "Ada",
+                    "lastName": "Testperson",
+                    "emails": [
+                      {
+                        "email": "ada.testperson@example.com"
+                      }
+                    ]
+                  }
+                },
+                "nameAndPhone": {
+                  "summary": "Match on name + phone",
+                  "value": {
+                    "firstName": "Ada",
+                    "lastName": "Testperson",
+                    "phones": [
+                      {
+                        "phoneNumber": "9075551234"
+                      }
+                    ]
+                  }
+                },
+                "byVanId": {
+                  "summary": "Look up by vanId (overrides all other criteria)",
+                  "value": {
+                    "vanId": 102714507
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
+            "headers": {
+              "Location": {
+                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714507"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "matched": {
+                    "summary": "Observed match (sandbox test person)",
+                    "value": {
+                      "vanId": 102714507,
+                      "status": "Matched"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "unmatched": {
+                    "summary": "Observed no-match response",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "200": {
+            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx - and the schemathesis fuzzer) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record. Documented so both redirect-following and raw clients match this spec.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                },
+                "examples": {
+                  "matched": {
+                    "summary": "Observed (sandbox test person, abridged: null-only fields omitted)",
+                    "value": {
+                      "vanId": 102714507,
+                      "firstName": "Ada",
+                      "lastName": "Testperson",
+                      "middleName": null,
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "salutation": "Ada",
+                      "formalSalutation": "Ada Testperson",
+                      "envelopeName": "Ada Testperson",
+                      "isDeceased": false,
+                      "dateCreated": "2026-08-03T12:58:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "party": null,
+                      "dateOfBirth": null,
+                      "emails": null,
+                      "phones": null,
+                      "addresses": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/surveyQuestions": {
+      "get": {
+        "operationId": "listSurveyQuestions",
+        "summary": "List survey questions",
+        "tags": [
+          "Survey Questions"
+        ],
+        "parameters": [
+          {
+            "name": "statuses",
+            "in": "query",
+            "description": "Comma-delimited list of statuses. One or more of Active (default), Archived, Inactive.",
+            "schema": {
+              "type": "string",
+              "examples": [
+                "Active,Archived"
+              ]
+            },
+            "example": "Active,Archived"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filters to survey questions whose name starts with the given input.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Gun Control"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filters to survey questions of the given type.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "GOTV"
+          },
+          {
+            "name": "question",
+            "in": "query",
+            "description": "Filters to survey questions whose script question contains the given input.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Will you vote"
+          },
+          {
+            "name": "cycle",
+            "in": "query",
+            "description": "A year in the format YYYY.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1900,
+              "maximum": 2100
+            },
+            "example": 2026
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "description": "Limits the number of results. Default 50, maximum 200 (observed via the INVALID_PARAMETER hint; official docs claim default 40).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of survey questions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyQuestionList"
+                },
+                "examples": {
+                  "empty": {
+                    "summary": "Observed: empty committee",
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
+                  },
+                  "populated": {
+                    "summary": "Docs-derived (item shape not yet observed live)",
+                    "value": {
+                      "items": [
+                        {
+                          "surveyQuestionId": 1204,
+                          "type": "GOTV",
+                          "cycle": 2026,
+                          "name": "Will Vote 2026",
+                          "mediumName": "WillVote26",
+                          "shortName": "WV26",
+                          "scriptQuestion": "Can we count on you to vote in the 2026 general election?",
+                          "status": "Active",
+                          "responses": [
+                            {
+                              "surveyResponseId": 1,
+                              "name": "Yes",
+                              "mediumName": "Yes",
+                              "shortName": "Y"
+                            },
+                            {
+                              "surveyResponseId": 2,
+                              "name": "No",
+                              "mediumName": "No",
+                              "shortName": "N"
+                            }
+                          ]
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "HTTP Basic auth. Username = an arbitrary label, e.g. `my_fancy_app`; password = `{apiKey}|{databaseMode}` where databaseMode is `0` (My Voters) or `1` (My Campaign) and apiKey is a UUID like `07540886-b749-433c-b18d-a3d052f6b759`. Using a mode your key lacks returns 401 UNAUTHORIZED \"Invalid Database Mode\"."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Validation error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "invalidParameter": {
+                "summary": "Observed: $top over the max on /surveyQuestions",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "INVALID_PARAMETER",
+                      "text": "'$top' must be less than or equal to the maximum result size for this end point: 200",
+                      "properties": [
+                        "$top"
+                      ],
+                      "hint": "If no '$top' parameter is specified, a default top size of 50 will be used."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing/invalid API key, or a database mode the key does not have access to.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "wrongMode": {
+                "summary": "Observed: database mode the key lacks",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "UNAUTHORIZED",
+                      "text": "Invalid Database Mode"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Internal server error. OBSERVED: the API 500s (rather than 400s) on various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Body carries a referenceCode for support.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "internal": {
+                "summary": "Observed: malformed input that should 400",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "INTERNAL_SERVER_ERROR",
+                      "text": "An unknown error occurred",
+                      "referenceCode": "48E6AB-938498"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "errors"
+        ],
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "text"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code. Observed: UNAUTHORIZED, INVALID_PARAMETER, NOT_FOUND.",
+            "examples": [
+              "INVALID_PARAMETER"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "properties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "JSON paths of the offending request properties, e.g. \"responses[0].shortName\".",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Support reference code; present on INTERNAL_SERVER_ERROR responses."
+          }
+        }
+      },
+      "EchoRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "delayInMilliseconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 2000,
+            "description": "Optional server-side delay before responding. OBSERVED BUG: -1 hangs the server indefinitely (likely interpreted as .NET Timeout.Infinite); other negative values return 500. Spec minimum is 1 so fuzzer boundary probes send 0 (safe) rather than -1."
+          }
+        }
+      },
+      "Echo": {
+        "type": "object",
+        "required": [
+          "message",
+          "dateSent"
+        ],
+        "properties": {
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dateSent": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delayInMilliseconds": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "PeopleFindRequest": {
+        "type": "object",
+        "description": "Match criteria. A valid vanId overrides all other criteria.",
+        "properties": {
+          "vanId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "OBSERVED: vanId 0 causes a 500."
+          },
+          "firstName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middleName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dateOfBirth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "emails": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            }
+          },
+          "phones": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "phoneNumber": {
+                  "type": "string",
+                  "description": "Number without country code."
+                },
+                "dialingPrefix": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Numeric country code."
+                },
+                "countryCode": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Alpha-2 country code. (Official docs spell this 'countyCode' \u2014 likely a typo, unverified.)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PersonMatchResult": {
+        "type": "object",
+        "required": [
+          "vanId",
+          "status"
+        ],
+        "properties": {
+          "vanId": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "Matched (302 from find), Unmatched (404 from find), UnmatchedStored (201 from findOrCreate).",
+            "enum": [
+              "Matched",
+              "Unmatched",
+              "UnmatchedStored"
+            ]
+          }
+        }
+      },
+      "SurveyQuestionList": {
+        "type": "object",
+        "required": [
+          "items",
+          "count"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestion"
+            }
+          },
+          "nextPageLink": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      },
+      "SurveyQuestion": {
+        "type": "object",
+        "description": "Item shape from official docs; not yet observed live (sandbox committee has no survey questions and POST /surveyQuestions rejects all type values tried so far).",
+        "properties": {
+          "surveyQuestionId": {
+            "type": "integer"
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cycle": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mediumName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shortName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scriptQuestion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "responses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestionResponse"
+            }
+          }
+        }
+      },
+      "SurveyQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "surveyResponseId": {
+            "type": "integer"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mediumName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shortName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Person": {
+        "type": "object",
+        "description": "A person record as returned by GET /people/{vanId}. Field inventory observed live 2026-08-03 on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down.",
+        "properties": {
+          "vanId": {
+            "type": "integer"
+          },
+          "firstName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middleName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "suffix": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contactSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "e.g. \"API\""
+          },
+          "contactMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "e.g. \"Person\""
+          },
+          "salutation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "formalSalutation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "envelopeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "formalEnvelopeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "party": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "employer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occupation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sex": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dateOfBirth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "isDeceased": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "dateCreated": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "dateAcquired": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "OBSERVED: \"0001-01-01T00:00:00Z\" (dotnet default) for API-created records."
+          },
+          "emails": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            }
+          },
+          "phones": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            }
+          },
+          "addresses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object"
+            }
+          },
+          "sourceFileTitle": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "sourceFileFirstName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "sourceFileMiddleName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "sourceFileLastName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "sourceFileSuffix": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "organizationContactCommonName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "organizationContactOfficialName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "additionalSalutation": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "preferredPronoun": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "pronouns": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "namePronunciation": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "additionalEnvelopeName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "contactMethodPreferenceCode": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "contactMethodPreferenceId": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "contactMethodPreferenceName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "assistantName": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "nickname": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "website": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "professionalSuffix": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedRace": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedEthnicity": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedRaces": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedEthnicities": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedGenders": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedSexualOrientations": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedLanguagePreference": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "selfReportedLanguagePreferences": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "recordedAddresses": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "pollingLocation": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "earlyVoteLocation": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "identifiers": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "codes": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "customFields": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "primaryCustomField": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "contributionSummary": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "suppressions": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "caseworkCases": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "caseworkIssues": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "caseworkStories": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "notes": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "scores": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "customProperties": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "electionRecords": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "membershipStatus": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "organizationRoles": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "districts": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "surveyQuestionResponses": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "finderNumber": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "biographyImageUrl": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "biographyText": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "biographyHtml": {
+            "description": "Only observed as null so far; type unverified."
+          },
+          "primaryContact": {
+            "description": "Only observed as null so far; type unverified."
+          }
+        }
+      }
+    }
+  }
+}

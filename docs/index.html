@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NGP VAN API Reference (community OpenAPI spec)</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference('#app', {
+        showDeveloperTools: 'never',
+        url: 'openapi.json',
+        "theme": "moon",
+        "externalUrls": {
+          // "dashboardUrl": "https://dashboard.scalar.com",
+          // "registryUrl": "https://registry.scalar.com",
+          // "proxyUrl": "https://proxy.scalar.com",
+          // "apiBaseUrl": "https://api.scalar.com"
+        },
+        authentication: {
+          preferredSecurityScheme: 'basicAuth',
+          securitySchemes: {
+            basicAuth: {
+              username: 'my_fancy_app',
+              password: '07540886-b749-433c-b18d-a3d052f6b759|1',
+            },
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

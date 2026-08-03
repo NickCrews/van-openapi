@@ -1,0 +1,4 @@
+# docs/openapi.json is a committed symlink to ../openapi.json:
+# GitHub Pages serves the docs/ folder and needs the spec inside it.
+.env
+schemathesis-report/
