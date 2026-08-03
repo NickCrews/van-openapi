@@ -3,11 +3,15 @@
   "info": {
     "title": "NGP VAN API (community OpenAPI spec)",
     "version": "0.1.0",
-    "description": "Community-maintained OpenAPI spec for the NGP VAN API, reverse-engineered from https://docs.ngpvan.com, the NGPVAN/van-cli source, and live probing of the sandbox API. Where observed behavior differs from the official docs, this spec records observed behavior and notes the discrepancy.\n\nSee STATUS.md in the repo for per-endpoint research status.",
+    "description": "Community-maintained OpenAPI spec for the NGP VAN API, reverse-engineered from https://docs.ngpvan.com, the NGPVAN/van-cli source, and live probing of the sandbox API. Where observed behavior differs from the official docs, this spec records observed behavior and notes the discrepancy.\n\nSource repository: https://github.com/NickCrews/van-openapi — file issues and corrections there. This spec is not published or endorsed by NGP VAN; for questions about the API itself, contact APIDevelopers@ngpvan.com.\n\nSee [STATUS.md](https://github.com/NickCrews/van-openapi/blob/main/STATUS.md) for per-endpoint research status.",
     "contact": {
-      "name": "NGP VAN API Support",
-      "email": "APIDevelopers@ngpvan.com"
+      "name": "van-openapi on GitHub",
+      "url": "https://github.com/NickCrews/van-openapi"
     }
+  },
+  "externalDocs": {
+    "description": "Source repository (NickCrews/van-openapi)",
+    "url": "https://github.com/NickCrews/van-openapi"
   },
   "servers": [
     {

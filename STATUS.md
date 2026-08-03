@@ -1,5 +1,7 @@
 # Endpoint Survey
 
+Part of [NickCrews/van-openapi](https://github.com/NickCrews/van-openapi).
+
 Research status of NGP VAN API endpoints. Base URL: `https://api.securevan.com/v4`.
 
 **Statuses:** `unresearched` → `researched` (docs read + sandbox probed) → `spec'd` (in openapi.json) → `validated` (passing `make fuzz`).
