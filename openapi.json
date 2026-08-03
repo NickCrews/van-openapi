@@ -174,6 +174,15 @@
                   }
                 }
               }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the matched person's full record — equivalent to following the Location header."
+              }
             }
           },
           "404": {
@@ -239,7 +248,131 @@
                   }
                 }
               }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Re-fetch the matched person by id (e.g. with $expand for related collections)."
+              }
             }
+          }
+        }
+      }
+    },
+    "/people/{vanId}": {
+      "get": {
+        "operationId": "getPerson",
+        "summary": "Get a person by VAN id",
+        "description": "Retrieves a person record. Related collections (emails, phones, addresses, …) are null unless requested via $expand, and empty arrays when expanded but absent. An unknown, zero, or negative vanId returns the standard 404 error envelope; a non-integer path segment does not match the route and returns an HTML 404 page instead.",
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the person.",
+            "x-docs-discrepancy": "Official docs type this path parameter as string (default \"100476252\"); the route only matches integers — a non-integer segment returns an IIS HTML 404 page (observed 2026-08-03).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102714507
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "description": "Comma-delimited list of related sections to include. Valid values: contributionHistory, addresses, phones, emails, codes, customFields, externalIds, preferences, recordedAddresses, reportedDemographics, suppressions, cases, customProperties, districts, electionRecords, membershipStatuses, notes, organizationRoles, scores, disclosureFieldValues, primaryContact, pollingLocation, biography. Any other value returns 400 INVALID_PARAMETER with a hint listing the valid set.",
+            "x-docs-discrepancy": "Official docs list only 10 valid $expand values; the API's own INVALID_PARAMETER hint (observed 2026-08-03) lists these 23.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "emails,phones,addresses"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The person record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                },
+                "examples": {
+                  "expanded": {
+                    "summary": "Sandbox test person with $expand=emails,phones (abridged: null-only fields omitted)",
+                    "value": {
+                      "vanId": 102714507,
+                      "firstName": "Ada",
+                      "lastName": "Testperson",
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "isDeceased": false,
+                      "dateCreated": "2026-08-03T12:58:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "emails": [
+                        {
+                          "type": "P",
+                          "email": "ada.testperson@example.com",
+                          "dateCreated": "2026-08-03T12:58:00Z",
+                          "isPreferred": true,
+                          "isSubscribed": true,
+                          "subscriptionStatus": "S"
+                        }
+                      ],
+                      "phones": [],
+                      "addresses": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "No person with that vanId exists (also returned for 0 and negative ids, as the standard error envelope). A non-integer path segment fails to match the route and returns an HTML 404 error page instead.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "notFound": {
+                    "summary": "Unknown vanId",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "NOT_FOUND",
+                          "text": "The specified resource cannot be found."
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "lastProbed": "2026-08-03",
+                  "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an integer so no API route matches."
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -447,11 +580,18 @@
         }
       },
       "ServerError": {
-        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Body carries a referenceCode for support.",
+        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ErrorResponse"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                {
+                  "$ref": "#/components/schemas/AspNetError"
+                }
+              ]
             },
             "examples": {
               "internal": {
@@ -525,6 +665,42 @@
               "null"
             ],
             "description": "Support reference code; present on INTERNAL_SERVER_ERROR responses."
+          }
+        }
+      },
+      "AspNetError": {
+        "type": "object",
+        "description": "Raw ASP.NET Web API exception payload, returned on some 500s instead of the standard errors envelope when the request fails before reaching the API's own error handling — e.g. a query-string key containing '[' crashes jQuery-syntax key parsing. Includes a full stack trace.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Found by the stateful fuzz phase on GET /people/{vanId} with a fuzzed query-string key containing '['. The stack-trace disclosure is itself a VAN bug, logged in STATUS.md."
+        },
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "e.g. \"An error has occurred.\""
+          },
+          "exceptionMessage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exceptionType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "e.g. \"System.ArgumentException\""
+          },
+          "stackTrace": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -798,6 +974,55 @@
           }
         }
       },
+      "PersonEmail": {
+        "type": "object",
+        "description": "An email address on a person record, returned when $expand=emails is requested.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Shape observed live once on the sandbox test person; every field was populated, so nullability is assumed rather than verified."
+        },
+        "properties": {
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Email type code, e.g. \"P\" (personal)."
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dateCreated": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "isPreferred": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "isSubscribed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "subscriptionStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Subscription status code, e.g. \"S\" (subscribed)."
+          }
+        }
+      },
       "Person": {
         "type": "object",
         "description": "A person record as returned by GET /people/{vanId}.",
@@ -940,8 +1165,9 @@
               "array",
               "null"
             ],
+            "description": "Null unless the request included $expand=emails; an empty array when expanded and none exist.",
             "items": {
-              "type": "object"
+              "$ref": "#/components/schemas/PersonEmail"
             }
           },
           "phones": {
@@ -949,8 +1175,12 @@
               "array",
               "null"
             ],
+            "description": "Null unless the request included $expand=phones; an empty array when expanded and none exist.",
             "items": {
               "type": "object"
+            },
+            "x-provenance": {
+              "note": "Item shape not yet observed live — only seen as an empty array."
             }
           },
           "addresses": {
@@ -958,8 +1188,12 @@
               "array",
               "null"
             ],
+            "description": "Null unless the request included $expand=addresses. Provides best-known Home and Mailing address.",
             "items": {
               "type": "object"
+            },
+            "x-provenance": {
+              "note": "Item shape not yet observed live."
             }
           },
           "sourceFileTitle": {

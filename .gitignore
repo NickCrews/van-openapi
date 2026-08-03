@@ -2,3 +2,6 @@
 # GitHub Pages serves the docs/ folder and needs the spec inside it.
 .env
 schemathesis-report/
+# Local test-tool caches: contents churn (timestamps, generated examples) on every run.
+.schemathesis/
+.hypothesis/

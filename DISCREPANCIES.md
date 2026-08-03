@@ -9,5 +9,7 @@ Research status and evidence live in `x-provenance` fields and
 [STATUS.md](STATUS.md).
 
 - **POST /people/find** — Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.
+- **GET /people/{vanId} parameter `vanId`** — Official docs type this path parameter as string (default "100476252"); the route only matches integers — a non-integer segment returns an IIS HTML 404 page (observed 2026-08-03).
+- **GET /people/{vanId} parameter `$expand`** — Official docs list only 10 valid $expand values; the API's own INVALID_PARAMETER hint (observed 2026-08-03) lists these 23.
 - **GET /surveyQuestions parameter `$top`** — Official docs claim a default of 40; the API's own INVALID_PARAMETER hint (observed 2026-08-03) states default 50, maximum 200.
 - **schema `PeopleFindRequest.phones.countryCode`** — Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live.
