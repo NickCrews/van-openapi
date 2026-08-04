@@ -112,7 +112,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PeopleFindRequest"
+                "$ref": "#/components/schemas/PersonMatchCriteria"
               },
               "examples": {
                 "nameAndEmail": {
@@ -478,7 +478,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MatchCandidate"
+                "$ref": "#/components/schemas/PersonInput"
               },
               "examples": {
                 "scalars": {
@@ -621,7 +621,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MatchCandidate"
+                "$ref": "#/components/schemas/PersonInput"
               },
               "examples": {
                 "nameAndEmail": {
@@ -768,7 +768,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MatchCandidate"
+                "$ref": "#/components/schemas/PersonInput"
               },
               "examples": {
                 "minimal": {
@@ -1321,7 +1321,7 @@
           }
         }
       },
-      "PeopleFindRequest": {
+      "PersonMatchCriteria": {
         "type": "object",
         "description": "Match criteria. A valid vanId overrides all other criteria.",
         "properties": {
@@ -2245,9 +2245,9 @@
           }
         }
       },
-      "MatchCandidate": {
+      "PersonInput": {
         "type": "object",
-        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId}. Every field is optional — an entirely empty body is accepted and creates a blank record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
+        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the \"Match Candidate\" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Field list from the official docs' Match Candidate model; max lengths and the enforced/unenforced split established by probing POST /people/create with out-of-range values. Not modelled here, because the sandbox has no lookup values to write against and only the 400 path could be seen: pronouns, selfReportedRaces, selfReportedEthnicities, selfReportedGenders, selfReportedSexualOrientations and selfReportedLanguagePreference. Each takes an id that must exist in the context, e.g. 'reportedRaceId' is not a valid ReportedRace in this context."

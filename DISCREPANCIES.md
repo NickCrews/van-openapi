@@ -13,7 +13,7 @@ Research status and evidence live in `x-provenance` fields and
 - **GET /people/{vanId} parameter `$expand`** — Official docs list only 10 valid $expand values; the API's own INVALID_PARAMETER hint (observed 2026-08-03) lists these 23.
 - **GET /surveyQuestions parameter `$top`** — Official docs claim a default of 40; the API's own INVALID_PARAMETER hint (observed 2026-08-03) states default 50, maximum 200.
 - **components/responses/TooManyRequests** — The official docs do not mention rate limiting or the 429 response anywhere in their reference index (checked 2026-08-04). Observed live on GET /surveyQuestions and POST /people/create.
-- **schema `PeopleFindRequest.phones.countryCode`** — Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live.
+- **schema `PersonMatchCriteria.phones.countryCode`** — Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live.
 - **schema `PersonPhone.phoneType`** — Official docs document only the write codes and imply they are echoed back. GET returns an expanded category name instead, and seven write codes collapse onto three of them (observed 2026-08-03).
 - **schema `PersonPhone.deviceType`** — Official docs document only the write codes C, L, U, F, V and imply they are echoed back; GET returns the spelled-out names Cell/Landline/Unknown/Fax/VoIP (observed 2026-08-03).
 - **schema `PersonPhone.phoneOptInStatus`** — Official docs describe the field only as the write codes I/U/O; GET returns the expanded names Opt-In/Unknown/Opt-Out (observed 2026-08-03).
@@ -22,4 +22,4 @@ Research status and evidence live in `x-provenance` fields and
 - **schema `PersonPhoneInput.phoneType`** — Official docs list five codes (H, W, C, M, F); the API's own INVALID_PARAMETER response accepts seven — "'phoneType' must be one of: H, W, O, C, M, F, P" (observed 2026-08-03).
 - **schema `PersonPhoneInput.deviceType`** — Official docs list only the letter codes. The API's INVALID_PARAMETER response also accepts numeric ids 1, 2, 4, 5, 6; writing 2 and 6 was confirmed to store Landline and VoIP (observed 2026-08-03). There is no id 3.
 - **schema `PersonAddressInput.type`** — The value is not validated: an address written with type "Q" is accepted with 201 and filed as the person's home address (observed 2026-08-03).
-- **schema `MatchCandidate.contactMode`** — Official docs say the value must be Person or Organization; it is not validated. Writing "Q" returns 201 and the record reads back with contactMode "Person" (observed 2026-08-03).
+- **schema `PersonInput.contactMode`** — Official docs say the value must be Person or Organization; it is not validated. Writing "Q" returns 201 and the record reads back with contactMode "Person" (observed 2026-08-03).
