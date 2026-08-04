@@ -2631,7 +2631,18 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "enum": [
+              "M",
+              "F",
+              null
+            ],
+            "description": "Always the uppercase one-letter code, even when the record was written with a lowercase value.",
+            "x-provenance": {
+              "source": "sandbox probe + official docs (common-models.md: \"must be M or F\")",
+              "lastProbed": "2026-08-04",
+              "note": "Wrote sex \"m\"/\"f\" via /people/findOrCreate; GET returned \"M\"/\"F\" respectively (vanIds 102716311, 102716312)."
+            }
           },
           "dateOfBirth": {
             "type": [
