@@ -206,11 +206,11 @@
               }
             }
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       },
@@ -270,6 +270,21 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Not sent by the server directly: the server responds 302, but clients that auto-follow redirects (requests, fetch, httpx) surface the 200 from GET /people/{vanId} with the updated record — or, when the redirect was the request-validation bounce, the web application's HTML error page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "302": {
             "description": "The record was updated. `Location` points back at the person resource; the body is a match stub, not the updated record.\n\nThe same status also covers a failure that never reaches the API: a path segment containing `<`, `>`, `*` or `&` is rejected by ASP.NET request validation and redirected to `/Error.aspx?EID={code}` with an HTML body. Check the content type to tell them apart.",
             "headers": {
@@ -305,21 +320,6 @@
                   "vanId": "$response.body#/vanId"
                 },
                 "description": "Fetch the record to see the merged result — the update response does not include it."
-              }
-            }
-          },
-          "200": {
-            "description": "Not sent by the server directly: the server responds 302, but clients that auto-follow redirects (requests, fetch, httpx) surface the 200 from GET /people/{vanId} with the updated record — or, when the redirect was the request-validation bounce, the web application's HTML error page.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Person"
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                }
               }
             }
           },
@@ -361,11 +361,11 @@
               }
             }
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -830,11 +830,11 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -891,66 +891,6 @@
           }
         },
         "responses": {
-          "302": {
-            "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
-            "headers": {
-              "Location": {
-                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
-                "schema": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "example": "https://api.securevan.com/v4/people/102714507"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonMatched"
-                }
-              }
-            },
-            "links": {
-              "getMatchedPerson": {
-                "operationId": "getPerson",
-                "parameters": {
-                  "vanId": "$response.body#/vanId"
-                },
-                "description": "Fetch the matched person's full record — equivalent to following the Location header."
-              }
-            }
-          },
-          "404": {
-            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonUnmatched"
-                },
-                "examples": {
-                  "unmatched": {
-                    "summary": "No match",
-                    "value": {
-                      "vanId": null,
-                      "status": "Unmatched"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          },
           "200": {
             "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
             "x-provenance": {
@@ -996,6 +936,66 @@
                 "description": "Re-fetch the matched person by id (e.g. with $expand for related collections)."
               }
             }
+          },
+          "302": {
+            "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
+            "headers": {
+              "Location": {
+                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714507"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatched"
+                }
+              }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the matched person's full record — equivalent to following the Location header."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonUnmatched"
+                },
+                "examples": {
+                  "unmatched": {
+                    "summary": "No match",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -1193,6 +1193,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Not sent by the server directly: on the vanId-match path, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          },
           "201": {
             "description": "A new record was created. No `Location` header is sent — the new id is in the body.",
             "content": {
@@ -1250,27 +1260,17 @@
               }
             }
           },
-          "200": {
-            "description": "Not sent by the server directly: on the vanId-match path, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Person"
-                }
-              }
-            }
-          },
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -1411,11 +1411,11 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -1484,11 +1484,11 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -1582,6 +1582,35 @@
           }
         }
       },
+      "TooManyRequests": {
+        "description": "Rate limit exceeded. Limits are per API key, set by the key's rate-limit profile, and apply across all endpoints, so any operation can return 429. There is no `Retry-After` header; the suggested wait appears only in the error text (\"Try again in N ms.\"). Unlike other errors, `code` is the numeric string \"429\" rather than a symbolic name.",
+        "x-docs-discrepancy": "The official docs do not mention rate limiting or the 429 response anywhere in their reference index (checked 2026-08-04). Observed live on GET /surveyQuestions and POST /people/create.",
+        "x-provenance": {
+          "source": "sandbox probe",
+          "lastProbed": "2026-08-04",
+          "note": "Triggered with ~300 concurrent GET /surveyQuestions requests; 225 returned 429. None of them carried a Retry-After header — the retry hint is only in the error text, with the millisecond count varying per response."
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "rateLimited": {
+                "summary": "Per-key rate limit exceeded",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "429",
+                      "text": "Rate limit exceeded. Try again in 30 ms."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "ServerError": {
         "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find, a null phone entry on the person write endpoints, and an `identifiers` entry with the valid type `dwid` on POST /people/create. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
         "content": {
@@ -1625,35 +1654,6 @@
               "source": "sandbox probe",
               "lastProbed": "2026-08-04",
               "note": "The aspNet example is a verbatim sandbox response to GET /people/102714507?a[=1, with the stack trace truncated after the frames that identify the crash. The internal example is from earlier probing of the malformed inputs listed above."
-            }
-          }
-        }
-      },
-      "TooManyRequests": {
-        "description": "Rate limit exceeded. Limits are per API key, set by the key's rate-limit profile, and apply across all endpoints, so any operation can return 429. There is no `Retry-After` header; the suggested wait appears only in the error text (\"Try again in N ms.\"). Unlike other errors, `code` is the numeric string \"429\" rather than a symbolic name.",
-        "x-docs-discrepancy": "The official docs do not mention rate limiting or the 429 response anywhere in their reference index (checked 2026-08-04). Observed live on GET /surveyQuestions and POST /people/create.",
-        "x-provenance": {
-          "source": "sandbox probe",
-          "lastProbed": "2026-08-04",
-          "note": "Triggered with ~300 concurrent GET /surveyQuestions requests; 225 returned 429. None of them carried a Retry-After header — the retry hint is only in the error text, with the millisecond count varying per response."
-        },
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorResponse"
-            },
-            "examples": {
-              "rateLimited": {
-                "summary": "Per-key rate limit exceeded",
-                "value": {
-                  "errors": [
-                    {
-                      "code": "429",
-                      "text": "Rate limit exceeded. Try again in 30 ms."
-                    }
-                  ]
-                }
-              }
             }
           }
         }
