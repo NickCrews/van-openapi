@@ -91,6 +91,9 @@
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -213,6 +216,9 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "200": {
             "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
             "x-provenance": {
@@ -297,41 +303,113 @@
         ],
         "responses": {
           "200": {
-            "description": "The person record.",
+            "description": "The person record. Clients that follow redirects can also land here with `text/html` instead: a path segment containing `<`, `>`, `*` or `&` is bounced to the web application's error page, which answers 200 with HTML (see the 302 response).",
             "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "lastProbed": "2026-08-03",
+                  "note": "The VAN web app's \"Oops...something went wrong\" page, reached by following the request-validation 302. Documented so redirect-following clients (including the schemathesis stateful phase, which found it) conform."
+                }
+              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Person"
                 },
                 "examples": {
                   "expanded": {
-                    "summary": "Sandbox test person with $expand=emails,phones (abridged: null-only fields omitted)",
+                    "summary": "Sandbox test person with $expand=emails,phones,addresses (abridged: null-only fields omitted)",
                     "value": {
-                      "vanId": 102714507,
-                      "firstName": "Ada",
+                      "vanId": 102714558,
+                      "firstName": "Grace",
                       "lastName": "Testperson",
                       "contactSource": "API",
                       "contactMode": "Person",
+                      "salutation": "Grace",
+                      "formalSalutation": "Grace Testperson",
+                      "envelopeName": "Grace Testperson",
+                      "formalEnvelopeName": "Grace Testperson",
                       "isDeceased": false,
-                      "dateCreated": "2026-08-03T12:58:00Z",
+                      "dateCreated": "2026-08-03T16:31:00Z",
                       "dateAcquired": "0001-01-01T00:00:00Z",
                       "emails": [
                         {
-                          "type": "P",
-                          "email": "ada.testperson@example.com",
-                          "dateCreated": "2026-08-03T12:58:00Z",
+                          "type": "W",
+                          "email": "grace.testperson@example.com",
+                          "dateCreated": "2026-08-03T16:31:00Z",
                           "isPreferred": true,
-                          "isSubscribed": true,
-                          "subscriptionStatus": "S"
+                          "isSubscribed": null,
+                          "subscriptionStatus": "N"
                         }
                       ],
-                      "phones": [],
-                      "addresses": null
+                      "phones": [
+                        {
+                          "phoneId": 1021629,
+                          "phoneNumber": "9075550142",
+                          "dialingPrefix": "1",
+                          "countryCode": "US",
+                          "ext": "123",
+                          "dateCreated": "2026-08-03T16:31:00Z",
+                          "phoneType": "Personal",
+                          "deviceType": "Cell",
+                          "isPreferred": true,
+                          "isBest": true,
+                          "isDisclosure": true,
+                          "smsOptInStatus": "Opt-In",
+                          "phoneOptInStatus": "Opt-In",
+                          "isCellPhoneExchange": false,
+                          "isCellStatus": null,
+                          "tags": null
+                        }
+                      ],
+                      "addresses": [
+                        {
+                          "addressId": 1206601,
+                          "addressLine1": "123 Test St",
+                          "addressLine2": "Apt 4",
+                          "addressLine3": null,
+                          "unitNo": null,
+                          "city": "Anchorage",
+                          "stateOrProvince": "AK",
+                          "zipOrPostalCode": "99501",
+                          "geoLocation": null,
+                          "countryCode": "US",
+                          "preview": "123 Test St Apt 4",
+                          "type": "Voting",
+                          "isPreferred": true,
+                          "isBest": true,
+                          "streetAddress": null,
+                          "displayMode": "Standardized"
+                        },
+                        {
+                          "addressId": 1206601,
+                          "addressLine1": "123 Test St",
+                          "addressLine2": "Apt 4",
+                          "addressLine3": null,
+                          "unitNo": null,
+                          "city": "Anchorage",
+                          "stateOrProvince": "AK",
+                          "zipOrPostalCode": "99501",
+                          "geoLocation": null,
+                          "countryCode": "US",
+                          "preview": "123 Test St Apt 4",
+                          "type": "Mailing",
+                          "isPreferred": true,
+                          "isBest": true,
+                          "streetAddress": null,
+                          "displayMode": "Standardized"
+                        }
+                      ]
                     }
                   }
                 }
               }
             }
+          },
+          "302": {
+            "$ref": "#/components/responses/RequestValidationRedirect"
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -373,6 +451,472 @@
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      },
+      "post": {
+        "operationId": "updatePerson",
+        "summary": "Update an existing person",
+        "description": "Merges the payload into an existing record. Fields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. An empty body is accepted and changes nothing.\n\nOn success the response is **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body — the same shape POST /people/find returns, not the updated record. An unknown, zero or negative vanId returns 404.\n\nThe update is not idempotent for contact methods: sending the same email twice adds it twice.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Merge semantics confirmed by updating only middleName on a record and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
+        },
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the person to update.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102714580
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchCandidate"
+              },
+              "examples": {
+                "scalars": {
+                  "summary": "Change a couple of fields, leaving the rest alone",
+                  "value": {
+                    "middleName": "Quinn",
+                    "employer": "Ship Creek Group"
+                  }
+                },
+                "addEmail": {
+                  "summary": "Append an email address (existing addresses are kept)",
+                  "value": {
+                    "emails": [
+                      {
+                        "email": "cre.work@example.com",
+                        "type": "W"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "The record was updated. `Location` points back at the person resource; the body is a match stub, not the updated record.\n\nThe same status also covers a failure that never reaches the API: a path segment containing `<`, `>`, `*` or `&` is rejected by ASP.NET request validation and redirected to `/Error.aspx?EID={code}` with an HTML body. Check the content type to tell them apart.",
+            "headers": {
+              "Location": {
+                "description": "URL of the updated person — or of the web application's error page when request validation rejected the path.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714580"
+              }
+            },
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "lastProbed": "2026-08-03",
+                  "note": "\"Object moved\" body of the request-validation redirect; see the RequestValidationRedirect response for the full story."
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "updated": {
+                    "summary": "Update applied",
+                    "value": {
+                      "vanId": 102714580,
+                      "status": "Matched"
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getUpdatedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the record to see the merged result — the update response does not include it."
+              }
+            }
+          },
+          "200": {
+            "description": "Not sent by the server directly: the server responds 302, but clients that auto-follow redirects (requests, fetch, httpx) surface the 200 from GET /people/{vanId} with the updated record — or, when the redirect was the request-validation bounce, the web application's HTML error page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "No person with that vanId exists. Zero and negative ids return this too, as the standard error envelope. A non-integer path segment fails to match the route and returns an HTML 404 error page instead.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "notFound": {
+                    "summary": "Unknown vanId",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "NOT_FOUND",
+                          "text": "The specified resource cannot be found."
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "lastProbed": "2026-08-03",
+                  "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an integer so no API route matches — same as the GET."
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/people/findOrCreate": {
+      "post": {
+        "operationId": "findOrCreatePerson",
+        "summary": "Find a person, or create one if nothing matches",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nA match returns **302 Found** with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`; no match returns **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`. Unlike find, this never returns 404 — the no-match case is the create case.\n\nEvery field is optional, including the name: an empty body `{}` returns 201 and creates a blank record. Supplying a `vanId` that exists short-circuits the match and returns 302 for that record.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03)."
+        },
+        "tags": [
+          "People"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchCandidate"
+              },
+              "examples": {
+                "nameAndEmail": {
+                  "summary": "Name + email, the usual dedupe key",
+                  "value": {
+                    "firstName": "Grace",
+                    "lastName": "Testperson",
+                    "emails": [
+                      {
+                        "email": "grace.testperson@example.com",
+                        "type": "W",
+                        "isPreferred": true
+                      }
+                    ]
+                  }
+                },
+                "fullContact": {
+                  "summary": "New record with phone and address",
+                  "value": {
+                    "firstName": "Grace",
+                    "lastName": "Testperson",
+                    "phones": [
+                      {
+                        "phoneNumber": "907-555-0142",
+                        "phoneType": "C",
+                        "ext": "123",
+                        "isPreferred": true,
+                        "phoneOptInStatus": "I"
+                      }
+                    ],
+                    "addresses": [
+                      {
+                        "addressLine1": "123 Test St",
+                        "addressLine2": "Apt 4",
+                        "city": "Anchorage",
+                        "stateOrProvince": "AK",
+                        "zipOrPostalCode": "99501",
+                        "type": "Home"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Nothing matched, so a new record was created. No `Location` header is sent — the new id is in the body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "created": {
+                    "summary": "New record stored",
+                    "value": {
+                      "vanId": 102714558,
+                      "status": "UnmatchedStored"
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getCreatedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the record that was just created."
+              }
+            }
+          },
+          "302": {
+            "description": "An existing person matched, so nothing was written.",
+            "headers": {
+              "Location": {
+                "description": "URL of the matched person.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714558"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "matched": {
+                    "summary": "Existing record found",
+                    "value": {
+                      "vanId": 102714558,
+                      "status": "Matched"
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the matched person's full record."
+              }
+            }
+          },
+          "200": {
+            "description": "Not sent by the server directly: on a match, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/people/create": {
+      "post": {
+        "operationId": "createPerson",
+        "summary": "Create a person without matching",
+        "description": "Stores the payload as a new record and returns **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. No de-duplication happens: posting a name and email identical to an existing record creates a second record. Use POST /people/findOrCreate when you want matching.\n\nThe one exception is `vanId`: if the body carries one that exists, nothing is created and the response is **302 Found** for that record, exactly as findOrCreate would answer.\n\nEvery field is optional — an empty body `{}` returns 201 and creates a blank record with no name.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts create), which requires firstName and lastName client-side. The API requires neither. Duplicate behaviour confirmed by posting an exact copy of an existing person's name and email and receiving a new vanId (observed 2026-08-03)."
+        },
+        "tags": [
+          "People"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchCandidate"
+              },
+              "examples": {
+                "minimal": {
+                  "summary": "Name only",
+                  "value": {
+                    "firstName": "Cre",
+                    "lastName": "Atetest"
+                  }
+                },
+                "withDetails": {
+                  "summary": "Name plus demographics and contact details",
+                  "value": {
+                    "firstName": "Cre",
+                    "lastName": "Atetest",
+                    "sex": "F",
+                    "dateOfBirth": "1975-04-12",
+                    "party": "D",
+                    "contactMethodPreferenceCode": "E",
+                    "employer": "Ship Creek Group",
+                    "occupation": "Engineer",
+                    "emails": [
+                      {
+                        "email": "cre@example.com",
+                        "type": "W",
+                        "subscriptionStatus": "S"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A new record was created. No `Location` header is sent — the new id is in the body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "created": {
+                    "summary": "New record stored",
+                    "value": {
+                      "vanId": 102714580,
+                      "status": "Stored"
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getCreatedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the record that was just created."
+              }
+            }
+          },
+          "302": {
+            "description": "The body carried a vanId that already exists, so nothing was created.",
+            "headers": {
+              "Location": {
+                "description": "URL of the existing person.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714558"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatchResult"
+                },
+                "examples": {
+                  "matched": {
+                    "summary": "vanId already exists",
+                    "value": {
+                      "vanId": 102714558,
+                      "status": "Matched"
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the existing person's full record."
+              }
+            }
+          },
+          "200": {
+            "description": "Not sent by the server directly: on the vanId-match path, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -515,6 +1059,9 @@
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -529,6 +1076,35 @@
       }
     },
     "responses": {
+      "RequestValidationRedirect": {
+        "description": "The request never reached the API. ASP.NET request validation rejects a path segment containing `<`, `>`, `*` or `&` and hands the request to the VAN web application, which answers **302** with `Location: /Error.aspx?EID={code}` and a small HTML \"Object moved\" body. Clients that follow the redirect land on the web app's HTML \"Oops...something went wrong\" page with status 200 — HTML, not JSON, from an endpoint that otherwise only speaks JSON.\n\nOther unusual path characters take different routes: `:` and `\"` give the IIS HTML 404, and a backslash gives the standard JSON 404 envelope.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Found by the stateful fuzz phase on GET /people/{vanId} and reproduced character by character. The EID in the Location is a support reference code; no request data is echoed back."
+        },
+        "headers": {
+          "Location": {
+            "description": "The web application's error page, e.g. /Error.aspx?EID=26B226-343EF8",
+            "schema": {
+              "type": "string"
+            },
+            "example": "/Error.aspx?EID=26B226-343EF8"
+          }
+        },
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string"
+            },
+            "examples": {
+              "objectMoved": {
+                "summary": "Redirect body",
+                "value": "<html><head><title>Object moved</title></head><body>\n<h2>Object moved to <a href=\"/Error.aspx?EID=26B226-343EF8\">here</a>.</h2>\n</body></html>\n"
+              }
+            }
+          }
+        }
+      },
       "BadRequest": {
         "description": "Validation error.",
         "content": {
@@ -580,7 +1156,7 @@
         }
       },
       "ServerError": {
-        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
+        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find, a null phone entry on the person write endpoints, and an `identifiers` entry with the valid type `dwid` on POST /people/create. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
         "content": {
           "application/json": {
             "schema": {
@@ -602,6 +1178,35 @@
                       "code": "INTERNAL_SERVER_ERROR",
                       "text": "An unknown error occurred",
                       "referenceCode": "48E6AB-938498"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Rate limit exceeded. Limits are per API key, set by the key's rate-limit profile, and apply across all endpoints, so any operation can return 429. There is no `Retry-After` header; the suggested wait appears only in the error text (\"Try again in N ms.\"). Unlike other errors, `code` is the numeric string \"429\" rather than a symbolic name.",
+        "x-docs-discrepancy": "The official docs do not mention rate limiting or the 429 response anywhere in their reference index (checked 2026-08-04). Observed live on GET /surveyQuestions and POST /people/create.",
+        "x-provenance": {
+          "source": "sandbox probe",
+          "lastProbed": "2026-08-04",
+          "note": "Triggered with ~300 concurrent GET /surveyQuestions requests; 225 returned 429. None of them carried a Retry-After header — the retry hint is only in the error text, with the millisecond count varying per response."
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "rateLimited": {
+                "summary": "Per-key rate limit exceeded",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "429",
+                      "text": "Rate limit exceeded. Try again in 30 ms."
                     }
                   ]
                 }
@@ -635,7 +1240,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Machine-readable error code. Known values: UNAUTHORIZED, INVALID_PARAMETER, NOT_FOUND (list likely incomplete).",
+            "description": "Machine-readable error code. Known values: UNAUTHORIZED, FORBIDDEN, INVALID_PARAMETER, NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR (list likely incomplete).",
             "examples": [
               "INVALID_PARAMETER"
             ]
@@ -851,11 +1456,12 @@
           },
           "status": {
             "type": "string",
-            "description": "Matched (302 from find), Unmatched (404 from find), UnmatchedStored (201 from findOrCreate).",
+            "description": "`Matched` — an existing record was found (302 from find, findOrCreate, create when a vanId matches, and update). `Unmatched` — nothing matched and nothing was written (404 from find). `UnmatchedStored` — nothing matched, so a record was created (201 from findOrCreate). `Stored` — a record was created with no attempt to match (201 from create).",
             "enum": [
               "Matched",
               "Unmatched",
-              "UnmatchedStored"
+              "UnmatchedStored",
+              "Stored"
             ]
           }
         }
@@ -979,47 +1585,1011 @@
         "description": "An email address on a person record, returned when $expand=emails is requested.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
-          "note": "Shape observed live once on the sandbox test person; every field was populated, so nullability is assumed rather than verified."
+          "note": "Enums taken from the API's own INVALID_PARAMETER responses to POST /people/findOrCreate and confirmed by round-tripping every value through GET /people/{vanId}?$expand=emails. Unlike phones, email codes come back as the same single letters that were written."
         },
         "properties": {
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The email address."
+          },
           "type": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Email type code, e.g. \"P\" (personal)."
-          },
-          "email": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "enum": [
+              "P",
+              "W",
+              "O",
+              null
+            ],
+            "description": "What kind of address this is. `P` = personal, `W` = work, `O` = other.",
+            "x-provenance": {
+              "note": "Writing any other value returns 400 INVALID_PARAMETER: \"'type' must be one of P , W , O\"."
+            }
           },
           "dateCreated": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "description": "When the address was added to the record. Set by the server."
           },
           "isPreferred": {
             "type": [
               "boolean",
               "null"
-            ]
+            ],
+            "description": "Whether this is the person's preferred email address. Exactly one address per person carries it."
           },
           "isSubscribed": {
             "type": [
               "boolean",
               "null"
-            ]
+            ],
+            "description": "The pre-Targeted-Email view of `subscriptionStatus`: whether the address may be used in a broadcast email. Derived from `subscriptionStatus` — `S` maps to true, `U` to false, and `N` to null, since neutral has no boolean equivalent.",
+            "x-provenance": {
+              "note": "The S/U/N -> true/false/null mapping was observed by writing each subscriptionStatus and reading the record back (2026-08-03). The docs describe isSubscribed only as a write field and mark it deprecated where Targeted Email is available; they do not say what it reads back as."
+            }
           },
           "subscriptionStatus": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Subscription status code, e.g. \"S\" (subscribed)."
+            "enum": [
+              "U",
+              "N",
+              "S",
+              null
+            ],
+            "description": "Targeted Email subscription state. `S` = subscribed — the only status that receives Targeted Email messages. `N` = neutral — no message, but not an opt-out. `U` = unsubscribed. This property exists only where the Targeted Email feature is enabled.",
+            "x-provenance": {
+              "note": "Writing any other value returns 400 INVALID_PARAMETER with hint \"'U', 'S', 'N'\"."
+            }
+          }
+        }
+      },
+      "PersonPhone": {
+        "type": "object",
+        "description": "A phone number on a person record, returned when $expand=phones is requested.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Shape and every enum observed live: each documented write code was posted through POST /people/findOrCreate and read back via GET /people/{vanId}?$expand=phones. Fields not in the documented model (dateCreated, isBest, isDisclosure, smsOptInStatus, isCellPhoneExchange, tags) are read-only additions seen on every phone returned."
+        },
+        "properties": {
+          "phoneId": {
+            "type": "integer",
+            "description": "Read-only; unique identifier of the phone."
+          },
+          "phoneNumber": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The number, normalized to digits only."
+          },
+          "dialingPrefix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "1 to 3 digit country dialing prefix, e.g. \"1\" for North America."
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO alpha-2 code of the country the number belongs to, e.g. \"US\"."
+          },
+          "ext": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 6,
+            "description": "Extension; no more than six numeric characters."
+          },
+          "dateCreated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the number was added to the record. Set by the server."
+          },
+          "phoneType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Personal",
+              "Work",
+              "Other",
+              null
+            ],
+            "description": "Which sphere of the person's life the number belongs to. The cell/fax/landline/etc distinction is stored in `deviceType`, not here.",
+            "x-provenance": {
+              "note": "Mapping established by writing all seven accepted codes to one record and reading them back (2026-08-03). Enum lists the read values observed for those codes; records created outside the API were not sampled."
+            },
+            "x-docs-discrepancy": "Official docs document only the write codes and imply they are echoed back. GET returns an expanded category name instead, and seven write codes collapse onto three of them (observed 2026-08-03)."
+          },
+          "deviceType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Cell",
+              "Landline",
+              "Unknown",
+              "Fax",
+              "VoIP",
+              null
+            ],
+            "description": "What physical kind of device answers the number (decides if the number is textable). \"Unknown\" when the device kind has never been established.",
+            "x-provenance": {
+              "note": "Read values confirmed by writing each of C, L, U, F, V and reading back (2026-08-03)."
+            },
+            "x-docs-discrepancy": "Official docs document only the write codes C, L, U, F, V and imply they are echoed back; GET returns the spelled-out names Cell/Landline/Unknown/Fax/VoIP (observed 2026-08-03)."
+          },
+          "isPreferred": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether this is the person's preferred phone number."
+          },
+          "isBest": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read-only; whether this is the best known number of its type — the most recently updated one."
+          },
+          "isDisclosure": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read-only; whether the number is usable for campaign-finance disclosure reporting.",
+            "x-provenance": {
+              "note": "Not in the documented model. Observed true on the first number written to a record and on numbers written with deviceType Cell, false otherwise; the exact rule was not pinned down."
+            }
+          },
+          "smsOptInStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Opt-In",
+              "Unknown",
+              "Opt-Out",
+              null
+            ],
+            "description": "Read-only; text-message consent for this number.",
+            "x-provenance": {
+              "note": "Not in the documented model. Observed to mirror phoneOptInStatus on every phone probed (2026-08-03); there is no separate write field for it."
+            }
+          },
+          "phoneOptInStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Opt-In",
+              "Unknown",
+              "Opt-Out",
+              null
+            ],
+            "description": "Whether the person has consented to being contacted at this number.",
+            "x-provenance": {
+              "note": "Writing any other value returns 400 INVALID_PARAMETER: \"'phoneOptInStatus' must be one of I , U , O\"."
+            },
+            "x-docs-discrepancy": "Official docs describe the field only as the write codes I/U/O; GET returns the expanded names Opt-In/Unknown/Opt-Out (observed 2026-08-03)."
+          },
+          "isCellPhoneExchange": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read-only; whether the number's exchange (area code + prefix) is one allocated to wireless carriers. An inference from the number itself, independent of `deviceType` and `isCellStatus`.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only observed as false — the sandbox's fictional 555 numbers belong to no real exchange."
+            }
+          },
+          "isCellStatus": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PhoneIsCellStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How confident VAN is that this number reaches a cell phone. Null when no explicit status has been applied.",
+            "x-docs-discrepancy": "The value written is validated but never read back: phones written with a valid isCellStatus still return null from GET /people/{vanId}?$expand=phones (observed 2026-08-03)."
+          },
+          "tags": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {},
+            "description": "Read-only; tags applied to the number.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only observed as null; item shape unverified."
+            }
+          }
+        }
+      },
+      "PhoneIsCellStatus": {
+        "type": "object",
+        "description": "A confidence level for whether a phone number reaches a cell phone. The four levels are fixed; `GET /phones/isCellStatuses` returns them as a bare array (empty in the sandbox). On write, supplying either `statusId` or `statusName` alone is enough; omitting the object entirely leaves any existing status unchanged.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Values come from the API's own INVALID_PARAMETER response: \"'statusId' must be one of 1 , 2 , 3 , 4\" and \"'statusName' must be one of Verified Cell , Likely Cell , Likely Not a Cell , Not a Cell\". The id-to-name pairing below follows that ordering and the docs' example ({\"statusId\": 2, \"statusName\": \"Likely Cell\"}); the API accepts a mismatched pair without complaint, so the pairing could not be confirmed by round-trip."
+        },
+        "properties": {
+          "statusId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              null
+            ],
+            "description": "1 = Verified Cell, 2 = Likely Cell, 3 = Likely Not a Cell, 4 = Not a Cell."
+          },
+          "statusName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Verified Cell",
+              "Likely Cell",
+              "Likely Not a Cell",
+              "Not a Cell",
+              null
+            ],
+            "description": "Name matching `statusId`."
+          }
+        }
+      },
+      "PersonAddress": {
+        "type": "object",
+        "description": "An address on a person record, returned when $expand=addresses is requested. The expansion returns the best known Home address and the best known Mailing address only — at most two entries, and the same address appears twice (once per type, sharing an addressId) when it serves as both. Work and Custom addresses are stored but not surfaced here.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Shape observed live by writing addresses of each documented type through POST /people/findOrCreate and reading them back. Fields not in the documented model (unitNo, geoLocation, preview, streetAddress, displayMode) are read-only additions seen on every address returned."
+        },
+        "properties": {
+          "addressId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Read-only; unique identifier of the address on this person. Shared by the Home and Mailing entries when one address fills both roles."
+          },
+          "addressLine1": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First line of the standardized street address."
+          },
+          "addressLine2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Second line of the street address."
+          },
+          "addressLine3": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Third line of the street address."
+          },
+          "unitNo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Read-only; the unit or apartment number parsed out of the street address by standardization.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only observed as null, including for an address written with \"Apt 4\" on line 2 — the sandbox does not appear to run full standardization."
+            }
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "City or town."
+          },
+          "stateOrProvince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two or three character state or province code, e.g. \"MN\", \"ON\", \"NSW\"."
+          },
+          "zipOrPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ZIP, ZIP+4, postal code, post code, etc."
+          },
+          "geoLocation": {
+            "description": "Read-only; the geocoded position of the address.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only observed as null — the sandbox does not geocode API-created addresses; type unverified."
+            }
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two character ISO country code supported by the VAN context, e.g. \"US\"."
+          },
+          "preview": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Read-only; a one-line display form of the street address.",
+            "x-provenance": {
+              "note": "Not in the documented model. Observed as address lines 1 and 2 joined by a space, with a trailing space when line 2 is empty."
+            }
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Voting",
+              "Mailing",
+              null
+            ],
+            "description": "Which role the address plays for the person. This expansion only ever returns \"Voting\" or \"Mailing\"; a person with no mailing address of their own has their home address returned under \"Mailing\" as well.",
+            "x-provenance": {
+              "note": "Read values observed by writing Home, Work, Mailing and Custom addresses (2026-08-03). An address written as Work or Custom did not appear in the expansion at all."
+            },
+            "x-docs-discrepancy": "Official docs list five address types with no indication that reads are restricted; $expand=addresses only ever returns Voting and Mailing, and Work and Custom addresses are omitted from the response entirely (observed 2026-08-03)."
+          },
+          "isPreferred": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read-only; whether this is the person's preferred address."
+          },
+          "isBest": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Read-only; whether this is the best known address of its type — the most recently updated one."
+          },
+          "streetAddress": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Read-only; the street portion of the standardized address.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only observed as null; type assumed to be string."
+            }
+          },
+          "displayMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Read-only; which form of the address the other fields show — \"Standardized\" for the normalized version rather than the raw text as entered.",
+            "x-provenance": {
+              "note": "Not in the documented model. Only \"Standardized\" observed; other values not enumerated, so this is left unconstrained."
+            }
+          }
+        }
+      },
+      "PersonEmailInput": {
+        "type": "object",
+        "description": "An email address as written to a person record. Reads come back as PersonEmail; the two differ only in required-ness and the server-set dateCreated, since email codes round-trip unchanged.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Every value round-tripped through POST /people/findOrCreate and GET /people/{vanId}?$expand=emails."
+        },
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The address. Validated: a malformed value returns 400 INVALID_PARAMETER \"'email' is not a valid email address\"."
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "P",
+              "W",
+              "O",
+              null
+            ],
+            "description": "`P` = personal, `W` = work, `O` = other. Defaults to `P`."
+          },
+          "isPreferred": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether this becomes the person's preferred address. Documented as defaulting to false, but the flag moves to the most recently added address on its own: writing three addresses in turn without ever setting this leaves only the newest preferred. Phones do not behave this way — an unflagged phone stays unpreferred.",
+            "x-provenance": {
+              "note": "Observed by appending three emails to one record in separate requests, none setting isPreferred, and seeing the flag follow the newest each time (2026-08-03)."
+            }
+          },
+          "isSubscribed": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Deprecated where Targeted Email is available. `false` is a permanent opt-out — it stores `subscriptionStatus: \"U\"`, which cannot be reversed. Cannot be sent together with `subscriptionStatus`."
+          },
+          "subscriptionStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "U",
+              "N",
+              "S",
+              null
+            ],
+            "description": "`S` = subscribed (the default, and the only status that receives Targeted Email), `N` = neutral, `U` = unsubscribed. `U` is terminal. Only available where Targeted Email is enabled, and not valid alongside `isSubscribed`."
+          }
+        }
+      },
+      "PersonPhoneInput": {
+        "type": "object",
+        "description": "A phone number as written to a person record. The code fields take single letters here, but they are input codes mapped to the stored model at write time (see PersonPhone): several codes collapse onto one stored value, and reads return the stored words, not the codes.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Every code round-tripped through POST /people/findOrCreate and GET /people/{vanId}?$expand=phones."
+        },
+        "required": [
+          "phoneNumber"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "Non-numeric characters are stripped, then the remaining digits are validated for the country implied by `countryCode`/`dialingPrefix`, defaulting to the context's country. A number that fails validation returns 400 INVALID_PARAMETER \"Phone number is not valid. If entering UK number, please include leading 0.\"."
+          },
+          "phoneType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "H",
+              "W",
+              "O",
+              "C",
+              "M",
+              "F",
+              "P",
+              null
+            ],
+            "description": "`H` = home, `W` = work, `O` = other, `C` = cell, `M` = main, `F` = fax, `P` = personal. A write-only input code, not what is stored: at write time it is collapsed and stored as `phoneType` `Personal` (H, C, M, P), `Work` (W, F) or `Other` (O), and `C` additionally stores `deviceType: \"Cell\"` while `F` stores `deviceType: \"Fax\"`. Reads return the stored values (see PersonPhone).",
+            "x-docs-discrepancy": "Official docs list five codes (H, W, C, M, F); the API's own INVALID_PARAMETER response accepts seven — \"'phoneType' must be one of: H, W, O, C, M, F, P\" (observed 2026-08-03)."
+          },
+          "deviceType": {
+            "description": "What kind of device answers the number; decides whether it is textable. Accepts either a letter — `C` = cell, `L` = landline, `U` = unknown, `F` = fax, `V` = VoIP — or the equivalent numeric id: 1 (Cell), 2 (Landline), 4 (Unknown), 5 (Fax), 6 (VoIP). Defaults to Unknown. Available since May 9, 2024.",
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "C",
+                  "L",
+                  "U",
+                  "F",
+                  "V"
+                ]
+              },
+              {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  4,
+                  5,
+                  6
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-docs-discrepancy": "Official docs list only the letter codes. The API's INVALID_PARAMETER response also accepts numeric ids 1, 2, 4, 5, 6; writing 2 and 6 was confirmed to store Landline and VoIP (observed 2026-08-03). There is no id 3."
+          },
+          "ext": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 6,
+            "description": "Extension. Over six characters returns 400 INVALID_PARAMETER \"'ext' must be between 0 and 6 characters\"."
+          },
+          "isPreferred": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether this becomes the person's preferred number. Defaults to false and stays there — unlike emails, a newly added phone does not take the preferred flag from the existing one.",
+            "x-provenance": {
+              "note": "Seven phones written to one record with no isPreferred flag all read back isPreferred false (2026-08-03)."
+            }
+          },
+          "phoneOptInStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "I",
+              "U",
+              "O",
+              null
+            ],
+            "description": "`I` = opt in, `U` = unknown (the default), `O` = opt out. Reads back as `Opt-In`, `Unknown`, `Opt-Out`, and also sets the read-only `smsOptInStatus` to the same value."
+          },
+          "isCellStatus": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PhoneIsCellStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Confidence that the number reaches a cell phone. Omitting it leaves any existing explicit status unchanged."
+          },
+          "dialingPrefix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 3,
+            "description": "1 to 3 numeric characters identifying the country, e.g. \"1\". If sent alongside `countryCode`, the two must name the same country."
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO alpha-2 country code, e.g. \"US\". If sent alongside `dialingPrefix`, the two must name the same country."
+          }
+        }
+      },
+      "PersonAddressInput": {
+        "type": "object",
+        "description": "An address as written to a person record. Reads come back as PersonAddress, which surfaces only the best known Home and Mailing addresses and adds several standardization fields.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Each documented type written through POST /people/findOrCreate and read back with $expand=addresses."
+        },
+        "properties": {
+          "addressLine1": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First line of the street address."
+          },
+          "addressLine2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Second line of the street address."
+          },
+          "addressLine3": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Third line of the street address."
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "City or town."
+          },
+          "stateOrProvince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two or three character state or province code, e.g. \"MN\", \"ON\", \"NSW\"."
+          },
+          "zipOrPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ZIP, ZIP+4, postal code, post code, etc."
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two character ISO country code supported by the VAN context. Defaults to the context's country."
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Mailing",
+              "Home",
+              "Voting",
+              "Work",
+              "Custom",
+              null
+            ],
+            "description": "`Home` and `Voting` mean the same thing and read back as `Voting`. Some types are unavailable in some contexts. An address written as `Work` or `Custom` is stored but never appears under $expand=addresses. When a person has no mailing address, their home address serves as the mailing address too.",
+            "x-docs-discrepancy": "The value is not validated: an address written with type \"Q\" is accepted with 201 and filed as the person's home address (observed 2026-08-03)."
+          }
+        }
+      },
+      "PersonIdentifierInput": {
+        "type": "object",
+        "description": "A known external identifier for the person, e.g. a DWID or voter file VANID. External IDs are case-insensitive in VAN — \"Abcd1234\" always matches \"ABCD1234\".",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Only the rejection path was observed: an unrecognized type returns 400 \"'type' (bogus) is not a valid ExternalID in this context\". The sandbox 500s on the valid type 'dwid' (see the operation description), so a successful write was never observed."
+        },
+        "required": [
+          "type",
+          "externalId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "An external identifier type available in the current context. Use `votervanid` for a VoterFile VANID from a My Campaign call, and `dwid` for Catalist DWIDs in either mode."
+          },
+          "externalId": {
+            "type": "string",
+            "description": "The identifier value; case-insensitive."
+          }
+        }
+      },
+      "PersonCustomFieldValueInput": {
+        "type": "object",
+        "description": "A value for one of the context's custom fields.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Only the rejection path was observed — the demo committee defines no custom fields, so writing customFieldId 1 returns 400 \"Custom field 1 does not exist.\". Property names taken from the error's `properties` path and the official docs."
+        },
+        "properties": {
+          "customFieldId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Id of a custom field defined in the current context. Unknown ids return 400 INVALID_PARAMETER."
+          },
+          "customFieldGroupId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Id of the custom field's group."
+          },
+          "assignedValue": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The value to store."
+          }
+        }
+      },
+      "MatchCandidate": {
+        "type": "object",
+        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId}. Every field is optional — an entirely empty body is accepted and creates a blank record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
+        "x-provenance": {
+          "lastProbed": "2026-08-03",
+          "note": "Field list from the official docs' Match Candidate model; max lengths and the enforced/unenforced split established by probing POST /people/create with out-of-range values. Not modelled here, because the sandbox has no lookup values to write against and only the 400 path could be seen: pronouns, selfReportedRaces, selfReportedEthnicities, selfReportedGenders, selfReportedSexualOrientations and selfReportedLanguagePreference. Each takes an id that must exist in the context, e.g. 'reportedRaceId' is not a valid ReportedRace in this context."
+        },
+        "properties": {
+          "vanId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Id of an existing record. When it matches, all other criteria are ignored and the endpoint returns 302 Matched instead of creating anything — this is the only way POST /people/create will decline to create a record. A vanId of 0, or one matching nothing, is silently ignored and a new record is created.",
+            "x-provenance": {
+              "note": "Unlike POST /people/find, which returns 500 for vanId 0, the write endpoints tolerate it (observed 2026-08-03), so no minimum is imposed here."
+            }
+          },
+          "firstName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 75
+          },
+          "middleName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 75
+          },
+          "lastName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 150
+          },
+          "suffix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "Part of the name following the last name, e.g. \"Jr.\"."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10,
+            "description": "An honorific."
+          },
+          "salutation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100,
+            "description": "Preferred greeting for correspondence. Derived from the name when not supplied."
+          },
+          "envelopeName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 350,
+            "description": "Preferred name for mailings. Derived from the name when not supplied."
+          },
+          "nickname": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50
+          },
+          "party": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1,
+            "description": "One-character party affiliation, e.g. \"D\". Only the length is checked — any single character is stored as given.",
+            "x-provenance": {
+              "note": "Writing \"Q\" is accepted and reads back as \"Q\"; writing \"Democrat\" returns 400 for length, not for value (observed 2026-08-03)."
+            }
+          },
+          "contactMethodPreferenceCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "P",
+              "E",
+              "M",
+              "F",
+              "S",
+              null
+            ],
+            "description": "Preferred method of contact: `P` = phone, `E` = email, `M` = mail, `F` = fax, `S` = SMS. Any other value returns 400 \"The specified condition was not met for 'contactMethodPreferenceCode'\"."
+          },
+          "employer": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "May not be available in every context."
+          },
+          "occupation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "May not be available in every context."
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 150,
+            "description": "May not be available in every context."
+          },
+          "sex": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "M",
+              "F",
+              null
+            ],
+            "description": "Matched case-insensitively — \"m\" is accepted and stored as \"M\". Any other value returns 400 \"The specified condition was not met for 'sex'\"."
+          },
+          "dateOfBirth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 \"'dateOfBirth' must be in the 20th or 21st century.\". A value that is not a parseable date is not an error: it is silently dropped and the record stores null.",
+            "x-provenance": {
+              "note": "\"not-a-date\" returned 201 with dateOfBirth null (observed 2026-08-03)."
+            }
+          },
+          "collectedLocationId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Location where the person's voter registration application was collected."
+          },
+          "electionType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "G",
+              "P",
+              "R",
+              "PP",
+              "SP",
+              "SG",
+              "MP",
+              "MG",
+              "C",
+              "O",
+              null
+            ],
+            "description": "Type of election registered for: `G` = General, `P` = Primary, `R` = Run-off, `PP` = Presidential Primary, `SP` = Special Primary, `SG` = Special General, `MP` = Municipal Primary, `MG` = Municipal General, `C` = Caucus, `O` = Other. Any other value returns 400 \"Invalid Election Type\"."
+          },
+          "cycle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 4,
+            "maxLength": 4,
+            "description": "Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 \"'cycle' must be 4 characters in length\"."
+          },
+          "emails": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Appended to the record's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
+            "items": {
+              "$ref": "#/components/schemas/PersonEmailInput"
+            }
+          },
+          "phones": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Appended to the record's existing numbers, not substituted for them. A bare object instead of an array is silently ignored. A null array entry returns 500.",
+            "items": {
+              "$ref": "#/components/schemas/PersonPhoneInput"
+            }
+          },
+          "addresses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Appended to the record's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
+            "items": {
+              "$ref": "#/components/schemas/PersonAddressInput"
+            }
+          },
+          "identifiers": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Known external identifiers. Writing a type the context does not recognize returns a clean 400; writing the valid type `dwid` returns 500 in a My Campaign context, so no successful write was ever observed.",
+            "items": {
+              "$ref": "#/components/schemas/PersonIdentifierInput"
+            }
+          },
+          "customFieldValues": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/PersonCustomFieldValueInput"
+            }
+          },
+          "organizationContactCommonName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 150,
+            "description": "An organization's common name. Only applies to My Campaign databases with organizations-as-contacts enabled."
+          },
+          "organizationContactOfficialName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 150,
+            "description": "An organization's official name. Only applies to My Campaign databases with organizations-as-contacts enabled."
+          },
+          "contactMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Person",
+              "Organization",
+              null
+            ],
+            "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
+            "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the record reads back with contactMode \"Person\" (observed 2026-08-03)."
           }
         }
       },
@@ -1175,12 +2745,9 @@
               "array",
               "null"
             ],
-            "description": "Null unless the request included $expand=phones; an empty array when expanded and none exist.",
+            "description": "Null unless the request included $expand=phones; an empty array when expanded and none exist. Every phone on the record is returned, not just the best known one.",
             "items": {
-              "type": "object"
-            },
-            "x-provenance": {
-              "note": "Item shape not yet observed live — only seen as an empty array."
+              "$ref": "#/components/schemas/PersonPhone"
             }
           },
           "addresses": {
@@ -1188,12 +2755,9 @@
               "array",
               "null"
             ],
-            "description": "Null unless the request included $expand=addresses. Provides best-known Home and Mailing address.",
+            "description": "Null unless the request included $expand=addresses; an empty array when expanded and none exist. Provides the best known Home address and the best known Mailing address only — the same address appears under both types when it fills both roles, and Work/Custom addresses are omitted.",
             "items": {
-              "type": "object"
-            },
-            "x-provenance": {
-              "note": "Item shape not yet observed live."
+              "$ref": "#/components/schemas/PersonAddress"
             }
           },
           "sourceFileTitle": {
