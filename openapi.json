@@ -165,7 +165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
                   "matched": {
@@ -193,7 +193,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonUnmatched"
                 },
                 "examples": {
                   "unmatched": {
@@ -305,15 +305,6 @@
           "200": {
             "description": "The person record. Clients that follow redirects can also land here with `text/html` instead: a path segment containing `<`, `>`, `*` or `&` is bounced to the web application's error page, which answers 200 with HTML (see the 302 response).",
             "content": {
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                },
-                "x-provenance": {
-                  "lastProbed": "2026-08-03",
-                  "note": "The VAN web app's \"Oops...something went wrong\" page, reached by following the request-validation 302. Documented so redirect-following clients (including the schemathesis stateful phase, which found it) conform."
-                }
-              },
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Person"
@@ -404,6 +395,15 @@
                       ]
                     }
                   }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "lastProbed": "2026-08-03",
+                  "note": "The VAN web app's \"Oops...something went wrong\" page, reached by following the request-validation 302. Documented so redirect-following clients (including the schemathesis stateful phase, which found it) conform."
                 }
               }
             }
@@ -537,7 +537,7 @@
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
                   "updated": {
@@ -692,7 +692,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonUnmatchedStored"
                 },
                 "examples": {
                   "created": {
@@ -730,7 +730,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
                   "matched": {
@@ -835,7 +835,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonStored"
                 },
                 "examples": {
                   "created": {
@@ -873,7 +873,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonMatchResult"
+                  "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
                   "matched": {
@@ -1441,28 +1441,67 @@
           }
         }
       },
-      "PersonMatchResult": {
+      "PersonMatched": {
         "type": "object",
+        "description": "An existing record was found and nothing was written. The only match-stub shape that accompanies a 302: from find, findOrCreate, create when the body's vanId exists, and update.",
         "required": [
           "vanId",
           "status"
         ],
         "properties": {
           "vanId": {
-            "type": [
-              "integer",
-              "null"
-            ]
+            "type": "integer"
           },
           "status": {
-            "type": "string",
-            "description": "`Matched` — an existing record was found (302 from find, findOrCreate, create when a vanId matches, and update). `Unmatched` — nothing matched and nothing was written (404 from find). `UnmatchedStored` — nothing matched, so a record was created (201 from findOrCreate). `Stored` — a record was created with no attempt to match (201 from create).",
-            "enum": [
-              "Matched",
-              "Unmatched",
-              "UnmatchedStored",
-              "Stored"
-            ]
+            "const": "Matched"
+          }
+        }
+      },
+      "PersonUnmatched": {
+        "type": "object",
+        "description": "Nothing matched and nothing was written — the 404 body from find. The one match-stub shape with a null vanId.",
+        "required": [
+          "vanId",
+          "status"
+        ],
+        "properties": {
+          "vanId": {
+            "type": "null"
+          },
+          "status": {
+            "const": "Unmatched"
+          }
+        }
+      },
+      "PersonUnmatchedStored": {
+        "type": "object",
+        "description": "Nothing matched, so a new record was created — the 201 body from findOrCreate.",
+        "required": [
+          "vanId",
+          "status"
+        ],
+        "properties": {
+          "vanId": {
+            "type": "integer"
+          },
+          "status": {
+            "const": "UnmatchedStored"
+          }
+        }
+      },
+      "PersonStored": {
+        "type": "object",
+        "description": "A new record was created with no attempt to match — the 201 body from create.",
+        "required": [
+          "vanId",
+          "status"
+        ],
+        "properties": {
+          "vanId": {
+            "type": "integer"
+          },
+          "status": {
+            "const": "Stored"
           }
         }
       },
@@ -1624,15 +1663,19 @@
             }
           },
           "subscriptionStatus": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "enum": [
               "U",
               "N",
-              "S"
+              "S",
+              null
             ],
-            "description": "Targeted Email subscription state. `S` = subscribed — the default, and the only status that receives Targeted Email messages. `N` = neutral — no message, but not an opt-out. `U` = unsubscribed. This property exists only where the Targeted Email feature is enabled.",
+            "description": "Targeted Email subscription state. `S` = subscribed — the default at write time, and the only status that receives Targeted Email messages. `N` = neutral — no message, but not an opt-out. `U` = unsubscribed. Null on some addresses (`isSubscribed` is null there too). This property exists only where the Targeted Email feature is enabled.",
             "x-provenance": {
-              "note": "Writing any other value returns 400 INVALID_PARAMETER with hint \"'U', 'S', 'N'\". Never observed null — an email written without it (or with an explicit null) reads back \"S\" (2026-08-04). Contexts without Targeted Email were not observable from the sandbox; there the property is presumably absent rather than null."
+              "note": "Writing any other value returns 400 INVALID_PARAMETER with hint \"'U', 'S', 'N'\". An email written without it (or with an explicit null) reads back \"S\" (2026-08-04), but the fuzzer's mutation target carries four older non-preferred addresses whose status reads null — the rule that nulls it was not pinned down, so null stays in the schema."
             }
           }
         }
@@ -1785,56 +1828,32 @@
             "title": "Verified Cell",
             "type": "object",
             "properties": {
-              "statusId": {
-                "type": "integer",
-                "const": 1
-              },
-              "statusName": {
-                "type": "string",
-                "const": "Verified Cell"
-              }
+              "statusId": { "const": 1 },
+              "statusName": { "const": "Verified Cell" }
             }
           },
           {
             "title": "Likely Cell",
             "type": "object",
             "properties": {
-              "statusId": {
-                "type": "integer",
-                "const": 2
-              },
-              "statusName": {
-                "type": "string",
-                "const": "Likely Cell"
-              }
+              "statusId": { "const": 2 },
+              "statusName": { "const": "Likely Cell" }
             }
           },
           {
             "title": "Likely Not a Cell",
             "type": "object",
             "properties": {
-              "statusId": {
-                "type": "integer",
-                "const": 3
-              },
-              "statusName": {
-                "type": "string",
-                "const": "Likely Not a Cell"
-              }
+              "statusId": { "const": 3 },
+              "statusName": { "const": "Likely Not a Cell" }
             }
           },
           {
             "title": "Not a Cell",
             "type": "object",
             "properties": {
-              "statusId": {
-                "type": "integer",
-                "const": 4
-              },
-              "statusName": {
-                "type": "string",
-                "const": "Not a Cell"
-              }
+              "statusId": { "const": 4 },
+              "statusName": { "const": "Not a Cell" }
             }
           }
         ]
