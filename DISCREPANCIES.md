@@ -8,12 +8,12 @@ behavior deviates from the official docs at <https://docs.ngpvan.com>.
 Research status and evidence live in `x-provenance` fields and
 [STATUS.md](STATUS.md).
 
-- **POST /people/find** — Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.
 - **GET /people/{vanId} parameter `vanId`** — Official docs type this path parameter as string (default "100476252"); the route only matches integers — a non-integer segment returns an IIS HTML 404 page (observed 2026-08-03).
 - **GET /people/{vanId} parameter `$expand`** — Official docs list only 10 valid $expand values; the API's own INVALID_PARAMETER hint (observed 2026-08-03) lists these 23.
+- **POST /people/find** — Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.
 - **GET /surveyQuestions parameter `$top`** — Official docs claim a default of 40; the API's own INVALID_PARAMETER hint (observed 2026-08-03) states default 50, maximum 200.
 - **components/responses/TooManyRequests** — The official docs do not mention rate limiting or the 429 response anywhere in their reference index (checked 2026-08-04). Observed live on GET /surveyQuestions and POST /people/create.
-- **schema `PersonMatchCriteria.phones.countryCode`** — Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live.
+- **schema `PersonMatchPhone.countryCode`** — Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live.
 - **schema `PersonPhone.phoneType`** — Official docs document only the write codes and imply they are echoed back. GET returns an expanded category name instead, and seven write codes collapse onto three of them (observed 2026-08-03).
 - **schema `PersonPhone.deviceType`** — Official docs document only the write codes C, L, U, F, V and imply they are echoed back; GET returns the spelled-out names Cell/Landline/Unknown/Fax/VoIP (observed 2026-08-03).
 - **schema `PersonPhone.phoneOptInStatus`** — Official docs describe the field only as the write codes I/U/O; GET returns the expanded names Opt-In/Unknown/Opt-Out (observed 2026-08-03).

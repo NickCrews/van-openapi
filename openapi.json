@@ -24,6 +24,20 @@
       "basicAuth": []
     }
   ],
+  "tags": [
+    {
+      "name": "People",
+      "description": "Look up, search, create and update people — the contacts and voters that most of the API hangs off."
+    },
+    {
+      "name": "Survey Questions",
+      "description": "Survey questions and the canned responses canvassers can record against them."
+    },
+    {
+      "name": "Echoes",
+      "description": "Test endpoint for checking auth and connectivity. Writes nothing."
+    }
+  ],
   "paths": {
     "/people/{vanId}": {
       "get": {
@@ -50,12 +64,46 @@
           {
             "name": "$expand",
             "in": "query",
-            "description": "Comma-delimited list of related sections to include. Valid values: contributionHistory, addresses, phones, emails, codes, customFields, externalIds, preferences, recordedAddresses, reportedDemographics, suppressions, cases, customProperties, districts, electionRecords, membershipStatuses, notes, organizationRoles, scores, disclosureFieldValues, primaryContact, pollingLocation, biography. Any other value returns 400 INVALID_PARAMETER with a hint listing the valid set.",
+            "description": "Related sections to include, comma-delimited eg 'addresses,emails'. Anything outside this set returns 400 INVALID_PARAMETER with a hint listing the valid values. Two sections in the set are still refused in a My Campaign context: `scores` with 403 FORBIDDEN and `pollingLocation` with 400 BAD_REQUEST.",
             "x-docs-discrepancy": "Official docs list only 10 valid $expand values; the API's own INVALID_PARAMETER hint (observed 2026-08-03) lists these 23.",
+            "style": "form",
+            "explode": false,
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "addresses",
+                  "biography",
+                  "cases",
+                  "codes",
+                  "contributionHistory",
+                  "customFields",
+                  "customProperties",
+                  "disclosureFieldValues",
+                  "districts",
+                  "electionRecords",
+                  "emails",
+                  "externalIds",
+                  "membershipStatuses",
+                  "notes",
+                  "organizationRoles",
+                  "phones",
+                  "pollingLocation",
+                  "preferences",
+                  "primaryContact",
+                  "recordedAddresses",
+                  "reportedDemographics",
+                  "scores",
+                  "suppressions"
+                ]
+              }
             },
-            "example": "emails,phones,addresses"
+            "example": [
+              "emails",
+              "phones",
+              "addresses"
+            ]
           }
         ],
         "responses": {
@@ -174,37 +222,11 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
           "404": {
-            "description": "No person with that vanId exists (also returned for 0 and negative ids, as the standard error envelope). A non-integer path segment fails to match the route and returns an HTML 404 error page instead.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "examples": {
-                  "notFound": {
-                    "summary": "Unknown vanId",
-                    "value": {
-                      "errors": [
-                        {
-                          "code": "NOT_FOUND",
-                          "text": "The specified resource cannot be found."
-                        }
-                      ]
-                    }
-                  }
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                },
-                "x-provenance": {
-                  "lastProbed": "2026-08-03",
-                  "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an integer so no API route matches."
-                }
-              }
-            }
+            "$ref": "#/components/responses/PersonNotFound"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -271,7 +293,7 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a successful update:\n\n```\nPOST /people/102714580         {\"firstName\": \"Cre\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714580   (same URL)\n    {\"vanId\": 102714580, \"status\": \"Matched\"}\n\nGET /people/102714580          ← client re-issues the request at Location\n  ← 200 OK\n    { the merged record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, which is a happy accident here: the update itself never returns the record, but the followed GET does, so redirect-following clients get the merged result for free.\n\nThe other way to reach a 200 is a failure: when the 302 was the ASP.NET request-validation bounce (a path segment containing `<`, `>`, `*` or `&`), following it lands on the web application's HTML error page, which answers 200 with `text/html`. Check the content type before parsing JSON.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}`, hitting this same update endpoint a second time; with no body IIS answers `411 Length Required`. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a successful update:\n\n```\nPOST /people/102714580         {\"firstName\": \"Cre\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714580   (same URL)\n    {\"vanId\": 102714580, \"status\": \"Matched\"}\n\nGET /people/102714580          ← client re-issues the request at Location\n  ← 200 OK\n    { the merged record — the body documented here }\n```\n\nA happy accident: the update itself never returns the record, but the followed GET does, so redirect-following clients get the merged result for free. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.\n\nThe other way to reach a 200 is a failure: when the 302 was the ASP.NET request-validation bounce (a path segment containing `<`, `>`, `*` or `&`), following it lands on the web application's HTML error page, which answers 200 with `text/html`. Check the content type before parsing JSON.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Chain observed end to end with httpx: POST /people/{vanId} with an empty body → 302 back to the same URL → GET → 200 with the full record."
@@ -334,36 +356,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "No person with that vanId exists. Zero and negative ids return this too, as the standard error envelope. A non-integer path segment fails to match the route and returns an HTML 404 error page instead.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                },
-                "examples": {
-                  "notFound": {
-                    "summary": "Unknown vanId",
-                    "value": {
-                      "errors": [
-                        {
-                          "code": "NOT_FOUND",
-                          "text": "The specified resource cannot be found."
-                        }
-                      ]
-                    }
-                  }
-                }
-              },
-              "text/html": {
-                "schema": {
-                  "type": "string"
-                },
-                "x-provenance": {
-                  "lastProbed": "2026-08-03",
-                  "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an integer so no API route matches — same as the GET."
-                }
-              }
-            }
+            "$ref": "#/components/responses/PersonNotFound"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -507,7 +500,7 @@
             "example": "Acme Corp",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+              "note": "Listed as a search criterion in van-cli people.ts, but adding it to a lastName search never changed the result count, even for values matching no one. Only My Campaign was probed."
             }
           },
           {
@@ -520,7 +513,7 @@
             "example": "Engineer",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+              "note": "Listed as a search criterion in van-cli people.ts, but adding it to a lastName search never changed the result count, even for values matching no one. Only My Campaign was probed."
             }
           },
           {
@@ -533,7 +526,7 @@
             "example": "1980-01-15",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+              "note": "Listed as a search criterion in van-cli people.ts, but adding it to a lastName search never changed the result count, even for values matching no one. Only My Campaign was probed."
             }
           },
           {
@@ -575,11 +568,27 @@
           {
             "name": "$expand",
             "in": "query",
-            "description": "Comma-delimited list of related sections to include (case-insensitive). The API's own hint lists addresses, emails, phones, districts and pollingLocation — a much smaller set than GET /people/{vanId} accepts — but pollingLocation is then refused with 400 BAD_REQUEST \"May not request 'pollingLocation' in this context\", alone or combined with other sections, so the usable set is addresses, emails, phones, districts. Any value outside the hinted set returns 400 INVALID_PARAMETER with a hint listing it. Expanded collections come back as empty arrays when absent, vs null when not expanded; unexpanded sections stay null.",
+            "description": "Related sections to include, comma-delimited and case-insensitive eg 'addresses,emails' — a much smaller set than GET /people/{vanId} accepts. The API's hint also lists pollingLocation, but requesting it is then refused with 400 BAD_REQUEST \"May not request 'pollingLocation' in this context\", alone or combined, so the usable set is the four below. Anything outside the hinted set returns 400 INVALID_PARAMETER. Expanded collections come back as empty arrays when absent; unexpanded sections stay null.",
+            "style": "form",
+            "explode": false,
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "addresses",
+                  "emails",
+                  "phones",
+                  "districts"
+                ]
+              }
             },
-            "example": "emails,phones,addresses,districts",
+            "example": [
+              "emails",
+              "phones",
+              "addresses",
+              "districts"
+            ],
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "pollingLocation was rejected in My Campaign mode (the only mode the sandbox key can reach); it may be expandable in My Voters mode, which is what the hint presumably describes."
@@ -588,7 +597,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A page of matching people. count is the total number of matches across all pages, not the page size; nextPageLink is an absolute URL for the next page (with an explicit :443 port), or null on the last page.",
+            "description": "A page of matching people.",
             "content": {
               "application/json": {
                 "schema": {
@@ -625,7 +634,7 @@
                     }
                   },
                   "First of Many Pages (with $expand)": {
-                    "description": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields and sandbox fuzz noise omitted)",
+                    "description": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields, sandbox fuzz noise, and the duplicate Mailing copy of the address omitted — see GET /people/{vanId} for that quirk)",
                     "value": {
                       "items": [
                         {
@@ -834,6 +843,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "404": {
+            "$ref": "#/components/responses/QueryStringTooLong"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           },
@@ -946,12 +958,7 @@
             "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
             "headers": {
               "Location": {
-                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
-                "schema": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "example": "https://api.securevan.com/v4/people/102714507"
+                "$ref": "#/components/headers/MatchedPersonLocation"
               }
             },
             "content": {
@@ -1071,10 +1078,10 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a match:\n\n```\nPOST /people/findOrCreate      {\"vanId\": 102714558}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, so on a match your code sees this 200 and a full `Person`, not the 302 and its two-field match stub. `resp.history` (requests/httpx) or `resp.redirected` (fetch) is how you tell this apart from the 201 create path, which sends no `Location` and is never rewritten this way.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}` — the *update* endpoint — where IIS answers `411 Length Required` because the re-issued request carries no body. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET like everything else.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a match:\n\n```\nPOST /people/findOrCreate      {\"vanId\": 102714558}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on a match your code sees this 200 and a full `Person`, not the 302 and its two-field match stub. `resp.history` (requests/httpx) or `resp.redirected` (fetch) is how you tell this apart from the 201 create path, which sends no `Location` and is never rewritten this way. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Chain observed end to end with httpx and requests (both: 302 → GET → 200 Person) and with curl 8.7.1 both ways (`-d` alone → GET → 200; `-X POST -L` → POST /people/{vanId} → 411). Documented alongside the raw 302 so redirect-following clients and raw clients (including the schemathesis fuzzer) both conform to this spec."
+              "note": "Chain observed end to end with httpx and requests (both: 302 → GET → 200 Person) and with curl 8.7.1 both ways (`-d` alone → GET → 200; `-X POST -L` → POST /people/{vanId} → 411)."
             },
             "content": {
               "application/json": {
@@ -1107,12 +1114,7 @@
             "description": "An existing person matched, so nothing was written.",
             "headers": {
               "Location": {
-                "description": "URL of the matched person.",
-                "schema": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "example": "https://api.securevan.com/v4/people/102714558"
+                "$ref": "#/components/headers/MatchedPersonLocation"
               }
             },
             "content": {
@@ -1194,7 +1196,7 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, so on the vanId path your code sees this 200 and a full `Person` — and, critically, a status that looks nothing like the 201 you get when a record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}` — the *update* endpoint — where IIS answers `411 Length Required` because the re-issued request carries no body. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET like everything else.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on the vanId path your code sees this 200 and a full `Person` — and, critically, a response that looks nothing like the 201 you get when a record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Chain observed end to end with httpx (302 → GET → 200 Person) by posting an existing vanId; identical to the POST /people/findOrCreate and POST /people/find redirects."
@@ -1258,12 +1260,7 @@
             "description": "The body carried a vanId that already exists, so nothing was created.",
             "headers": {
               "Location": {
-                "description": "URL of the existing person.",
-                "schema": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "example": "https://api.securevan.com/v4/people/102714558"
+                "$ref": "#/components/headers/MatchedPersonLocation"
               }
             },
             "content": {
@@ -1302,6 +1299,7 @@
       "get": {
         "operationId": "listSurveyQuestions",
         "summary": "List survey questions",
+        "description": "Returns the context's survey questions, each with its canned responses, in the standard pagination envelope. Every filter is optional; with none set, Active questions are returned. The sandbox committee has no survey questions, so only the empty page has been observed live.",
         "tags": [
           "Survey Questions"
         ],
@@ -1309,14 +1307,19 @@
           {
             "name": "statuses",
             "in": "query",
-            "description": "Comma-delimited list of statuses. One or more of Active (default), Archived, Inactive.",
+            "description": "Statuses to include, comma-delimited. Defaults to Active.",
+            "style": "form",
+            "explode": false,
             "schema": {
-              "type": "string",
-              "examples": [
-                "Active,Archived"
-              ]
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SurveyQuestionStatus"
+              }
             },
-            "example": "Active,Archived"
+            "example": [
+              "Active",
+              "Archived"
+            ]
           },
           {
             "name": "name",
@@ -1434,6 +1437,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "404": {
+            "$ref": "#/components/responses/QueryStringTooLong"
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           },
@@ -1525,7 +1531,90 @@
         "description": "HTTP Basic auth. Username = an arbitrary label, e.g. `my_fancy_app`; password = `{apiKey}|{databaseMode}` where databaseMode is `0` (My Voters) or `1` (My Campaign) and apiKey is a UUID like `07540886-b749-433c-b18d-a3d052f6b759`. Using a mode your key lacks returns 401 UNAUTHORIZED \"Invalid Database Mode\"."
       }
     },
+    "headers": {
+      "MatchedPersonLocation": {
+        "description": "URL of the person the request resolved to.",
+        "schema": {
+          "type": "string",
+          "format": "uri"
+        },
+        "example": "https://api.securevan.com/v4/people/102714507"
+      }
+    },
     "responses": {
+      "Forbidden": {
+        "description": "The request was valid but the key's context does not allow it. Observed on GET /people/{vanId} with `$expand=scores`: scores are a My Voters feature, so a My Campaign key is refused even though `scores` is in the API's own list of valid sections. The sibling refusal for `pollingLocation` uses 400 BAD_REQUEST instead — the two are not consistent.",
+        "x-provenance": {
+          "lastProbed": "2026-08-04",
+          "note": "Surfaced by the fuzzer once $expand was modelled as an enum of the API's 23 valid sections; each section was then requested in turn against vanId 102714507, and scores was the only 403 (pollingLocation the only 400)."
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "forbiddenSection": {
+                "summary": "$expand=scores from a My Campaign key",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "FORBIDDEN",
+                      "text": "May not request 'scores'"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "QueryStringTooLong": {
+        "description": "The request never reached the API. IIS rejects any request whose query string runs past roughly 2048 characters and answers with its own HTML \"404 - File or directory not found\" page, so this 404 means the URL was too long rather than that anything was missing. Nothing in the body identifies the real cause; check the content type, since the API's own 404s are JSON.",
+        "x-provenance": {
+          "lastProbed": "2026-08-04",
+          "note": "Found by the fuzzer on GET /surveyQuestions with a very long generated filter value, then bisected with `statuses=AAA…`: 2000 characters still reach the API (which answers 500), 2100 return the IIS 404. Reproduced on GET /people with a long lastName, so this is infrastructure-wide rather than endpoint-specific."
+        },
+        "content": {
+          "text/html": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PersonNotFound": {
+        "description": "No person with that vanId exists. Zero and negative ids return this too, as the standard error envelope. Two non-API cases share this status and answer with an IIS HTML page instead: a non-integer path segment, which matches no route, and a query string longer than ~2048 characters, which IIS rejects outright.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notFound": {
+                "summary": "Unknown vanId",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "NOT_FOUND",
+                      "text": "The specified resource cannot be found."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string"
+            },
+            "x-provenance": {
+              "lastProbed": "2026-08-03",
+              "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an integer so no API route matches."
+            }
+          }
+        }
+      },
       "RequestValidationRedirect": {
         "description": "The request never reached the API. ASP.NET request validation rejects a path segment containing `<`, `>`, `*` or `&` and hands the request to the VAN web application, which answers **302** with `Location: /Error.aspx?EID={code}` and a small HTML \"Object moved\" body. Clients that follow the redirect land on the web app's HTML \"Oops...something went wrong\" page with status 200 — HTML, not JSON, from an endpoint that otherwise only speaks JSON.\n\nOther unusual path characters take different routes: `:` and `\"` give the IIS HTML 404, and a backslash gives the standard JSON 404 envelope.",
         "x-provenance": {
@@ -1685,6 +1774,7 @@
     "schemas": {
       "ErrorResponse": {
         "type": "object",
+        "description": "The standard error envelope, returned by every failing endpoint except where noted.",
         "required": [
           "errors"
         ],
@@ -1699,6 +1789,7 @@
       },
       "Error": {
         "type": "object",
+        "description": "One problem with the request.",
         "required": [
           "code",
           "text"
@@ -1712,7 +1803,8 @@
             ]
           },
           "text": {
-            "type": "string"
+            "type": "string",
+            "description": "Human-readable description of the problem."
           },
           "properties": {
             "type": [
@@ -1728,7 +1820,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "How to fix it — often the accepted values or a regular expression."
           },
           "referenceCode": {
             "type": [
@@ -1777,12 +1870,14 @@
       },
       "EchoRequest": {
         "type": "object",
+        "description": "A message to send to the echo endpoint. Every field is optional.",
         "properties": {
           "message": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Text to echo back verbatim."
           },
           "delayInMilliseconds": {
             "type": [
@@ -1800,6 +1895,7 @@
       },
       "Echo": {
         "type": "object",
+        "description": "The posted message, echoed back with a server timestamp.",
         "required": [
           "message",
           "dateSent"
@@ -1809,17 +1905,20 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "The message exactly as posted."
           },
           "dateSent": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "Server time when the response was produced."
           },
           "delayInMilliseconds": {
             "type": [
               "integer",
               "null"
-            ]
+            ],
+            "description": "The delay that was applied, echoed back."
           }
         }
       },
@@ -1865,14 +1964,9 @@
               "array",
               "null"
             ],
+            "description": "Email addresses to match on.",
             "items": {
-              "type": "object",
-              "properties": {
-                "email": {
-                  "type": "string",
-                  "format": "email"
-                }
-              }
+              "$ref": "#/components/schemas/PersonMatchEmail"
             }
           },
           "phones": {
@@ -1880,30 +1974,45 @@
               "array",
               "null"
             ],
+            "description": "Phone numbers to match on. A null array entry returns 500.",
             "items": {
-              "type": "object",
-              "properties": {
-                "phoneNumber": {
-                  "type": "string",
-                  "description": "Number without country code."
-                },
-                "dialingPrefix": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "Numeric country code."
-                },
-                "countryCode": {
-                  "type": [
-                    "string",
-                    "null"
-                  ],
-                  "description": "Alpha-2 country code.",
-                  "x-docs-discrepancy": "Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live."
-                }
-              }
+              "$ref": "#/components/schemas/PersonMatchPhone"
             }
+          }
+        }
+      },
+      "PersonMatchEmail": {
+        "type": "object",
+        "description": "An email address used as match criteria — the address only, unlike the fuller PersonEmailInput used when writing.",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "PersonMatchPhone": {
+        "type": "object",
+        "description": "A phone number used as match criteria — no type or opt-in fields, unlike the PersonPhoneInput used when writing.",
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "Number without country code."
+          },
+          "dialingPrefix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Numeric country code."
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Alpha-2 country code.",
+            "x-docs-discrepancy": "Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live."
           }
         }
       },
@@ -1971,29 +2080,51 @@
           }
         }
       },
-      "SurveyQuestionList": {
+      "Page": {
         "type": "object",
+        "description": "The envelope every paginated endpoint returns around its `items` array.",
         "required": [
-          "items",
           "count"
         ],
         "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SurveyQuestion"
-            }
-          },
           "nextPageLink": {
             "type": [
               "string",
               "null"
+            ],
+            "format": "uri",
+            "description": "Absolute URL of the next page — including an explicit `:443` port — or null on the last page.",
+            "examples": [
+              "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$skip=1"
             ]
           },
           "count": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Total number of matches across all pages, not the size of this page."
           }
         }
+      },
+      "SurveyQuestionList": {
+        "description": "A page of survey questions.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SurveyQuestion"
+                }
+              }
+            }
+          }
+        ]
       },
       "SurveyQuestion": {
         "type": "object",
@@ -2004,84 +2135,114 @@
         },
         "properties": {
           "surveyQuestionId": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Unique identifier of the question."
           },
           "type": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Category of question, e.g. \"GOTV\". The full set of values is not known — POST /surveyQuestions rejected every type tried in the sandbox."
           },
           "cycle": {
             "type": [
               "integer",
               "null"
-            ]
+            ],
+            "description": "Election year the question belongs to, as YYYY."
           },
           "name": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Full name of the question."
           },
           "mediumName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Abbreviated name, for displays with limited room."
           },
           "shortName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Shortest form of the name, for the tightest displays."
           },
           "scriptQuestion": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "The question as read aloud to the person."
           },
           "status": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SurveyQuestionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the question is in use.",
+            "x-provenance": {
+              "note": "Enum inferred from the values the `statuses` filter accepts; never observed on a live item."
+            }
           },
           "responses": {
             "type": [
               "array",
               "null"
             ],
+            "description": "The canned answers a canvasser can record against this question.",
             "items": {
               "$ref": "#/components/schemas/SurveyQuestionResponse"
             }
           }
         }
       },
+      "SurveyQuestionStatus": {
+        "type": "string",
+        "description": "`Active` — in use. `Archived` — retired but kept for reporting. `Inactive` — not currently in use.",
+        "enum": [
+          "Active",
+          "Archived",
+          "Inactive"
+        ]
+      },
       "SurveyQuestionResponse": {
         "type": "object",
+        "description": "A canned answer to a survey question.",
         "properties": {
           "surveyResponseId": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Unique identifier of the response."
           },
           "name": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Full text of the answer, e.g. \"Yes\"."
           },
           "mediumName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Abbreviated form of the answer."
           },
           "shortName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Shortest form of the answer, e.g. \"Y\"."
           }
         }
       },
@@ -2213,7 +2374,10 @@
           },
           "isPreferred": {
             "type": "boolean",
-            "description": "Whether this is the person's preferred phone number. Each person has at most one preferred number. TODO: is it at most 1, or exactly 1?"
+            "description": "Whether this is the person's preferred phone number. At most one number per person carries it.",
+            "x-provenance": {
+              "note": "Records with several phones never showed more than one preferred; whether a record with phones always has exactly one was not established."
+            }
           },
           "isBest": {
             "type": "boolean",
@@ -3010,43 +3174,44 @@
             "description": "An organization's official name. Only applies to My Campaign databases with organizations-as-contacts enabled."
           },
           "contactMode": {
-            "type": "string",
-            "enum": ["Person", "Organization"],
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": ["Person", "Organization", null],
             "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
             "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the record reads back with contactMode \"Person\" (observed 2026-08-03)."
           }
         }
       },
       "PersonList": {
-        "type": "object",
-        "required": [
-          "items",
-          "count"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Person"
+        "description": "A page of person records.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
             }
-          },
-          "nextPageLink": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "count": {
-            "type": "integer"
           }
-        }
+        ]
       },
       "Person": {
         "type": "object",
-        "description": "A person record as returned by GET /people/{vanId}.",
+        "description": "A person record: returned by GET /people/{vanId}, as the items of GET /people, and as what a redirect-following client lands on after the write endpoints. A few fields read differently between get-by-id and search — see `formalSalutation` and `formalEnvelopeName`.\n\nThe properties listed below with no type were only ever observed as null, either because the section needs `$expand` or because the sandbox committee holds no such data. They are listed to document that the API returns them, but their shape is unverified.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
-          "note": "Field inventory observed live on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down. Nullability checked against a fully blank record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
+          "note": "Field inventory observed live on a minimal API-created record; the untyped fields need a richer record to pin down. Nullability checked against a fully blank record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
         },
         "properties": {
           "vanId": {
@@ -3241,266 +3406,58 @@
               "$ref": "#/components/schemas/PersonAddress"
             }
           },
-          "sourceFileTitle": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "sourceFileFirstName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "sourceFileMiddleName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "sourceFileLastName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "sourceFileSuffix": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "organizationContactCommonName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "organizationContactOfficialName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "additionalSalutation": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "preferredPronoun": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "pronouns": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "namePronunciation": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "additionalEnvelopeName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "contactMethodPreferenceCode": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "contactMethodPreferenceId": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "contactMethodPreferenceName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "assistantName": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "nickname": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "website": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "professionalSuffix": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedRace": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedEthnicity": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedRaces": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedEthnicities": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedGenders": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedSexualOrientations": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedLanguagePreference": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "selfReportedLanguagePreferences": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "recordedAddresses": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "pollingLocation": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "earlyVoteLocation": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "identifiers": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "codes": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "customFields": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "primaryCustomField": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "contributionSummary": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "suppressions": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "caseworkCases": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "caseworkIssues": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "caseworkStories": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "notes": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "scores": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "customProperties": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "electionRecords": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "membershipStatus": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "organizationRoles": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "districts": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "surveyQuestionResponses": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "finderNumber": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "biographyImageUrl": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "biographyText": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "biographyHtml": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          },
-          "primaryContact": {
-            "x-provenance": {
-              "note": "Only observed as null so far; type unverified."
-            }
-          }
+          "sourceFileTitle": {},
+          "sourceFileFirstName": {},
+          "sourceFileMiddleName": {},
+          "sourceFileLastName": {},
+          "sourceFileSuffix": {},
+          "organizationContactCommonName": {},
+          "organizationContactOfficialName": {},
+          "additionalSalutation": {},
+          "preferredPronoun": {},
+          "pronouns": {},
+          "namePronunciation": {},
+          "additionalEnvelopeName": {},
+          "contactMethodPreferenceCode": {},
+          "contactMethodPreferenceId": {},
+          "contactMethodPreferenceName": {},
+          "assistantName": {},
+          "nickname": {},
+          "website": {},
+          "professionalSuffix": {},
+          "selfReportedRace": {},
+          "selfReportedEthnicity": {},
+          "selfReportedRaces": {},
+          "selfReportedEthnicities": {},
+          "selfReportedGenders": {},
+          "selfReportedSexualOrientations": {},
+          "selfReportedLanguagePreference": {},
+          "selfReportedLanguagePreferences": {},
+          "recordedAddresses": {},
+          "pollingLocation": {},
+          "earlyVoteLocation": {},
+          "identifiers": {},
+          "codes": {},
+          "customFields": {},
+          "primaryCustomField": {},
+          "contributionSummary": {},
+          "suppressions": {},
+          "caseworkCases": {},
+          "caseworkIssues": {},
+          "caseworkStories": {},
+          "notes": {},
+          "scores": {},
+          "customProperties": {},
+          "electionRecords": {},
+          "membershipStatus": {},
+          "organizationRoles": {},
+          "districts": {},
+          "surveyQuestionResponses": {},
+          "finderNumber": {},
+          "biographyImageUrl": {},
+          "biographyText": {},
+          "biographyHtml": {},
+          "primaryContact": {}
         }
       }
     }
