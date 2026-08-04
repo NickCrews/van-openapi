@@ -1587,7 +1587,8 @@
         "content": {
           "application/json": {
             "schema": {
-              "anyOf": [
+              "description": "The two shapes are disjoint: the standard envelope requires `errors`, the ASP.NET payload requires `message`, and neither carries the other's fields.",
+              "oneOf": [
                 {
                   "$ref": "#/components/schemas/ErrorResponse"
                 },
@@ -1608,7 +1609,22 @@
                     }
                   ]
                 }
+              },
+              "aspNet": {
+                "summary": "Raw ASP.NET exception (query-string key containing '[')",
+                "description": "Returned when the request fails before reaching the API's own error handling. `stackTrace` is abridged here; the live response leaks the full trace, including build-server paths.",
+                "value": {
+                  "message": "An error has occurred.",
+                  "exceptionMessage": "The key is invalid JQuery syntax because it is missing a closing bracket\r\nParameter name: key",
+                  "exceptionType": "System.ArgumentException",
+                  "stackTrace": "   at System.Web.Http.ModelBinding.FormDataCollectionExtensions.NormalizeJQueryToMvc(String key)\r\n   at System.Web.Http.ModelBinding.FormDataCollectionExtensions.<GetJQueryNameValuePairs>d__1.MoveNext()\r\n   at System.Linq.Buffer`1..ctor(IEnumerable`1 source)\r\n   at System.Linq.Enumerable.ToArray[TSource](IEnumerable`1 source)\r\n   at System.Net.Http.HttpRequestMessageExtensions.GetQueryNameValuePairs(HttpRequestMessage request)\r\n   at VAN.Web.Api.Infrastructure.TranslatorHandler.GetTranslationResource(HttpRequestMessage request) in D:\\BuildAgent\\work\\72169567f13f28bb\\Source\\Web.Api\\Infrastructure\\TranslatorHandler.cs:line 158\r\n   at VAN.Web.Api.Infrastructure.TranslatorHandler.<SendAsync>d__10.MoveNext() in D:\\BuildAgent\\work\\72169567f13f28bb\\Source\\Web.Api\\Infrastructure\\TranslatorHandler.cs:line 85\r\n   ... (stack trace abridged; the live response returns ~5.7 KB of frames)"
+                }
               }
+            },
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "The aspNet example is a verbatim sandbox response to GET /people/102714507?a[=1, with the stack trace truncated after the frames that identify the crash. The internal example is from earlier probing of the malformed inputs listed above."
             }
           }
         }
