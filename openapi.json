@@ -30,6 +30,10 @@
       "description": "Look up, search, create and update people — the contacts and voters that most of the API hangs off."
     },
     {
+      "name": "Notes",
+      "description": "Free-text notes attached to a person, and the note categories available in the current context."
+    },
+    {
       "name": "Survey Questions",
       "description": "Survey questions and the canned responses canvassers can record against them."
     },
@@ -239,7 +243,7 @@
       "post": {
         "operationId": "updatePerson",
         "summary": "Update an existing person",
-        "description": "Merges the payload into an existing record. Fields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. An empty body is accepted and changes nothing.\n\nOn success the response is **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body — the same shape POST /people/find returns, not the updated record. An unknown, zero or negative vanId returns 404.\n\nThe update is not idempotent for contact methods: sending the same email twice adds it twice.",
+        "description": "Merges the payload into an existing record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The update is not idempotent for contact methods: sending the same email twice adds it twice.\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated record.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Merge semantics confirmed by updating only middleName on a record and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
@@ -371,7 +375,7 @@
       "get": {
         "operationId": "searchPeople",
         "summary": "Search for people",
-        "description": "Searches for people matching the given criteria and returns full person records in the standard pagination envelope. At least one search parameter must be set: firstName, lastName, middleName, streetAddress, city, stateOrProvince, zipOrPostalCode, phoneNumber, email, commonName, or officialName. A request with none of these — even one with filter or paging parameters set — returns 400 INVALID_PARAMETER with the text \"This endpoint requires at least one search parameter to be set.\" Text criteria are case-insensitive prefix matches: lastName=Testpers matches \"Testperson\", lastName=estperson does not. Related collections on the returned records are null unless requested via $expand.",
+        "description": "Searches for people matching the given criteria and returns full person records in the standard pagination envelope. At least one search parameter must be set: firstName, lastName, middleName, streetAddress, city, stateOrProvince, zipOrPostalCode, phoneNumber, email, commonName, or officialName. A request with none of these — even one with filter or paging parameters set — returns 400 INVALID_PARAMETER with the text \"This endpoint requires at least one search parameter to be set.\" Text criteria are case-insensitive prefix matches: lastName=Testpers matches \"Testperson\", lastName=estperson does not. Related collections on the returned records are null unless requested via $expand.\n\n**This is the endpoint to use when you only have loose criteria.** Unlike POST /people/find and POST /people/findOrCreate — which refuse to attempt a match until you supply one of a handful of minimum field combinations, and answer Unmatched (or create a duplicate) when you cannot — this search has no such threshold. A single name is a perfectly valid query. In exchange it makes no identity claim: it hands back every record whose fields start with what you typed, and deciding which one is your person, or that none of them is, is your job. Inspect the candidates (with $expand for addresses, emails and phones if you need them) and take the vanId from there.",
         "x-provenance": {
           "source": "van-cli people.ts (list command) plus live sandbox probing; the endpoint is absent from the official docs' page index (llms.txt lists only /people/find).",
           "lastProbed": "2026-08-04"
@@ -859,8 +863,12 @@
       "post": {
         "operationId": "findPerson",
         "summary": "Find a person matching the given criteria",
-        "description": "Attempts to match a person in the database. A match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
-        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.",
+        "description": "Attempts to match a person in the database. Read-only: never creates records (use POST /people/findOrCreate for that).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — that record is returned as a **302** and every other criterion is ignored, no threshold involved.\n- **One record matches** — **302 Found**, with a `Location` header pointing at `/people/{vanId}` and a small match-stub body, `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several records match** — still a **302** for exactly one of them, and nothing in the response says the match was ambiguous. Which one you get depends on the shape of the criteria; see **When more than one record matches** below.\n- **Nothing matches** — **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}` (a match stub, not the standard error envelope).\n- **The criteria fall short of the minimum combination** — **404 Unmatched** as well, not a 400, and indistinguishable from a genuine no-match. This is the common case to guard against; see **The criteria must reach a minimum combination** below.\n\n## The criteria must reach a minimum combination\n\nThis endpoint is deliberately conservative — it would rather return nothing than return the wrong person. It does not attempt a match at all until the criteria reach one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own matches too, though the docs list only email)\n\nAnything short of that — a name on its own, name + date of birth, name + zip — comes back **404 Unmatched** regardless of who is in the database.\n\n**A 404 here does not mean the person does not exist.** It usually means you did not supply enough to identify them. Do not treat Unmatched as \"not in the database\", and in particular do not follow it with a create — see POST /people/findOrCreate, which silently creates a duplicate for exactly this reason.\n\n**If all you have is a name, use GET /people instead.** That endpoint is a loose prefix search with no threshold: `GET /people?firstName=Match&lastName=Threshold` returns full records for every candidate, and you decide which one (if any) is your person by inspecting them. Use /people/find only once you hold a strong identifier.\n\n## How the criteria are compared\n\n- Everything you send must agree with the record. Adding a **wrong** first name to a correct email turns a match into Unmatched — extra criteria narrow, they never widen.\n- Comparison is case- and format-insensitive: `MATCH.THRESHOLD@EXAMPLE.COM` matches the stored lowercase address, `907-555-4242` matches the stored `9075554242`, and per the docs it is accent-insensitive too (\"Pérez\" matches \"Perez\"). Names may match on nicknames and variants unless the context has \"Disable Partial Matching\" turned on.\n- The address combination needs the street **number**: `742 Evergreen Terrace` + zip matched; `Evergreen Terrace` + the same zip did not. A wrong zip with a right street also fails.\n\n## When more than one record matches\n\nDuplicates are common in VAN databases, and this endpoint does not warn you about them: **it returns exactly one vanId with no indication that others also matched.** A 302 is not proof that the match was unique.\n\nThe pick is deterministic, but the tiebreak depends on the shape of the criteria — with three identical records (102719047 < 102719048 < 102720144, same name, email and phone):\n\n- criteria **including a name** (name+email, name+phone, name+dob+zip) → always the **lowest vanId**, i.e. the oldest record\n- criteria **without a name** (email alone, phone alone) → always the **highest vanId**, i.e. the newest record\n\nIt is not the best-matching record and not the most recently updated one: enriching the newer duplicate so it matched the criteria at least as fully did not move a name-based match off the oldest record, and touching either record changed nothing.\n\nThe consequence to plan for: at the threshold you may be handed a stale or partial duplicate, and a follow-up write through POST /people/{vanId} then lands on whichever record won the tiebreak while the other keeps drifting. When it matters that you have *the* record rather than *a* record, list the candidates with GET /people and reconcile them yourself.",
+        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only. Criteria below the documented minimum combinations are also answered 404 Unmatched rather than rejected, so under-specified requests are indistinguishable from genuine no-matches. The docs are also silent on ambiguous matches: when several records satisfy the criteria the API returns one of them with no indication that others matched.",
+        "x-provenance": {
+          "lastProbed": "2026-08-04",
+          "note": "Minimum combinations taken from the docs' Match Candidate common model (https://docs.ngpvan.com/reference/common-models) and confirmed one by one against a purpose-built sandbox record (vanId 102719047: Match Threshold, dob 1980-04-15, match.threshold@example.com, 9075554242, 742 Evergreen Terrace / 99501). Unmatched: lastName alone; firstName+lastName; firstName+lastName+dateOfBirth; firstName+lastName+zip; firstName+lastName+street-name-without-number+zip; firstName+lastName+street+wrong zip; wrong firstName + correct email. Matched: email alone; phone alone; name+email; name+phone; name+dob+zip; name+street+zip; uppercased email; phone with dashes; miscased names. Ambiguous-match behavior probed 2026-08-04 with three deliberately identical records (102719047, 102719048, 102720144 — same name, email and phone): exactly one vanId is returned with no ambiguity signal; name-bearing criteria always returned the lowest vanId and name-less criteria (email alone, phone alone) always the highest, across repeated runs, after touching either record, and after enriching the newer duplicate to match the criteria as fully as the older one."
+        },
         "tags": [
           "People"
         ],
@@ -894,6 +902,50 @@
                         "phoneNumber": "9075551234"
                       }
                     ]
+                  }
+                },
+                "nameAndAddress": {
+                  "summary": "Match on name + street number, street name and zip5",
+                  "value": {
+                    "firstName": "Match",
+                    "lastName": "Threshold",
+                    "addresses": [
+                      {
+                        "addressLine1": "742 Evergreen Terrace",
+                        "zipOrPostalCode": "99501"
+                      }
+                    ]
+                  }
+                },
+                "nameAndDobAndZip": {
+                  "summary": "Match on name + date of birth + zip5",
+                  "value": {
+                    "firstName": "Match",
+                    "lastName": "Threshold",
+                    "dateOfBirth": "1980-04-15",
+                    "addresses": [
+                      {
+                        "zipOrPostalCode": "99501"
+                      }
+                    ]
+                  }
+                },
+                "emailOnly": {
+                  "summary": "Match on an email address alone — no name needed",
+                  "value": {
+                    "emails": [
+                      {
+                        "email": "match.threshold@example.com"
+                      }
+                    ]
+                  }
+                },
+                "belowThreshold": {
+                  "summary": "Below the minimum combination — always 404 Unmatched, even for a person who exists",
+                  "description": "Name-only criteria never reach the matching threshold. Search with GET /people instead and inspect the candidates yourself.",
+                  "value": {
+                    "firstName": "Match",
+                    "lastName": "Threshold"
                   }
                 },
                 "byVanId": {
@@ -985,7 +1037,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
+            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).\n\nThis is also the answer when the criteria never reached the minimum combination needed to attempt a match at all — there is no 400 and nothing in the body distinguishes the two cases. **Read it as \"not identified\", not \"not in the database\":** a person you can see through GET /people will still come back Unmatched here if all you sent was their name. See the operation description for the combinations that do trigger a match.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1016,11 +1068,12 @@
       "post": {
         "operationId": "findOrCreatePerson",
         "summary": "Find a person, or create one if nothing matches",
-        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nOutcomes:\n\n- **A record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The body supplies a `vanId` that exists** — the match is short-circuited and that record is returned as **302**.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank record is created.",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that record is returned as **302 Found**, and nothing is created.\n- **One record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second record.** Posting `{\"firstName\": \"Match\", \"lastName\": \"Threshold\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two records now both exist. This is the main way duplicate records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03)."
+          "lastProbed": "2026-08-04",
+          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03). Threshold behavior confirmed 2026-08-04: firstName+lastName for existing vanId 102719047 created duplicate 102719048 (201 UnmatchedStored); the same name plus the record's email returned 302 Matched."
         },
+        "x-docs-discrepancy": "The docs present the minimum match combinations as a matching quality note; in practice, on this endpoint, falling short of them is what silently produces duplicate records (observed 2026-08-04).",
         "tags": [
           "People"
         ],
@@ -1147,7 +1200,7 @@
       "post": {
         "operationId": "createPerson",
         "summary": "Create a person without matching",
-        "description": "Stores the payload as a new record and returns **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. No de-duplication happens: posting a name and email identical to an existing record creates a second record. Use POST /people/findOrCreate when you want matching.\n\nThe one exception is `vanId`: if the body carries one that exists, nothing is created and the response is **302 Found** for that record, exactly as findOrCreate would answer.\n\nEvery field is optional — an empty body `{}` returns 201 and creates a blank record with no name.",
+        "description": "Stores the payload as a new record. **No de-duplication happens**: posting a name and email identical to an existing record creates a second record. Use POST /people/findOrCreate when you want matching — bearing in mind that it too creates a second record unless your payload reaches the minimum match combination documented there (name alone never does).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — nothing is created and that record is returned as **302 Found**, exactly as findOrCreate would answer. This is the only way this endpoint declines to create a record.\n- **Anything else** — **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. A payload identical to an existing person is not a special case: it creates a duplicate.\n- **The body is empty (`{}`)** — every field is optional, so this too returns **201**, creating a blank record with no name.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts create), which requires firstName and lastName client-side. The API requires neither. Duplicate behaviour confirmed by posting an exact copy of an existing person's name and email and receiving a new vanId (observed 2026-08-03)."
@@ -1285,6 +1338,387 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/people/{vanId}/notes": {
+      "get": {
+        "operationId": "listPersonNotes",
+        "summary": "List a person's notes",
+        "description": "Returns the person's notes in the standard pagination envelope.\n\nView-restricted notes are withheld from API keys: a note saved with `isViewRestricted: true` is absent from `items` and is not counted in `count`, so every note in the response has `isViewRestricted` false. `contactHistory` is always null, even for a note created with one, and `$expand=noteDetails` — the only value the parameter accepts — returns a byte-identical body.\n\nItems come back oldest first by `createdDate`, ties broken by descending `noteId`. `$orderby` is validated against its two allowed properties but has no observable effect: `CreatedDate desc` returns the same order as the default.\n\nAn unknown, zero or negative vanId returns the standard 404 envelope; a non-integer path segment matches no route and returns an HTML 404 page.",
+        "tags": [
+          "Notes"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the person.",
+            "x-docs-discrepancy": "Official docs type this path parameter as string (default \"100476252\"); the route only matches integers — a non-integer segment returns an IIS HTML 404 page (observed 2026-08-04).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102714507
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "description": "Limits the number of results. Default 25, maximum 50. A value of 0 or less returns 400; so does a non-numeric value, with the same message as an over-maximum one.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "example": 25
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "description": "Number of results to skip. Must be 0 or greater.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "description": "Accepted but ignored. The API validates the value — only `CreatedDate` and `IsPinned` pass, case-insensitively, optionally followed by ` desc` — and then returns the default order regardless, including for `desc`.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "Valid values come from the API's own INVALID_PARAMETER hint on `$orderby=noteId`. All four accepted values, plus `createddate` in lower case, returned an identical item order on a person with six notes."
+            },
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CreatedDate",
+                "CreatedDate desc",
+                "IsPinned",
+                "IsPinned desc"
+              ]
+            },
+            "example": "CreatedDate"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "description": "`noteDetails` is the only value the API accepts; anything else returns 400 INVALID_PARAMETER with a hint saying so. Expanding has no observable effect — the response is identical with and without it, `contactHistory` included.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "noteDetails"
+              ]
+            },
+            "example": "noteDetails"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of the person's notes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteList"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "302": {
+            "$ref": "#/components/responses/RequestValidationRedirect"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPersonNote",
+        "summary": "Add a note to a person",
+        "description": "Creates a note on the person.\n\nOn success the response is **204 No Content** with an empty body: the new `noteId` is not returned and there is no `Location` header, so the only way to learn it is to read the notes back. Two notes with identical text are two separate records — the endpoint is not idempotent.\n\n`isPinned` is accepted and ignored; notes always read back `isPinned: false`. Unknown fields are ignored too. A `contactHistory` object records a Contact History entry alongside the note, but the note's own `contactHistory` stays null in every response.\n\nA note saved with `isViewRestricted: true` can be written but never read back through the API — it is excluded from `GET /people/{vanId}/notes` and from `$expand=notes` on the person.",
+        "tags": [
+          "Notes"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the person to attach the note to. An unknown, zero or negative id returns 404.",
+            "x-docs-discrepancy": "Official docs type this path parameter as string (default \"100476252\"); the route only matches integers (observed 2026-08-04).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102714507
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteInput"
+              },
+              "examples": {
+                "minimal": {
+                  "summary": "Text only",
+                  "value": {
+                    "text": "Great chat! This person will be able to volunteer next year."
+                  }
+                },
+                "categorized": {
+                  "summary": "With a category",
+                  "description": "The sandbox committee has no note categories, so this one is illustrative — every id tried there returned 400.",
+                  "value": {
+                    "text": "Wants to host a house party.",
+                    "isViewRestricted": false,
+                    "category": {
+                      "noteCategoryId": 24
+                    }
+                  }
+                },
+                "withContactHistory": {
+                  "summary": "Recording a contact alongside the note",
+                  "value": {
+                    "text": "Spoke by phone; will vote early.",
+                    "contactHistory": {
+                      "contactTypeId": "1",
+                      "inputTypeId": "11",
+                      "resultCodeId": "14",
+                      "dateCanvassed": "2026-08-01T00:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The note was created. Empty body, no Location header.",
+            "links": {
+              "listCreatedNote": {
+                "operationId": "listPersonNotes",
+                "parameters": {
+                  "vanId": "$request.path.vanId"
+                },
+                "description": "Read the person's notes back — the create response does not identify the note it made."
+              }
+            }
+          },
+          "302": {
+            "$ref": "#/components/responses/RequestValidationRedirect"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/people/{vanId}/notes/{noteId}": {
+      "put": {
+        "operationId": "updatePersonNote",
+        "summary": "Update a note on a person",
+        "description": "Updates an existing note. Only `text`, `isViewRestricted` and `category` can be changed; `isPinned` and the note's contact history cannot.\n\n**This action is restricted for the key used to research this spec.** Every request returns 403 FORBIDDEN \"Access to this action is restricted\", whether or not the note exists, so the success path has not been observed live — the request body and the 204 below come from the official docs. `GET` and `DELETE` on this same path are restricted the same way; they are left out of this spec because their success shapes are unknown and undocumented.",
+        "x-provenance": {
+          "source": "docs, van-cli",
+          "lastProbed": "2026-08-04",
+          "note": "The route exists: it answers 403, not the 404 an unrouted path gives. PUT with a valid body against a real note (184579 on vanId 102714507) and against a nonexistent noteId both returned 403, so the restriction is applied before the note is looked up. The 204 success response is from https://docs.ngpvan.com/reference/peoplevanidnotesnoteid — not yet observed live."
+        },
+        "tags": [
+          "Notes"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the person the note belongs to.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102714507
+          },
+          {
+            "name": "noteId",
+            "in": "path",
+            "required": true,
+            "description": "Id of the note to edit, as returned by GET /people/{vanId}/notes.",
+            "x-docs-discrepancy": "Official docs type this path parameter as string (default \"225\"); the route only matches integers (observed 2026-08-04).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 184579
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteUpdateInput"
+              },
+              "examples": {
+                "editText": {
+                  "summary": "Change the text",
+                  "value": {
+                    "text": "Updated after a follow-up call."
+                  }
+                },
+                "recategorize": {
+                  "summary": "Change text, visibility and category together",
+                  "value": {
+                    "text": "Updated after a follow-up call.",
+                    "isViewRestricted": false,
+                    "category": {
+                      "noteCategoryId": 24
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The note was updated. Empty body.",
+            "x-provenance": {
+              "source": "docs",
+              "note": "From the official docs; not observed live — the sandbox key gets 403 for this action."
+            }
+          },
+          "302": {
+            "$ref": "#/components/responses/RequestValidationRedirect"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ActionRestricted"
+          },
+          "404": {
+            "$ref": "#/components/responses/PersonNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/notes/categories": {
+      "get": {
+        "operationId": "listNoteCategories",
+        "summary": "List note categories",
+        "description": "Returns every note category available in the current context as a **bare JSON array** — this endpoint does not use the pagination envelope, and it ignores query parameters such as `$top`.\n\nA category only appears here once it has been opted in to the current context's committee through the Committees picker on its detail page in the VAN UI; being listed on the Note Categories page is not enough. The sandbox committee has none opted in, so only the empty array has been observed live.\n\nOnly a category whose `assignableTypes` include people can be used on a person note; sending any other id to `POST /people/{vanId}/notes` returns 400.",
+        "tags": [
+          "Notes"
+        ],
+        "responses": {
+          "200": {
+            "description": "All note categories in the context, as a bare array.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NoteCategory"
+                  }
+                },
+                "examples": {
+                  "populated": {
+                    "summary": "Two categories",
+                    "x-provenance": {
+                      "source": "docs",
+                      "note": "From the official docs; the item shape has not been observed live."
+                    },
+                    "value": [
+                      {
+                        "assignableTypes": [
+                          "Event"
+                        ],
+                        "noteCategoryId": 24,
+                        "name": "Event Details"
+                      },
+                      {
+                        "assignableTypes": [
+                          "Event",
+                          "Organization"
+                        ],
+                        "noteCategoryId": 23,
+                        "name": "Venue Directions"
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "No categories opted in (sandbox)",
+                    "value": []
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/QueryStringTooLong"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -1569,6 +2003,34 @@
           }
         }
       },
+      "ActionRestricted": {
+        "description": "The API key's profile does not permit this action at all. The body carries nothing beyond the code, and the check runs before the target is looked up, so a restricted action answers 403 even for an id that does not exist — which also means a 403 here says nothing about whether the record is there.\n\nDistinct from the other 403 in this spec: that one refuses a particular *section* of an otherwise-allowed request (`$expand=scores` from a My Campaign key), while this one refuses the whole operation.",
+        "x-provenance": {
+          "source": "sandbox probe",
+          "lastProbed": "2026-08-04",
+          "note": "Observed on GET, PUT and DELETE of /people/{vanId}/notes/{noteId} and on DELETE /people/{vanId} with the research key, while GET and POST of /people/{vanId}/notes work normally. Whether any key in the sandbox committee is granted these actions is unknown, so the success paths behind this response are unverified."
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "restricted": {
+                "summary": "PUT /people/102714507/notes/184579",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "FORBIDDEN",
+                      "text": "Access to this action is restricted"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "QueryStringTooLong": {
         "description": "The request never reached the API. IIS rejects any request whose query string runs past roughly 2048 characters and answers with its own HTML \"404 - File or directory not found\" page, so this 404 means the URL was too long rather than that anything was missing. Nothing in the body identifies the real cause; check the content type, since the API's own 404s are JSON.",
         "x-provenance": {
@@ -1645,7 +2107,7 @@
         }
       },
       "BadRequest": {
-        "description": "Validation error.",
+        "description": "Validation error, as the standard JSON envelope.\n\nTwo unrelated cases share this status and answer with `text/html` instead, because the request is rejected in front of the API and never reaches it: a percent-encoded control character such as `%7F` in the path gets IIS's \"Bad Request - Invalid URL\" page, and `%00` gets Cloudflare's \"400 Bad Request\" page. Check the content type before parsing.",
         "content": {
           "application/json": {
             "schema": {
@@ -1666,6 +2128,26 @@
                     }
                   ]
                 }
+              }
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string"
+            },
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "Found by the fuzzer's coverage phase on POST /people/{vanId}/notes with a generated path segment containing %7F, then reproduced character by character and confirmed to be path-position independent: %7F on GET /people/{vanId} and on /people/{vanId}/notes both give the IIS page (`charset=us-ascii`, 324 bytes), %00 gives Cloudflare's, and %25 takes the separate request-validation 302 route instead. Not notes-specific — it applies to every operation."
+            },
+            "examples": {
+              "invalidUrl": {
+                "summary": "IIS: control character in the path (%7F)",
+                "value": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\">\n<HTML><HEAD><TITLE>Bad Request</TITLE>\n<META HTTP-EQUIV=\"Content-Type\" Content=\"text/html; charset=us-ascii\"></HEAD>\n<BODY><h2>Bad Request - Invalid URL</h2>\n<hr><p>HTTP Error 400. The request URL is invalid.</p>\n</BODY></HTML>\n"
+              },
+              "cloudflare": {
+                "summary": "Cloudflare: null byte in the path (%00)",
+                "value": "<html>\n<head><title>400 Bad Request</title></head>\n<body>\n<center><h1>400 Bad Request</h1></center>\n<hr><center>cloudflare</center>\n</body>\n</html>\n"
               }
             }
           }
@@ -1924,7 +2406,11 @@
       },
       "PersonMatchCriteria": {
         "type": "object",
-        "description": "Match criteria. A valid vanId overrides all other criteria.",
+        "description": "Match criteria. Every field is optional in the sense that the API never rejects a sparse body — but matching only happens once the criteria reach one of these minimum combinations:\n\n- firstName + lastName + emails[].email\n- firstName + lastName + phones[].phoneNumber\n- firstName + lastName + addresses[].zipOrPostalCode (zip5) + dateOfBirth\n- firstName + lastName + addresses[].addressLine1 (street number **and** street name) + addresses[].zipOrPostalCode (zip5)\n- emails[].email on its own (phones[].phoneNumber on its own also works)\n\nBelow that, the request is answered Unmatched without a search rather than rejected. A valid vanId overrides all other criteria and skips the threshold entirely.",
+        "x-provenance": {
+          "lastProbed": "2026-08-04",
+          "note": "Combination list from the docs' Match Candidate common model, each combination confirmed against sandbox vanId 102719047 (see the x-provenance on POST /people/find for the full matched/unmatched probe list). `addresses` is absent from the docs' find request example but is accepted and is the only way to supply zip5 or a street address as criteria — name + dob + zip matched, name + dob alone did not."
+        },
         "properties": {
           "vanId": {
             "type": [
@@ -1932,39 +2418,43 @@
               "null"
             ],
             "minimum": 1,
-            "description": "VAN id of the person; a valid vanId overrides all other criteria. Warning: the API returns 500 for vanId 0."
+            "description": "VAN id of the person; a valid vanId overrides all other criteria and is looked up directly, with no minimum-combination threshold. Warning: the API returns 500 for vanId 0."
           },
           "firstName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Required by every combination except the email-only (or phone-only) one. Compared case- and accent-insensitively, and may match nicknames and variants unless the context has \"Disable Partial Matching\" enabled. A first name that disagrees with the record turns an otherwise-matching request into Unmatched."
           },
           "middleName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Never part of a minimum combination; only narrows a match that the other criteria already reached."
           },
           "lastName": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Required by every combination except the email-only (or phone-only) one. Same comparison rules as firstName."
           },
           "dateOfBirth": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date"
+            "format": "date",
+            "description": "Only reaches the threshold in combination with firstName, lastName and a zip5 in addresses[]. Name + dateOfBirth alone returns Unmatched."
           },
           "emails": {
             "type": [
               "array",
               "null"
             ],
-            "description": "Email addresses to match on.",
+            "description": "Email addresses to match on. The strongest single criterion: an address on its own reaches the threshold, no name required. Compared case-insensitively.",
             "items": {
               "$ref": "#/components/schemas/PersonMatchEmail"
             }
@@ -1974,10 +2464,66 @@
               "array",
               "null"
             ],
-            "description": "Phone numbers to match on. A null array entry returns 500.",
+            "description": "Phone numbers to match on. Reaches the threshold with firstName + lastName, and — undocumented but observed — on its own as well. Punctuation is ignored: \"907-555-4242\" matches a stored \"9075554242\". A null array entry returns 500.",
+            "x-docs-discrepancy": "The docs list only an email address as a criterion sufficient on its own; a phone number alone also matched (observed 2026-08-04, sandbox vanId 102719047).",
             "items": {
               "$ref": "#/components/schemas/PersonMatchPhone"
             }
+          },
+          "addresses": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Addresses to match on — the only way to supply the zip5 that two of the minimum combinations require. Never sufficient on its own, and never with a name alone: firstName + lastName + zipOrPostalCode returns Unmatched unless a dateOfBirth or a street address comes with it. Unlike phones, a null array entry is tolerated (404 Unmatched, not 500).",
+            "items": {
+              "$ref": "#/components/schemas/PersonMatchAddress"
+            }
+          }
+        }
+      },
+      "PersonMatchAddress": {
+        "type": "object",
+        "description": "An address used as match criteria — the fields the matcher reads, unlike the fuller PersonAddressInput used when writing. Only two shapes reach the matching threshold, both alongside firstName and lastName: zipOrPostalCode + dateOfBirth, or addressLine1 + zipOrPostalCode.",
+        "x-provenance": {
+          "lastProbed": "2026-08-04",
+          "note": "Accepted by POST /people/find and confirmed to drive matching against sandbox vanId 102719047 (742 Evergreen Terrace, Springfield AK 99501): name+dob+zip and name+addressLine1+zip both matched; name+zip alone, name+\"Evergreen Terrace\" (no street number)+zip, and name+addressLine1+wrong zip all returned Unmatched. Only these fields were probed as criteria; the write model's other fields (addressLine2/3, type, …) are accepted but were not observed to affect the outcome."
+        },
+        "properties": {
+          "addressLine1": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Street address. Must carry both the street **number** and the street name to count toward a match: \"742 Evergreen Terrace\" matched, \"Evergreen Terrace\" did not."
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "City or town. Not part of any minimum combination."
+          },
+          "stateOrProvince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two or three character state or province code, e.g. \"MN\", \"ON\", \"NSW\". Not part of any minimum combination."
+          },
+          "zipOrPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The zip5 that the date-of-birth and street-address combinations both require. Must agree with the record — a right street with a wrong zip does not match."
+          },
+          "countryCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two character ISO country code supported by the VAN context. Defaults to the context's country."
           }
         }
       },
@@ -2101,6 +2647,259 @@
           "count": {
             "type": "integer",
             "description": "Total number of matches across all pages, not the size of this page."
+          }
+        }
+      },
+      "NoteList": {
+        "description": "A page of notes on a person.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Page"
+          },
+          {
+            "type": "object",
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Note": {
+        "type": "object",
+        "description": "A free-text note on a person.",
+        "required": [
+          "noteId"
+        ],
+        "properties": {
+          "noteId": {
+            "type": "integer",
+            "description": "Unique identifier of the note.",
+            "example": 184579
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The body of the note.",
+            "example": "Great chat! This person will be able to volunteer next year."
+          },
+          "isViewRestricted": {
+            "type": "boolean",
+            "description": "Whether the note is restricted to certain users in the context. Always false in practice: a restricted note is withheld from API keys entirely rather than returned with the flag set."
+          },
+          "category": {
+            "description": "The note's category. An uncategorized note reads as the stub `{\"noteCategoryId\": 0, \"name\": null}` from GET /people/{vanId}/notes, but as null when the same note arrives through `$expand=notes` on the person.",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoteCategoryRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the note was created, UTC. Truncated to the minute — the seconds are always 00.",
+            "example": "2026-08-04T17:11:00Z"
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the note is pinned. Always false: POST accepts an `isPinned` field and ignores it, and nothing else in the API sets it."
+          },
+          "contactHistory": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Always null, including for notes created with a `contactHistory` payload and when the list is requested with `$expand=noteDetails`.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Never observed non-null, so the populated shape is unknown and deliberately left unmodelled."
+            }
+          }
+        }
+      },
+      "NoteCategoryRef": {
+        "type": "object",
+        "description": "The category stub returned on a note.",
+        "properties": {
+          "noteCategoryId": {
+            "type": "integer",
+            "description": "Category id, or 0 when the note has no category."
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Category name, or null when the note has no category."
+          }
+        }
+      },
+      "NoteCategory": {
+        "type": "object",
+        "description": "A note category available in the current context.",
+        "x-provenance": {
+          "source": "docs",
+          "lastProbed": "2026-08-04",
+          "note": "The sandbox committee has no note categories opted in, so only the empty array has been observed; the item shape is from the official docs."
+        },
+        "properties": {
+          "noteCategoryId": {
+            "type": "integer",
+            "description": "Unique identifier of the category — the value to send as `category.noteCategoryId` when writing a note.",
+            "example": 24
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Display name of the category.",
+            "example": "Event Details"
+          },
+          "assignableTypes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Entity types the category can be applied to, e.g. Event or Organization. A category not assignable to people cannot be used on a person note.",
+            "example": ["Event", "Organization"]
+          }
+        }
+      },
+      "NoteInput": {
+        "type": "object",
+        "description": "A note to create on a person.",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 7000,
+            "description": "The body of the note. Required and non-empty — absent, null and empty all return 400.\n\nThe API's own stated limit is 8000 characters, and 8001 is rejected with 400, but anything from 7001 to 8000 characters returns 500 without saving. 7000 is the longest text that actually works, which is what this schema allows.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "Bisected on POST /people/102714507/notes: 7000 characters → 204, 7001 → 500, 8001 → 400 \"'text' must be between 0 and 8000 characters\". maxLength is set to 7000 rather than the API's 8000 to keep generated requests out of the 500 band."
+            },
+            "example": "Great chat! This person will be able to volunteer next year."
+          },
+          "isViewRestricted": {
+            "type": "boolean",
+            "default": false,
+            "description": "Restricts the note to certain users in the context. A note saved with true is accepted (204) but then invisible to API keys — it never comes back from GET /people/{vanId}/notes, so it cannot be read, updated or verified through the API afterwards."
+          },
+          "category": {
+            "$ref": "#/components/schemas/NoteCategoryInput"
+          },
+          "contactHistory": {
+            "$ref": "#/components/schemas/NoteContactHistoryInput"
+          },
+          "isPinned": {
+            "type": "boolean",
+            "description": "Accepted and ignored — the created note always reads back `isPinned: false`. Included here only because the API tolerates it.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "POST with isPinned true returned 204 and the note came back isPinned false. Not part of the documented request model."
+            }
+          }
+        }
+      },
+      "NoteUpdateInput": {
+        "type": "object",
+        "description": "Changes to apply to an existing note. Only these three fields can be updated.",
+        "x-provenance": {
+          "source": "docs, van-cli",
+          "note": "Not verified live — the research key is refused this action with 403. The official docs mark `text` and `isViewRestricted` as required while van-cli sends whichever of the three the caller supplied; nothing is marked required here because neither claim could be checked."
+        },
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 7000,
+            "description": "The new body of the note. The length limits are those of the create endpoint; they have not been checked on update."
+          },
+          "isViewRestricted": {
+            "type": "boolean",
+            "description": "Restricts the note to certain users in the context. Setting this to true makes the note invisible to API keys from then on."
+          },
+          "category": {
+            "$ref": "#/components/schemas/NoteCategoryInput"
+          }
+        }
+      },
+      "NoteCategoryInput": {
+        "type": "object",
+        "description": "The category to file a note under.",
+        "required": [
+          "noteCategoryId"
+        ],
+        "properties": {
+          "noteCategoryId": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Id of a category from GET /notes/categories that is assignable to people. An id outside that set returns 400 INVALID_PARAMETER. `noteCategoryId: 0` — the value the API itself reports for an uncategorized note — returns 500, so omit `category` entirely instead of sending zero.",
+            "example": 24,
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "0 → 500 INTERNAL_SERVER_ERROR, 99999 → 400 \"'category' (99999) is an invalid Note Category ID for this type of note\". The sandbox committee has no categories opted in, so no accepted value has been observed; `minimum: 1` keeps generated requests out of the 500."
+            }
+          }
+        }
+      },
+      "NoteContactHistoryInput": {
+        "type": "object",
+        "description": "A Contact History record to create alongside the note. It does not come back on the note afterwards — the note's own `contactHistory` stays null in every response.",
+        "x-docs-discrepancy": "Official docs type all four fields as strings; that is what has been probed and what this schema keeps, but whether integers are also accepted has not been tested (2026-08-04).",
+        "properties": {
+          "contactTypeId": {
+            "type": "string",
+            "description": "A Contact Type id from GET /canvassResponses/contactTypes. An id outside that list returns 400. If an `inputTypeId` is also given, the contact type must be available to it.",
+            "example": "1"
+          },
+          "inputTypeId": {
+            "type": "string",
+            "description": "An Input Type id from GET /canvassResponses/inputTypes. Defaults to 11 (API).",
+            "example": "11"
+          },
+          "dateCanvassed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the contact attempt. Defaults to today.",
+            "example": "2026-08-01T00:00:00Z"
+          },
+          "resultCodeId": {
+            "type": "string",
+            "description": "A Result Code id from GET /canvassResponses/resultCodes. Defaults to Canvassed. An id outside that list returns 500 rather than the 400 an invalid contactTypeId gets.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "resultCodeId \"99999\" → 500 INTERNAL_SERVER_ERROR; \"14\" (Canvassed) → 204."
+            },
+            "example": "14"
           }
         }
       },
@@ -3445,7 +4244,21 @@
           "caseworkCases": {},
           "caseworkIssues": {},
           "caseworkStories": {},
-          "notes": {},
+          "notes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Notes on the person, when requested with `$expand=notes`. Same objects GET /people/{vanId}/notes returns, with two differences: an uncategorized note's `category` is null here rather than the `{\"noteCategoryId\": 0, \"name\": null}` stub, and the array is not paginated. View-restricted notes are withheld here too.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-04",
+              "note": "Compared side by side against GET /people/102714507/notes on a person with six notes: same ids and fields, different `category` rendering and a different item order."
+            },
+            "items": {
+              "$ref": "#/components/schemas/Note"
+            }
+          },
           "scores": {},
           "customProperties": {},
           "electionRecords": {},
