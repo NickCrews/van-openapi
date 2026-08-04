@@ -271,7 +271,11 @@
         },
         "responses": {
           "200": {
-            "description": "Not sent by the server directly: the server responds 302, but clients that auto-follow redirects (requests, fetch, httpx) surface the 200 from GET /people/{vanId} with the updated record — or, when the redirect was the request-validation bounce, the web application's HTML error page.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a successful update:\n\n```\nPOST /people/102714580         {\"firstName\": \"Cre\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714580   (same URL)\n    {\"vanId\": 102714580, \"status\": \"Matched\"}\n\nGET /people/102714580          ← client re-issues the request at Location\n  ← 200 OK\n    { the merged record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, which is a happy accident here: the update itself never returns the record, but the followed GET does, so redirect-following clients get the merged result for free.\n\nThe other way to reach a 200 is a failure: when the 302 was the ASP.NET request-validation bounce (a path segment containing `<`, `>`, `*` or `&`), following it lands on the web application's HTML error page, which answers 200 with `text/html`. Check the content type before parsing JSON.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}`, hitting this same update endpoint a second time; with no body IIS answers `411 Length Required`. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Chain observed end to end with httpx: POST /people/{vanId} with an empty body → 302 back to the same URL → GET → 200 with the full record."
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -892,9 +896,10 @@
         },
         "responses": {
           "200": {
-            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* on a match:\n\n```\nPOST /people/find              {\"firstName\": \"Ada\", \"lastName\": \"Testperson\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714507\n    {\"vanId\": 102714507, \"status\": \"Matched\"}\n\nGET /people/102714507          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, so a match reaches your code as this 200 and a full `Person`, never as the 302 and its two-field match stub. The no-match 404 is not a redirect, so the practical test is `resp.status_code == 200` vs `404`, not `302` vs `404`. The follow-up GET has no `$expand`, so its related collections come back null — re-fetch through the `getMatchedPerson` link if you need addresses, phones or emails.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}` — the *update* endpoint — where IIS answers `411 Length Required` because the re-issued request carries no body. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET like everything else.",
             "x-provenance": {
-              "note": "Documented alongside the raw 302 so both redirect-following clients and raw clients (including the schemathesis fuzzer) conform to this spec."
+              "lastProbed": "2026-08-04",
+              "note": "Chain observed end to end with httpx and requests (both: 302 → GET → 200 Person) and with curl 8.7.1 both ways (`-d` alone → GET → 200; `-X POST -L` → POST /people/{vanId} → 411). Documented alongside the raw 302 so both redirect-following clients and raw clients (including the schemathesis fuzzer) conform to this spec."
             },
             "content": {
               "application/json": {
@@ -1004,7 +1009,7 @@
       "post": {
         "operationId": "findOrCreatePerson",
         "summary": "Find a person, or create one if nothing matches",
-        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nA match returns **302 Found** with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`; no match returns **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`. Unlike find, this never returns 404 — the no-match case is the create case.\n\nEvery field is optional, including the name: an empty body `{}` returns 201 and creates a blank record. Supplying a `vanId` that exists short-circuits the match and returns 302 for that record.",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nOutcomes:\n\n- **A record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The body supplies a `vanId` that exists** — the match is short-circuited and that record is returned as **302**.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank record is created.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03)."
@@ -1066,7 +1071,11 @@
         },
         "responses": {
           "200": {
-            "description": "Not sent by the server directly: on a match, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a match:\n\n```\nPOST /people/findOrCreate      {\"vanId\": 102714558}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, so on a match your code sees this 200 and a full `Person`, not the 302 and its two-field match stub. `resp.history` (requests/httpx) or `resp.redirected` (fetch) is how you tell this apart from the 201 create path, which sends no `Location` and is never rewritten this way.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}` — the *update* endpoint — where IIS answers `411 Length Required` because the re-issued request carries no body. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET like everything else.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Chain observed end to end with httpx and requests (both: 302 → GET → 200 Person) and with curl 8.7.1 both ways (`-d` alone → GET → 200; `-X POST -L` → POST /people/{vanId} → 411). Documented alongside the raw 302 so redirect-following clients and raw clients (including the schemathesis fuzzer) both conform to this spec."
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1076,20 +1085,11 @@
             }
           },
           "201": {
-            "description": "Nothing matched, so a new record was created. No `Location` header is sent — the new id is in the body.",
+            "description": "Nothing matched, so a new record was created. No `Location` header is sent — the new id is in the body, and redirect-following clients see this response unchanged.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonUnmatchedStored"
-                },
-                "examples": {
-                  "created": {
-                    "summary": "New record stored",
-                    "value": {
-                      "vanId": 102714558,
-                      "status": "UnmatchedStored"
-                    }
-                  }
                 }
               }
             },
@@ -1194,11 +1194,34 @@
         },
         "responses": {
           "200": {
-            "description": "Not sent by the server directly: on the vanId-match path, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nrequests, httpx, fetch and `curl -L` all follow that redirect and downgrade POST to GET by default, so on the vanId path your code sees this 200 and a full `Person` — and, critically, a status that looks nothing like the 201 you get when a record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint.\n\nGotcha: `curl -X POST -L` keeps the method across the redirect and re-POSTs to `/people/{vanId}` — the *update* endpoint — where IIS answers `411 Length Required` because the re-issued request carries no body. Drop the explicit `-X POST` (`-d` already implies POST) and curl downgrades to GET like everything else.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Chain observed end to end with httpx (302 → GET → 200 Person) by posting an existing vanId; identical to the POST /people/findOrCreate and POST /people/find redirects."
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Person"
+                },
+                "examples": {
+                  "existingVanIdFollowed": {
+                    "summary": "What a redirect-following client receives when the posted vanId already exists (abridged: null-only fields omitted)",
+                    "value": {
+                      "vanId": 102714558,
+                      "firstName": "Dup",
+                      "lastName": "Testperson",
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "salutation": "Dup",
+                      "formalSalutation": "Dup Testperson",
+                      "envelopeName": "Dup Testperson",
+                      "formalEnvelopeName": "Dup Testperson",
+                      "isDeceased": false,
+                      "dateCreated": "2026-08-03T16:31:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z"
+                    }
+                  }
                 }
               }
             }
