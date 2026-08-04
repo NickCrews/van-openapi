@@ -25,240 +25,6 @@
     }
   ],
   "paths": {
-    "/echoes": {
-      "post": {
-        "operationId": "createEcho",
-        "summary": "Echo a message back",
-        "description": "Test endpoint: echoes the posted message back with a server timestamp. Safe to call freely; useful for verifying auth and connectivity. Accepts an empty body (all fields nullable).",
-        "tags": [
-          "Echoes"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EchoRequest"
-              },
-              "examples": {
-                "hello": {
-                  "summary": "Simple echo",
-                  "value": {
-                    "message": "hello"
-                  }
-                },
-                "empty": {
-                  "summary": "Empty body (accepted; everything is nullable)",
-                  "value": {}
-                },
-                "delayed": {
-                  "summary": "Ask the server to wait before responding",
-                  "value": {
-                    "message": "slow reply",
-                    "delayInMilliseconds": 500
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The echoed message.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Echo"
-                },
-                "examples": {
-                  "hello": {
-                    "summary": "Echoed message (sandbox)",
-                    "value": {
-                      "message": "hello",
-                      "dateSent": "2026-08-03T16:47:29.8973257Z",
-                      "delayInMilliseconds": null
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
-        }
-      }
-    },
-    "/people/find": {
-      "post": {
-        "operationId": "findPerson",
-        "summary": "Find a person matching the given criteria",
-        "description": "Attempts to match a person in the database. A match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
-        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.",
-        "tags": [
-          "People"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PersonMatchCriteria"
-              },
-              "examples": {
-                "nameAndEmail": {
-                  "summary": "Match on name + email",
-                  "value": {
-                    "firstName": "Ada",
-                    "lastName": "Testperson",
-                    "emails": [
-                      {
-                        "email": "ada.testperson@example.com"
-                      }
-                    ]
-                  }
-                },
-                "nameAndPhone": {
-                  "summary": "Match on name + phone",
-                  "value": {
-                    "firstName": "Ada",
-                    "lastName": "Testperson",
-                    "phones": [
-                      {
-                        "phoneNumber": "9075551234"
-                      }
-                    ]
-                  }
-                },
-                "byVanId": {
-                  "summary": "Look up by vanId (overrides all other criteria)",
-                  "value": {
-                    "vanId": 102714507
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "302": {
-            "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
-            "headers": {
-              "Location": {
-                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
-                "schema": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "example": "https://api.securevan.com/v4/people/102714507"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonMatched"
-                }
-              }
-            },
-            "links": {
-              "getMatchedPerson": {
-                "operationId": "getPerson",
-                "parameters": {
-                  "vanId": "$response.body#/vanId"
-                },
-                "description": "Fetch the matched person's full record — equivalent to following the Location header."
-              }
-            }
-          },
-          "404": {
-            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonUnmatched"
-                },
-                "examples": {
-                  "unmatched": {
-                    "summary": "No match",
-                    "value": {
-                      "vanId": null,
-                      "status": "Unmatched"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          },
-          "200": {
-            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
-            "x-provenance": {
-              "note": "Documented alongside the raw 302 so both redirect-following clients and raw clients (including the schemathesis fuzzer) conform to this spec."
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Person"
-                },
-                "examples": {
-                  "matched": {
-                    "summary": "Sandbox test person (abridged: null-only fields omitted)",
-                    "value": {
-                      "vanId": 102714507,
-                      "firstName": "Ada",
-                      "lastName": "Testperson",
-                      "middleName": null,
-                      "contactSource": "API",
-                      "contactMode": "Person",
-                      "salutation": "Ada",
-                      "formalSalutation": "Ada Testperson",
-                      "envelopeName": "Ada Testperson",
-                      "isDeceased": false,
-                      "dateCreated": "2026-08-03T12:58:00Z",
-                      "dateAcquired": "0001-01-01T00:00:00Z",
-                      "party": null,
-                      "dateOfBirth": null,
-                      "emails": null,
-                      "phones": null,
-                      "addresses": null
-                    }
-                  }
-                }
-              }
-            },
-            "links": {
-              "getMatchedPerson": {
-                "operationId": "getPerson",
-                "parameters": {
-                  "vanId": "$response.body#/vanId"
-                },
-                "description": "Re-fetch the matched person by id (e.g. with $expand for related collections)."
-              }
-            }
-          }
-        }
-      }
-    },
     "/people/{vanId}": {
       "get": {
         "operationId": "getPerson",
@@ -600,6 +366,674 @@
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/people": {
+      "get": {
+        "operationId": "searchPeople",
+        "summary": "Search for people",
+        "description": "Searches for people matching the given criteria and returns full person records in the standard pagination envelope. At least one search parameter must be set: firstName, lastName, middleName, streetAddress, city, stateOrProvince, zipOrPostalCode, phoneNumber, email, commonName, or officialName. A request with none of these — even one with filter or paging parameters set — returns 400 INVALID_PARAMETER with the text \"This endpoint requires at least one search parameter to be set.\" Text criteria are case-insensitive prefix matches: lastName=Testpers matches \"Testperson\", lastName=estperson does not. Related collections on the returned records are null unless requested via $expand.",
+        "x-provenance": {
+          "source": "van-cli people.ts (list command) plus live sandbox probing; the endpoint is absent from the official docs' page index (llms.txt lists only /people/find).",
+          "lastProbed": "2026-08-04"
+        },
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "firstName",
+            "in": "query",
+            "description": "First name. Case-insensitive prefix match.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Ada"
+          },
+          {
+            "name": "lastName",
+            "in": "query",
+            "description": "Last name. Case-insensitive prefix match.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Testperson"
+          },
+          {
+            "name": "middleName",
+            "in": "query",
+            "description": "Middle name.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Marie"
+          },
+          {
+            "name": "streetAddress",
+            "in": "query",
+            "description": "Street address.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "123 Test St"
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "description": "City.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Anchorage"
+          },
+          {
+            "name": "stateOrProvince",
+            "in": "query",
+            "description": "State or province.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "AK"
+          },
+          {
+            "name": "zipOrPostalCode",
+            "in": "query",
+            "description": "ZIP or postal code.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "99501"
+          },
+          {
+            "name": "phoneNumber",
+            "in": "query",
+            "description": "Phone number. Non-numeric characters are stripped, then the value must be a valid North American number matching `^1?[2-9][0-8]\\d[2-9]\\d{6,6}$`; anything else returns 400 INVALID_PARAMETER with that regular expression in the hint.",
+            "schema": {
+              "type": "string",
+              "pattern": "^1?[2-9][0-8]\\d[2-9]\\d{6,6}$"
+            },
+            "example": "9075550142"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Email address. Case-insensitive prefix match, checked against all of the person's email addresses, not just the preferred one.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "ada.testperson@example.com"
+          },
+          {
+            "name": "commonName",
+            "in": "query",
+            "description": "Organization common name.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Acme Corp"
+          },
+          {
+            "name": "officialName",
+            "in": "query",
+            "description": "Organization official name.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Acme Corporation"
+          },
+          {
+            "name": "contactMode",
+            "in": "query",
+            "description": "Filters the results to Person or Organization records. Does not count toward the at-least-one-search-parameter requirement, and any other value is ignored rather than rejected.",
+            "schema": {
+              "type": "string",
+              "enum": ["Person", "Organization"]
+            },
+            "example": "Person"
+          },
+          {
+            "name": "employer",
+            "in": "query",
+            "description": "Accepted but has no effect on the results, and does not count toward the at-least-one-search-parameter requirement.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Acme Corp",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+            }
+          },
+          {
+            "name": "occupation",
+            "in": "query",
+            "description": "Accepted but has no effect on the results, and does not count toward the at-least-one-search-parameter requirement.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Engineer",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+            }
+          },
+          {
+            "name": "dateOfBirth",
+            "in": "query",
+            "description": "Accepted but has no effect on the results, and does not count toward the at-least-one-search-parameter requirement. Even an unparseable value is accepted and ignored.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1980-01-15",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Listed as a search criterion in van-cli people.ts, but combining it with a lastName search left the result count unchanged even for values matching no one, and sending it alone triggers the no-search-parameter 400. May behave differently in other database modes; only My Campaign was probed."
+            }
+          },
+          {
+            "name": "$top",
+            "in": "query",
+            "description": "Limits the number of results per page. Default 50, maximum 200; 0 and negative values return 400.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "van-cli caps this at 50 client-side with a comment that VAN limits people search to 50, but the API's own INVALID_PARAMETER hint states default 50 / maximum 200, and $top=200 was accepted live."
+            },
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "example": 50
+          },
+          {
+            "name": "$skip",
+            "in": "query",
+            "description": "Number of results to skip. Negative values return 400.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "$orderby",
+            "in": "query",
+            "description": "Sort expression. The only sortable property is Name; \"Name desc\" sorts descending. Any other property returns 400 INVALID_PARAMETER with the hint \"The only valid orderby property is: 'Name'\".",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Name"
+          },
+          {
+            "name": "$expand",
+            "in": "query",
+            "description": "Comma-delimited list of related sections to include (case-insensitive). The API's own hint lists addresses, emails, phones, districts and pollingLocation — a much smaller set than GET /people/{vanId} accepts — but pollingLocation is then refused with 400 BAD_REQUEST \"May not request 'pollingLocation' in this context\", alone or combined with other sections, so the usable set is addresses, emails, phones, districts. Any value outside the hinted set returns 400 INVALID_PARAMETER with a hint listing it. Expanded collections come back as empty arrays when absent, vs null when not expanded; unexpanded sections stay null.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "emails,phones,addresses,districts",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "pollingLocation was rejected in My Campaign mode (the only mode the sandbox key can reach); it may be expandable in My Voters mode, which is what the hint presumably describes."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of matching people. count is the total number of matches across all pages, not the page size; nextPageLink is an absolute URL for the next page (with an explicit :443 port), or null on the last page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonList"
+                },
+                "examples": {
+                  "empty": {
+                    "summary": "No matches",
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
+                  },
+                  "populated": {
+                    "summary": "First of 120 matches for lastName=Testperson with $top=1 (item abridged: null-only fields omitted)",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 102714808,
+                          "firstName": null,
+                          "lastName": "Testperson",
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "isDeceased": false,
+                          "dateCreated": "2026-08-03T17:31:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "emails": null,
+                          "phones": null,
+                          "addresses": null
+                        }
+                      ],
+                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$skip=1",
+                      "count": 120
+                    }
+                  },
+                  "expanded": {
+                    "summary": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields and sandbox fuzz noise omitted)",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 102715285,
+                          "firstName": "Grace",
+                          "lastName": "Testperson",
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "sex": "M",
+                          "dateOfBirth": "2000-01-01T00:00:00Z",
+                          "isDeceased": false,
+                          "partialDateOfBirth": {
+                            "month": 1,
+                            "day": 1,
+                            "year": 2000
+                          },
+                          "dateCreated": "2026-08-04T12:16:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "emails": [
+                            {
+                              "type": "W",
+                              "email": "grace.testperson@example.com",
+                              "dateCreated": "2026-08-04T12:16:00Z",
+                              "isPreferred": true,
+                              "isSubscribed": true,
+                              "subscriptionStatus": "S"
+                            }
+                          ],
+                          "phones": [
+                            {
+                              "phoneId": 1021654,
+                              "phoneNumber": "9075550142",
+                              "dialingPrefix": "1",
+                              "countryCode": "US",
+                              "ext": "123",
+                              "dateCreated": "2026-08-04T12:25:00Z",
+                              "phoneType": "Personal",
+                              "deviceType": "Cell",
+                              "isPreferred": true,
+                              "isBest": true,
+                              "isDisclosure": true,
+                              "smsOptInStatus": "Opt-In",
+                              "phoneOptInStatus": "Opt-In",
+                              "isCellPhoneExchange": false,
+                              "isCellStatus": null,
+                              "tags": null
+                            }
+                          ],
+                          "addresses": [
+                            {
+                              "addressId": 1206622,
+                              "addressLine1": "123 Test St",
+                              "addressLine2": "Apt 4",
+                              "city": "Anchorage",
+                              "stateOrProvince": "AK",
+                              "zipOrPostalCode": "99501",
+                              "countryCode": "US",
+                              "preview": "123 Test St Apt 4",
+                              "type": "Voting",
+                              "isPreferred": true,
+                              "isBest": true,
+                              "displayMode": "Standardized"
+                            },
+                            {
+                              "addressId": 1206622,
+                              "addressLine1": "123 Test St",
+                              "addressLine2": "Apt 4",
+                              "city": "Anchorage",
+                              "stateOrProvince": "AK",
+                              "zipOrPostalCode": "99501",
+                              "countryCode": "US",
+                              "preview": "123 Test St Apt 4",
+                              "type": "Mailing",
+                              "isPreferred": true,
+                              "isBest": true,
+                              "displayMode": "Standardized"
+                            }
+                          ],
+                          "districts": [
+                            {
+                              "districtFieldId": 0,
+                              "name": "County",
+                              "parentFieldId": null,
+                              "isCustomDistrict": false,
+                              "districtFieldValues": [
+                                {
+                                  "id": "020",
+                                  "name": "Anchorage",
+                                  "parentId": null
+                                }
+                              ]
+                            },
+                            {
+                              "districtFieldId": 0,
+                              "name": "State",
+                              "parentFieldId": null,
+                              "isCustomDistrict": false,
+                              "districtFieldValues": [
+                                {
+                                  "id": "AK",
+                                  "name": "Alaska",
+                                  "parentId": null
+                                }
+                              ]
+                            }
+                          ],
+                          "pollingLocation": null,
+                          "scores": null
+                        }
+                      ],
+                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$orderby=Name%20desc&$expand=emails%2Cphones%2Caddresses%2Cdistricts&$skip=1",
+                      "count": 131
+                    }
+                  },
+                  "noExpandedData": {
+                    "summary": "Same query at $skip=4: a record with no related data, showing expanded sections as empty arrays rather than null",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 102717610,
+                          "firstName": "Grace",
+                          "lastName": "Testperson",
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "isDeceased": false,
+                          "dateCreated": "2026-08-04T14:44:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "emails": [],
+                          "phones": [],
+                          "addresses": [],
+                          "districts": [
+                            {
+                              "districtFieldId": 0,
+                              "name": "State",
+                              "parentFieldId": null,
+                              "isCustomDistrict": false,
+                              "districtFieldValues": [
+                                {
+                                  "id": "FL",
+                                  "name": "Florida",
+                                  "parentId": null
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$orderby=Name%20desc&$expand=emails%2Cphones%2Caddresses%2Cdistricts&$skip=5",
+                      "count": 131
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getFirstPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/items/0/vanId"
+                },
+                "description": "Fetch the first matching person's full record (e.g. with the larger $expand set that getPerson accepts)."
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error. Most are INVALID_PARAMETER and name the offending query parameter in `properties`; the no-search-parameter case names the pseudo-property \"All Arguments\", and refusing an out-of-context $expand section uses code BAD_REQUEST with no `properties` or `hint` at all.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "All five examples are verbatim sandbox responses (My Campaign mode)."
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "noSearchParameter": {
+                    "summary": "No search parameter set (here: only $top)",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "This endpoint requires at least one search parameter to be set.",
+                          "properties": ["All Arguments"]
+                        }
+                      ]
+                    }
+                  },
+                  "invalidPhoneNumber": {
+                    "summary": "phoneNumber=555",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "'phoneNumber' (555) is not a valid phone number for NorthAmerica",
+                          "properties": ["phoneNumber"],
+                          "hint": "After non-numeric characters are removed, value must match the regular expression: ^1?[2-9][0-8]\\d[2-9]\\d{6,6}$"
+                        }
+                      ]
+                    }
+                  },
+                  "invalidOrderby": {
+                    "summary": "$orderby=lastName — only Name is sortable",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "'lastName' is not a valid argument for the '$orderby' parameter",
+                          "properties": ["$orderby"],
+                          "hint": "The only valid orderby property is: 'Name'"
+                        }
+                      ]
+                    }
+                  },
+                  "invalidExpand": {
+                    "summary": "$expand=scores — valid on GET /people/{vanId}, not here",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "'scores' is not a valid argument for the '$expand' parameter",
+                          "properties": ["$expand"],
+                          "hint": "The only valid expand sections are: 'Addresses', 'Emails', 'Phones', 'Districts', 'PollingLocation'"
+                        }
+                      ]
+                    }
+                  },
+                  "expandNotAllowedInContext": {
+                    "summary": "$expand=pollingLocation — listed in the hint above, but refused in My Campaign mode",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "BAD_REQUEST",
+                          "text": "May not request 'pollingLocation' in this context"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/people/find": {
+      "post": {
+        "operationId": "findPerson",
+        "summary": "Find a person matching the given criteria",
+        "description": "Attempts to match a person in the database. A match returns **302 Found** with a `Location` header pointing at `/people/{vanId}` and a small match-stub body; no match returns **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}`. Sparse criteria (e.g. firstName only) are accepted and simply return Unmatched. Read-only: never creates records (use /people/findOrCreate for that).",
+        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only.",
+        "tags": [
+          "People"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonMatchCriteria"
+              },
+              "examples": {
+                "nameAndEmail": {
+                  "summary": "Match on name + email",
+                  "value": {
+                    "firstName": "Ada",
+                    "lastName": "Testperson",
+                    "emails": [
+                      {
+                        "email": "ada.testperson@example.com"
+                      }
+                    ]
+                  }
+                },
+                "nameAndPhone": {
+                  "summary": "Match on name + phone",
+                  "value": {
+                    "firstName": "Ada",
+                    "lastName": "Testperson",
+                    "phones": [
+                      {
+                        "phoneNumber": "9075551234"
+                      }
+                    ]
+                  }
+                },
+                "byVanId": {
+                  "summary": "Look up by vanId (overrides all other criteria)",
+                  "value": {
+                    "vanId": 102714507
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "A person matched the criteria. `Location` header points at the canonical person resource.",
+            "headers": {
+              "Location": {
+                "description": "URL of the matched person, e.g. https://api.securevan.com/v4/people/{vanId}",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102714507"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMatched"
+                }
+              }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the matched person's full record — equivalent to following the Location header."
+              }
+            }
+          },
+          "404": {
+            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonUnmatched"
+                },
+                "examples": {
+                  "unmatched": {
+                    "summary": "No match",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "200": {
+            "description": "Not sent by the server directly: the server responds 302, but most HTTP clients (requests, fetch, httpx) auto-follow the Location redirect to GET /people/{vanId} and surface its 200 with the full person record.",
+            "x-provenance": {
+              "note": "Documented alongside the raw 302 so both redirect-following clients and raw clients (including the schemathesis fuzzer) conform to this spec."
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                },
+                "examples": {
+                  "matched": {
+                    "summary": "Sandbox test person (abridged: null-only fields omitted)",
+                    "value": {
+                      "vanId": 102714507,
+                      "firstName": "Ada",
+                      "lastName": "Testperson",
+                      "middleName": null,
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "salutation": "Ada",
+                      "formalSalutation": "Ada Testperson",
+                      "envelopeName": "Ada Testperson",
+                      "isDeceased": false,
+                      "dateCreated": "2026-08-03T12:58:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "party": null,
+                      "dateOfBirth": null,
+                      "emails": null,
+                      "phones": null,
+                      "addresses": null
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getMatchedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Re-fetch the matched person by id (e.g. with $expand for related collections)."
+              }
+            }
           }
         }
       }
@@ -1029,6 +1463,79 @@
           }
         }
       }
+    },
+    "/echoes": {
+      "post": {
+        "operationId": "createEcho",
+        "summary": "Echo a message back",
+        "description": "Test endpoint: echoes the posted message back with a server timestamp. Safe to call freely; useful for verifying auth and connectivity. Accepts an empty body (all fields nullable).",
+        "tags": [
+          "Echoes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EchoRequest"
+              },
+              "examples": {
+                "hello": {
+                  "summary": "Simple echo",
+                  "value": {
+                    "message": "hello"
+                  }
+                },
+                "empty": {
+                  "summary": "Empty body (accepted; everything is nullable)",
+                  "value": {}
+                },
+                "delayed": {
+                  "summary": "Ask the server to wait before responding",
+                  "value": {
+                    "message": "slow reply",
+                    "delayInMilliseconds": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The echoed message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Echo"
+                },
+                "examples": {
+                  "hello": {
+                    "summary": "Echoed message (sandbox)",
+                    "value": {
+                      "message": "hello",
+                      "dateSent": "2026-08-03T16:47:29.8973257Z",
+                      "delayInMilliseconds": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1204,7 +1711,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Machine-readable error code. Known values: UNAUTHORIZED, FORBIDDEN, INVALID_PARAMETER, NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR (list likely incomplete).",
+            "description": "Machine-readable error code. Known values: UNAUTHORIZED, FORBIDDEN, INVALID_PARAMETER, BAD_REQUEST, NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL_SERVER_ERROR (list likely incomplete).",
             "examples": [
               "INVALID_PARAMETER"
             ]
@@ -2335,6 +2842,7 @@
               "string",
               "null"
             ],
+            "minLength": 1,
             "maxLength": 1,
             "description": "One-character party affiliation, e.g. \"D\". Only the length is checked — any single character is stored as given.",
             "x-provenance": {
@@ -2398,6 +2906,7 @@
               "null"
             ],
             "format": "date",
+            "examples": ["2001-11-23"],
             "description": "ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 \"'dateOfBirth' must be in the 20th or 21st century.\". A value that is not a parseable date is not an error: it is silently dropped and the record stores null.",
             "x-provenance": {
               "note": "\"not-a-date\" returned 201 with dateOfBirth null (observed 2026-08-03)."
@@ -2437,6 +2946,7 @@
             ],
             "minLength": 4,
             "maxLength": 4,
+            "examples": ["2024"],
             "description": "Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 \"'cycle' must be 4 characters in length\"."
           },
           "emails": {
@@ -2506,12 +3016,33 @@
           },
           "contactMode": {
             "type": "string",
-            "enum": [
-              "Person",
-              "Organization"
-            ],
+            "enum": ["Person", "Organization"],
             "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
             "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the record reads back with contactMode \"Person\" (observed 2026-08-03)."
+          }
+        }
+      },
+      "PersonList": {
+        "type": "object",
+        "required": [
+          "items",
+          "count"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            }
+          },
+          "nextPageLink": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "count": {
+            "type": "integer"
           }
         }
       },
@@ -2565,7 +3096,8 @@
           },
           "contactMode": {
             "type": "string",
-            "description": "e.g. \"Person\". Defaults to \"Person\" even on a blank record; an unrecognized written value is stored as \"Person\"."
+            "enum": ["Person", "Organization"],
+            "description": "Defaults to \"Person\" even on a blank record; an unrecognized written value is stored as \"Person\"."
           },
           "salutation": {
             "type": [
@@ -2574,8 +3106,15 @@
             ]
           },
           "formalSalutation": {
-            "type": "string",
-            "description": "Derived from the name; \"Friend\" when there is no name to derive from — unlike `salutation`, which is null in that case."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On GET /people/{vanId}, derived from the name — \"Friend\" when there is no name to derive from, unlike `salutation`, which is null in that case. Always null in GET /people search results, even for records where get-by-id derives a value.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Null-in-search-results found by the fuzzer on GET /people; confirmed against vanId 102704536, which reads back \"Scgapi Matchrules\" here via get-by-id but null via search."
+            }
           },
           "envelopeName": {
             "type": [
@@ -2584,8 +3123,15 @@
             ]
           },
           "formalEnvelopeName": {
-            "type": "string",
-            "description": "Derived from the name; \"Our Friend At\" when there is no name to derive from — unlike `envelopeName`, which is null in that case."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On GET /people/{vanId}, derived from the name — \"Our Friend At\" when there is no name to derive from, unlike `envelopeName`, which is null in that case. Always null in GET /people search results, even for records where get-by-id derives a value.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Null-in-search-results found by the fuzzer on GET /people; same evidence as formalSalutation."
+            }
           },
           "party": {
             "type": [
@@ -2634,6 +3180,29 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "partialDateOfBirth": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "month": {
+                "type": "integer"
+              },
+              "day": {
+                "type": "integer"
+              },
+              "year": {
+                "type": "integer"
+              }
+            },
+            "examples": [{"year": 2001, "month": 11, "day": 23}],
+            "description": "The birth date broken into components; null when dateOfBirth is null. Returned by both GET /people and GET /people/{vanId}.",
+            "x-provenance": {
+              "lastProbed": "2026-08-04",
+              "note": "Surfaced by fuzzing GET /people — earlier field inventories missed it because every probed record had a null dateOfBirth, which nulls this field too. Only full dates observed (month, day and year all set); whether a genuinely partial date omits components is unverified."
+            }
           },
           "isDeceased": {
             "type": "boolean"
