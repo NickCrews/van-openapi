@@ -591,16 +591,15 @@
                   "$ref": "#/components/schemas/PersonList"
                 },
                 "examples": {
-                  "empty": {
-                    "summary": "No matches",
+                  "No Matches": {
                     "value": {
                       "items": [],
                       "nextPageLink": null,
                       "count": 0
                     }
                   },
-                  "populated": {
-                    "summary": "First of 120 matches for lastName=Testperson with $top=1 (item abridged: null-only fields omitted)",
+                  "First of Many Pages (no $expand)": {
+                    "description": "First of 120 matches for lastName=Testperson with $top=1 (item abridged: null-only fields omitted)",
                     "value": {
                       "items": [
                         {
@@ -621,8 +620,8 @@
                       "count": 120
                     }
                   },
-                  "expanded": {
-                    "summary": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields and sandbox fuzz noise omitted)",
+                  "First of Many Pages (with $expand)": {
+                    "description": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields and sandbox fuzz noise omitted)",
                     "value": {
                       "items": [
                         {
@@ -734,43 +733,6 @@
                         }
                       ],
                       "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$orderby=Name%20desc&$expand=emails%2Cphones%2Caddresses%2Cdistricts&$skip=1",
-                      "count": 131
-                    }
-                  },
-                  "noExpandedData": {
-                    "summary": "Same query at $skip=4: a record with no related data, showing expanded sections as empty arrays rather than null",
-                    "value": {
-                      "items": [
-                        {
-                          "vanId": 102717610,
-                          "firstName": "Grace",
-                          "lastName": "Testperson",
-                          "contactSource": "API",
-                          "contactMode": "Person",
-                          "isDeceased": false,
-                          "dateCreated": "2026-08-04T14:44:00Z",
-                          "dateAcquired": "0001-01-01T00:00:00Z",
-                          "emails": [],
-                          "phones": [],
-                          "addresses": [],
-                          "districts": [
-                            {
-                              "districtFieldId": 0,
-                              "name": "State",
-                              "parentFieldId": null,
-                              "isCustomDistrict": false,
-                              "districtFieldValues": [
-                                {
-                                  "id": "FL",
-                                  "name": "Florida",
-                                  "parentId": null
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ],
-                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$orderby=Name%20desc&$expand=emails%2Cphones%2Caddresses%2Cdistricts&$skip=5",
                       "count": 131
                     }
                   }
@@ -1059,7 +1021,7 @@
               },
               "examples": {
                 "nameAndEmail": {
-                  "summary": "Name + email, the usual dedupe key",
+                  "summary": "Name + email",
                   "value": {
                     "firstName": "Grace",
                     "lastName": "Testperson",
@@ -1073,7 +1035,7 @@
                   }
                 },
                 "fullContact": {
-                  "summary": "New record with phone and address",
+                  "summary": "Name + phone + address",
                   "value": {
                     "firstName": "Grace",
                     "lastName": "Testperson",
@@ -1103,6 +1065,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Not sent by the server directly: on a match, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Nothing matched, so a new record was created. No `Location` header is sent — the new id is in the body.",
             "content": {
@@ -1160,28 +1132,12 @@
               }
             }
           },
-          "200": {
-            "description": "Not sent by the server directly: on a match, redirect-following clients surface the 200 from GET /people/{vanId}. The 201 create path has no redirect and is unaffected.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Person"
-                }
-              }
-            }
-          },
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequests"
-          }
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
+          "500": { "$ref": "#/components/responses/ServerError" }
         }
       }
     },
