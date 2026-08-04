@@ -5,3 +5,4 @@ schemathesis-report/
 # Local test-tool caches: contents churn (timestamps, generated examples) on every run.
 .schemathesis/
 .hypothesis/
+.ocli

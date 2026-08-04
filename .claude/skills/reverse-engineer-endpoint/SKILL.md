@@ -1,6 +1,8 @@
 ---
 name: reverse-engineer-endpoint
 description: Reverse-engineer an NGP VAN API endpoint into openapi.json by cross-referencing official docs, van-cli source, and live sandbox probing, then validating with the schemathesis fuzzer. Use when adding or updating an endpoint in the spec, researching VAN API behavior, or when STATUS.md marks an endpoint unresearched.
+metadata:
+  internal: true
 ---
 
 # Reverse-engineer a VAN API endpoint

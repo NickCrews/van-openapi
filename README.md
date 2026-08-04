@@ -17,6 +17,23 @@ An OpenAPI spec has some nice benefits:
 - Allows for publishing a human readable docs website for exploring the API. See https://nickcrews.github.io/van-openapi/.
 - Allows inlining docs and examples of the endpoints right in the spec.
 
+## Usage
+
+### From the command line
+
+Turn the spec into searchable, runnable CLI commands with
+[ocli](https://github.com/EvilFreelancer/openapi-to-cli) — no client code needed.
+The [van-api-cli](.claude/skills/van-api-cli/SKILL.md) agent skill has setup and
+examples. Install it for your coding agent (Claude Code, Codex, Cursor, etc) with:
+
+```bash
+npx skills add NickCrews/van-openapi
+```
+
+### Browse the docs site
+
+Explore the API in a human-readable form at https://nickcrews.github.io/van-openapi/.
+
 ## Layout
 
 - [openapi.json](openapi.json) — the spec (source of truth). Descriptions state
