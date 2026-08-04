@@ -166,15 +166,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
-                },
-                "examples": {
-                  "matched": {
-                    "summary": "Match (sandbox test person)",
-                    "value": {
-                      "vanId": 102714507,
-                      "status": "Matched"
-                    }
-                  }
                 }
               }
             },
@@ -538,15 +529,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
-                },
-                "examples": {
-                  "updated": {
-                    "summary": "Update applied",
-                    "value": {
-                      "vanId": 102714580,
-                      "status": "Matched"
-                    }
-                  }
                 }
               }
             },
@@ -731,15 +713,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
-                },
-                "examples": {
-                  "matched": {
-                    "summary": "Existing record found",
-                    "value": {
-                      "vanId": 102714558,
-                      "status": "Matched"
-                    }
-                  }
                 }
               }
             },
@@ -874,15 +847,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
-                },
-                "examples": {
-                  "matched": {
-                    "summary": "vanId already exists",
-                    "value": {
-                      "vanId": 102714558,
-                      "status": "Matched"
-                    }
-                  }
                 }
               }
             },
