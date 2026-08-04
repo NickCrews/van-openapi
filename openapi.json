@@ -1434,7 +1434,7 @@
                     "null"
                   ],
                   "description": "Alpha-2 country code.",
-                  "x-docs-discrepancy": "Official docs spell this field 'countyCode' \u2014 likely a typo in the docs; not yet verified live."
+                  "x-docs-discrepancy": "Official docs spell this field 'countyCode' — likely a typo in the docs; not yet verified live."
                 }
               }
             }
@@ -1584,46 +1584,33 @@
         "type": "object",
         "description": "An email address on a person record, returned when $expand=emails is requested.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Enums taken from the API's own INVALID_PARAMETER responses to POST /people/findOrCreate and confirmed by round-tripping every value through GET /people/{vanId}?$expand=emails. Unlike phones, email codes come back as the same single letters that were written."
+          "lastProbed": "2026-08-04",
+          "note": "Enums taken from the API's own INVALID_PARAMETER responses to POST /people/findOrCreate and confirmed by round-tripping every value through GET /people/{vanId}?$expand=emails. Unlike phones, email codes come back as the same single letters that were written. Nullability probed 2026-08-04: an email written with only the address, and another written with every optional field explicitly null, both read back fully populated with defaults (type P, isPreferred, subscriptionStatus S) — isSubscribed is the only field observed null."
         },
         "properties": {
           "email": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "description": "The email address."
           },
           "type": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "P",
               "W",
-              "O",
-              null
+              "O"
             ],
-            "description": "What kind of address this is. `P` = personal, `W` = work, `O` = other.",
+            "description": "What kind of address this is. `P` = personal, `W` = work, `O` = other. Defaults to `P` when not set at write time, so it is never null.",
             "x-provenance": {
-              "note": "Writing any other value returns 400 INVALID_PARAMETER: \"'type' must be one of P , W , O\"."
+              "note": "Writing any other value returns 400 INVALID_PARAMETER: \"'type' must be one of P , W , O\". Writing an explicit null reads back as \"P\" (observed 2026-08-04)."
             }
           },
           "dateCreated": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "format": "date-time",
             "description": "When the address was added to the record. Set by the server."
           },
           "isPreferred": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Whether this is the person's preferred email address. Exactly one address per person carries it."
           },
           "isSubscribed": {
@@ -1637,19 +1624,15 @@
             }
           },
           "subscriptionStatus": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "U",
               "N",
-              "S",
-              null
+              "S"
             ],
-            "description": "Targeted Email subscription state. `S` = subscribed — the only status that receives Targeted Email messages. `N` = neutral — no message, but not an opt-out. `U` = unsubscribed. This property exists only where the Targeted Email feature is enabled.",
+            "description": "Targeted Email subscription state. `S` = subscribed — the default, and the only status that receives Targeted Email messages. `N` = neutral — no message, but not an opt-out. `U` = unsubscribed. This property exists only where the Targeted Email feature is enabled.",
             "x-provenance": {
-              "note": "Writing any other value returns 400 INVALID_PARAMETER with hint \"'U', 'S', 'N'\"."
+              "note": "Writing any other value returns 400 INVALID_PARAMETER with hint \"'U', 'S', 'N'\". Never observed null — an email written without it (or with an explicit null) reads back \"S\" (2026-08-04). Contexts without Targeted Email were not observable from the sandbox; there the property is presumably absent rather than null."
             }
           }
         }
@@ -1658,8 +1641,8 @@
         "type": "object",
         "description": "A phone number on a person record, returned when $expand=phones is requested.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Shape and every enum observed live: each documented write code was posted through POST /people/findOrCreate and read back via GET /people/{vanId}?$expand=phones. Fields not in the documented model (dateCreated, isBest, isDisclosure, smsOptInStatus, isCellPhoneExchange, tags) are read-only additions seen on every phone returned."
+          "lastProbed": "2026-08-04",
+          "note": "Shape and every enum observed live: each documented write code was posted through POST /people/findOrCreate and read back via GET /people/{vanId}?$expand=phones. Fields not in the documented model (dateCreated, isBest, isDisclosure, smsOptInStatus, isCellPhoneExchange, tags) are read-only additions seen on every phone returned. Nullability probed 2026-08-04: a phone written with only phoneNumber, and another written with every optional field explicitly null, both read back fully populated — the server substitutes defaults (phoneType Personal, deviceType Unknown, opt-in statuses Unknown, dialingPrefix/countryCode from the context) — so only ext, isCellStatus and tags are ever null."
         },
         "properties": {
           "phoneId": {
@@ -1667,25 +1650,16 @@
             "description": "Read-only; unique identifier of the phone."
           },
           "phoneNumber": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The number, normalized to digits only."
+            "type": "string",
+            "description": "The number, normalized to digits only. Required and validated at write time, so never null."
           },
           "dialingPrefix": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "1 to 3 digit country dialing prefix, e.g. \"1\" for North America."
+            "type": "string",
+            "description": "1 to 3 digit country dialing prefix, e.g. \"1\" for North America. Derived from the number's country (defaulting to the context's country) when not written."
           },
           "countryCode": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "ISO alpha-2 code of the country the number belongs to, e.g. \"US\"."
+            "type": "string",
+            "description": "ISO alpha-2 code of the country the number belongs to, e.g. \"US\". Derived from the number's country (defaulting to the context's country) when not written."
           },
           "ext": {
             "type": [
@@ -1701,34 +1675,26 @@
             "description": "When the number was added to the record. Set by the server."
           },
           "phoneType": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Personal",
               "Work",
-              "Other",
-              null
+              "Other"
             ],
-            "description": "Which sphere of the person's life the number belongs to. The cell/fax/landline/etc distinction is stored in `deviceType`, not here.",
+            "description": "Which sphere of the person's life the number belongs to. Defaults to `Personal` when no type is written, so it is never null. The cell/fax/landline/etc distinction is stored in `deviceType`, not here.",
             "x-provenance": {
-              "note": "Mapping established by writing all seven accepted codes to one record and reading them back (2026-08-03). Enum lists the read values observed for those codes; records created outside the API were not sampled."
+              "note": "Mapping established by writing all seven accepted codes to one record and reading them back (2026-08-03). Enum lists the read values observed for those codes; records created outside the API were not sampled. Phones written with no phoneType, or with an explicit null, read back \"Personal\" (observed 2026-08-04)."
             },
             "x-docs-discrepancy": "Official docs document only the write codes and imply they are echoed back. GET returns an expanded category name instead, and seven write codes collapse onto three of them (observed 2026-08-03)."
           },
           "deviceType": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Cell",
               "Landline",
               "Unknown",
               "Fax",
-              "VoIP",
-              null
+              "VoIP"
             ],
             "description": "What physical kind of device answers the number (decides if the number is textable). \"Unknown\" when the device kind has never been established.",
             "x-provenance": {
@@ -1737,67 +1703,47 @@
             "x-docs-discrepancy": "Official docs document only the write codes C, L, U, F, V and imply they are echoed back; GET returns the spelled-out names Cell/Landline/Unknown/Fax/VoIP (observed 2026-08-03)."
           },
           "isPreferred": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "description": "Whether this is the person's preferred phone number."
+            "type": "boolean",
+            "description": "Whether this is the person's preferred phone number. Each person has at most one preferred number. TODO: is it at most 1, or exactly 1?"
           },
           "isBest": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Read-only; whether this is the best known number of its type — the most recently updated one."
           },
           "isDisclosure": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Read-only; whether the number is usable for campaign-finance disclosure reporting.",
             "x-provenance": {
               "note": "Not in the documented model. Observed true on the first number written to a record and on numbers written with deviceType Cell, false otherwise; the exact rule was not pinned down."
             }
           },
           "smsOptInStatus": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Opt-In",
               "Unknown",
-              "Opt-Out",
-              null
+              "Opt-Out"
             ],
-            "description": "Read-only; text-message consent for this number.",
+            "description": "Read-only; text-message consent for this number. \"Unknown\" — never null — when no consent has been recorded.",
             "x-provenance": {
               "note": "Not in the documented model. Observed to mirror phoneOptInStatus on every phone probed (2026-08-03); there is no separate write field for it."
             }
           },
           "phoneOptInStatus": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Opt-In",
               "Unknown",
-              "Opt-Out",
-              null
+              "Opt-Out"
             ],
-            "description": "Whether the person has consented to being contacted at this number.",
+            "description": "Whether the person has consented to being contacted at this number. \"Unknown\" — never null — when no consent has been recorded.",
             "x-provenance": {
               "note": "Writing any other value returns 400 INVALID_PARAMETER: \"'phoneOptInStatus' must be one of I , U , O\"."
             },
             "x-docs-discrepancy": "Official docs describe the field only as the write codes I/U/O; GET returns the expanded names Opt-In/Unknown/Opt-Out (observed 2026-08-03)."
           },
           "isCellPhoneExchange": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Read-only; whether the number's exchange (area code + prefix) is one allocated to wireless carriers. An inference from the number itself, independent of `deviceType` and `isCellStatus`.",
             "x-provenance": {
               "note": "Not in the documented model. Only observed as false — the sandbox's fictional 555 numbers belong to no real exchange."
@@ -1829,56 +1775,80 @@
         }
       },
       "PhoneIsCellStatus": {
-        "type": "object",
         "description": "A confidence level for whether a phone number reaches a cell phone. The four levels are fixed; `GET /phones/isCellStatuses` returns them as a bare array (empty in the sandbox). On write, supplying either `statusId` or `statusName` alone is enough; omitting the object entirely leaves any existing status unchanged.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Values come from the API's own INVALID_PARAMETER response: \"'statusId' must be one of 1 , 2 , 3 , 4\" and \"'statusName' must be one of Verified Cell , Likely Cell , Likely Not a Cell , Not a Cell\". The id-to-name pairing below follows that ordering and the docs' example ({\"statusId\": 2, \"statusName\": \"Likely Cell\"}); the API accepts a mismatched pair without complaint, so the pairing could not be confirmed by round-trip."
         },
-        "properties": {
-          "statusId": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "enum": [
-              1,
-              2,
-              3,
-              4,
-              null
-            ],
-            "description": "1 = Verified Cell, 2 = Likely Cell, 3 = Likely Not a Cell, 4 = Not a Cell."
+        "oneOf": [
+          {
+            "title": "Verified Cell",
+            "type": "object",
+            "properties": {
+              "statusId": {
+                "type": "integer",
+                "const": 1
+              },
+              "statusName": {
+                "type": "string",
+                "const": "Verified Cell"
+              }
+            }
           },
-          "statusName": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "Verified Cell",
-              "Likely Cell",
-              "Likely Not a Cell",
-              "Not a Cell",
-              null
-            ],
-            "description": "Name matching `statusId`."
+          {
+            "title": "Likely Cell",
+            "type": "object",
+            "properties": {
+              "statusId": {
+                "type": "integer",
+                "const": 2
+              },
+              "statusName": {
+                "type": "string",
+                "const": "Likely Cell"
+              }
+            }
+          },
+          {
+            "title": "Likely Not a Cell",
+            "type": "object",
+            "properties": {
+              "statusId": {
+                "type": "integer",
+                "const": 3
+              },
+              "statusName": {
+                "type": "string",
+                "const": "Likely Not a Cell"
+              }
+            }
+          },
+          {
+            "title": "Not a Cell",
+            "type": "object",
+            "properties": {
+              "statusId": {
+                "type": "integer",
+                "const": 4
+              },
+              "statusName": {
+                "type": "string",
+                "const": "Not a Cell"
+              }
+            }
           }
-        }
+        ]
       },
       "PersonAddress": {
         "type": "object",
         "description": "An address on a person record, returned when $expand=addresses is requested. The expansion returns the best known Home address and the best known Mailing address only — at most two entries, and the same address appears twice (once per type, sharing an addressId) when it serves as both. Work and Custom addresses are stored but not surfaced here.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Shape observed live by writing addresses of each documented type through POST /people/findOrCreate and reading them back. Fields not in the documented model (unitNo, geoLocation, preview, streetAddress, displayMode) are read-only additions seen on every address returned."
+          "lastProbed": "2026-08-04",
+          "note": "Shape observed live by writing addresses of each documented type through POST /people/findOrCreate and reading them back. Fields not in the documented model (unitNo, geoLocation, preview, streetAddress, displayMode) are read-only additions seen on every address returned. Nullability probed 2026-08-04: a zip-only address reads back with city/state inferred from the zip and addressLine1 null; a city+state-only address reads back zipOrPostalCode \"\" (empty string, not null); addresses too sparse or unresolvable to standardize (street line only, or an unknown zip) are not surfaced by the expansion at all — so city, stateOrProvince, zipOrPostalCode and countryCode were never observed null."
         },
         "properties": {
           "addressId": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": "integer",
             "format": "int64",
             "description": "Read-only; unique identifier of the address on this person. Shared by the Home and Mailing entries when one address fills both roles."
           },
@@ -1914,25 +1884,16 @@
             }
           },
           "city": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "City or town."
+            "type": "string",
+            "description": "City or town. Inferred from the postal code when not written."
           },
           "stateOrProvince": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Two or three character state or province code, e.g. \"MN\", \"ON\", \"NSW\"."
+            "type": "string",
+            "description": "Two or three character state or province code, e.g. \"MN\", \"ON\", \"NSW\". Inferred from the postal code when not written."
           },
           "zipOrPostalCode": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "ZIP, ZIP+4, postal code, post code, etc."
+            "type": "string",
+            "description": "ZIP, ZIP+4, postal code, post code, etc. An empty string — not null — when the stored address has none."
           },
           "geoLocation": {
             "description": "Read-only; the geocoded position of the address.",
@@ -1941,31 +1902,21 @@
             }
           },
           "countryCode": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Two character ISO country code supported by the VAN context, e.g. \"US\"."
+            "type": "string",
+            "description": "Two character ISO country code supported by the VAN context, e.g. \"US\". Defaults to the context's country."
           },
           "preview": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Read-only; a one-line display form of the street address.",
+            "type": "string",
+            "description": "Read-only; a one-line display form of the street address. A single space when there are no street lines.",
             "x-provenance": {
               "note": "Not in the documented model. Observed as address lines 1 and 2 joined by a space, with a trailing space when line 2 is empty."
             }
           },
           "type": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Voting",
-              "Mailing",
-              null
+              "Mailing"
             ],
             "description": "Which role the address plays for the person. This expansion only ever returns \"Voting\" or \"Mailing\"; a person with no mailing address of their own has their home address returned under \"Mailing\" as well.",
             "x-provenance": {
@@ -1974,17 +1925,11 @@
             "x-docs-discrepancy": "Official docs list five address types with no indication that reads are restricted; $expand=addresses only ever returns Voting and Mailing, and Work and Custom addresses are omitted from the response entirely (observed 2026-08-03)."
           },
           "isPreferred": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Read-only; whether this is the person's preferred address."
           },
           "isBest": {
-            "type": [
-              "boolean",
-              "null"
-            ],
+            "type": "boolean",
             "description": "Read-only; whether this is the best known address of its type — the most recently updated one."
           },
           "streetAddress": {
@@ -1998,10 +1943,7 @@
             }
           },
           "displayMode": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "description": "Read-only; which form of the address the other fields show — \"Standardized\" for the normalized version rather than the raw text as entered.",
             "x-provenance": {
               "note": "Not in the documented model. Only \"Standardized\" observed; other values not enumerated, so this is left unconstrained."
@@ -2579,14 +2521,10 @@
             "description": "An organization's official name. Only applies to My Campaign databases with organizations-as-contacts enabled."
           },
           "contactMode": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "enum": [
               "Person",
-              "Organization",
-              null
+              "Organization"
             ],
             "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
             "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the record reads back with contactMode \"Person\" (observed 2026-08-03)."
@@ -2597,8 +2535,8 @@
         "type": "object",
         "description": "A person record as returned by GET /people/{vanId}.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Field inventory observed live on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down."
+          "lastProbed": "2026-08-04",
+          "note": "Field inventory observed live on a minimal API-created record; fields marked \"only observed as null\" need a richer record to pin down. Nullability checked against a fully blank record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
         },
         "properties": {
           "vanId": {
@@ -2635,18 +2573,15 @@
             ]
           },
           "contactSource": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "e.g. \"API\""
+            "type": "string",
+            "description": "How the record entered the database, e.g. \"API\".",
+            "x-provenance": {
+              "note": "Only \"API\" observed (the sandbox has no UI-created records); other values not enumerated. Present even on a blank record, so typed non-null."
+            }
           },
           "contactMode": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "e.g. \"Person\""
+            "type": "string",
+            "description": "e.g. \"Person\". Defaults to \"Person\" even on a blank record; an unrecognized written value is stored as \"Person\"."
           },
           "salutation": {
             "type": [
@@ -2655,10 +2590,8 @@
             ]
           },
           "formalSalutation": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "description": "Derived from the name; \"Friend\" when there is no name to derive from — unlike `salutation`, which is null in that case."
           },
           "envelopeName": {
             "type": [
@@ -2667,10 +2600,8 @@
             ]
           },
           "formalEnvelopeName": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "description": "Derived from the name; \"Our Friend At\" when there is no name to derive from — unlike `envelopeName`, which is null in that case."
           },
           "party": {
             "type": [
@@ -2710,23 +2641,14 @@
             "format": "date-time"
           },
           "isDeceased": {
-            "type": [
-              "boolean",
-              "null"
-            ]
+            "type": "boolean"
           },
           "dateCreated": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "format": "date-time"
           },
           "dateAcquired": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "format": "date-time",
             "description": "For API-created records this is \"0001-01-01T00:00:00Z\" (the .NET default date)."
           },
