@@ -2008,7 +2008,8 @@
         "properties": {
           "phoneNumber": {
             "type": "string",
-            "description": "Non-numeric characters are stripped, then the remaining digits are validated for the country implied by `countryCode`/`dialingPrefix`, defaulting to the context's country. A number that fails validation returns 400 INVALID_PARAMETER \"Phone number is not valid. If entering UK number, please include leading 0.\"."
+            "description": "Non-numeric characters are stripped, then the remaining digits are validated for the country implied by `countryCode`/`dialingPrefix`, defaulting to the context's country. A number that fails validation returns 400 INVALID_PARAMETER \"Phone number is not valid. If entering UK number, please include leading 0.\".",
+            "examples": ["907-111-2222", "(907) 111-2222", "9071112222"]
           },
           "phoneType": {
             "type": [
