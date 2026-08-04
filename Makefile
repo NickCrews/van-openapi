@@ -1,5 +1,6 @@
 # All tooling runs via uvx (no Python project needed). Requires: uv, curl.
-include .env
+# Optional: CI passes NGP_API_KEY_SANDBOX through the environment instead.
+-include .env
 export
 
 SPEC     := openapi.json

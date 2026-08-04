@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # The fuzz job hits the shared sandbox API, so never run two of them at once
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Spec checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Validate the spec structurally
+        run: make validate
+
+      - name: DISCREPANCIES.md is up to date with the spec
+        run: |
+          make discrepancies
+          git diff --exit-code -- DISCREPANCIES.md \
+            || { echo "::error::DISCREPANCIES.md is stale — run 'make discrepancies' and commit the result"; exit 1; }
+
+      - name: docs/openapi.json still points at the spec
+        run: |
+          test "$(readlink docs/openapi.json)" = "../openapi.json" \
+            || { echo "::error::docs/openapi.json must be a symlink to ../openapi.json"; exit 1; }
+
+  fuzz:
+    name: Fuzz against sandbox
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      # Forks and PRs from forks don't get repository secrets; skip rather than
+      # fail red on a run that never had a chance of authenticating.
+      - name: Check for sandbox credentials
+        id: creds
+        env:
+          NGP_API_KEY_SANDBOX: ${{ secrets.NGP_API_KEY_SANDBOX }}
+        run: |
+          if [ -n "$NGP_API_KEY_SANDBOX" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NGP_API_KEY_SANDBOX is not set — skipping the fuzz run"
+          fi
+
+      - name: Fuzz the spec against the sandbox API
+        if: steps.creds.outputs.available == 'true'
+        env:
+          NGP_API_KEY_SANDBOX: ${{ secrets.NGP_API_KEY_SANDBOX }}
+        run: make fuzz
