@@ -44,5 +44,40 @@ Explore the API in a human-readable form at https://nickcrews.github.io/van-open
 - [DISCREPANCIES.md](DISCREPANCIES.md) — deviations from the official docs,
   generated from the spec's `x-docs-discrepancy` fields via `make discrepancies`
 - [STATUS.md](STATUS.md) — per-endpoint research status and sandbox field notes
-- `make fuzz` — validate the spec against the sandbox API with [schemathesis](https://schemathesis.readthedocs.io/) (needs `uv`, and `NGP_API_KEY_SANDBOX` in `.env`)
-- `make docs` / `make serve` — build/preview the static [Scalar](https://scalar.com/) docs site in `docs/` (GitHub Pages-ready)
+- [docs/](docs/) — the static [Scalar](https://scalar.com/) docs site published to
+  GitHub Pages. `docs/openapi.json` is a committed symlink to the spec, so the
+  site never carries a second copy that can drift.
+
+## Development
+
+All tooling runs through `uvx`, so the only prerequisites are `uv` and `curl` —
+there is no Python project to install.
+
+| Command | What it does |
+| --- | --- |
+| `make validate` | Lint the spec structurally with [openapi-spec-validator](https://github.com/python-openapi/openapi-spec-validator) |
+| `make fuzz` | Property-based check of the spec against the sandbox API with [schemathesis](https://schemathesis.readthedocs.io/) |
+| `make discrepancies` | Regenerate `DISCREPANCIES.md` from the spec's `x-docs-discrepancy` fields |
+| `make serve` | Preview the docs site at http://localhost:8931 |
+
+`make fuzz` talks to the live sandbox and needs a key: put
+`NGP_API_KEY_SANDBOX=...` in a `.env` file at the repo root, or pass it through
+the environment.
+
+The fuzzer asserts only that *the spec describes reality* — status codes,
+content types, and response schemas. It deliberately does not enforce
+`not_a_server_error` (the API really does 500 on some malformed input, which the
+spec documents) or `negative_data_rejection` (the API tolerantly ignores unknown
+fields). See the comments in the [Makefile](Makefile) for details.
+
+### CI
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) runs on every push and pull
+request: it validates the spec, fails if `DISCREPANCIES.md` is out of date with
+respect to `x-docs-discrepancy` fields, checks that the `docs/openapi.json`
+symlink is intact, and then fuzzes against the sandbox. The fuzz job needs an
+`NGP_API_KEY_SANDBOX` repository secret; without one (as on pull requests from
+forks, which never receive secrets) it is skipped rather than failed.
+
+[.github/workflows/docs.yml](.github/workflows/docs.yml) publishes `docs/` to
+GitHub Pages on every push to `main`.
