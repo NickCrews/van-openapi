@@ -243,10 +243,10 @@
       "post": {
         "operationId": "updatePerson",
         "summary": "Update an existing person",
-        "description": "Merges the payload into an existing record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The update is not idempotent for contact methods: sending the same email twice adds it twice.\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated record.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
+        "description": "Merges the payload into an existing person record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The update is not idempotent for contact methods: sending the same email twice adds it twice.\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
-          "note": "Merge semantics confirmed by updating only middleName on a record and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
+          "note": "Merge semantics confirmed by updating only middleName on a person and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
         },
         "tags": [
           "People"
@@ -297,10 +297,10 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a successful update:\n\n```\nPOST /people/102714580         {\"firstName\": \"Cre\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714580   (same URL)\n    {\"vanId\": 102714580, \"status\": \"Matched\"}\n\nGET /people/102714580          ← client re-issues the request at Location\n  ← 200 OK\n    { the merged record — the body documented here }\n```\n\nA happy accident: the update itself never returns the record, but the followed GET does, so redirect-following clients get the merged result for free. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.\n\nThe other way to reach a 200 is a failure: when the 302 was the ASP.NET request-validation bounce (a path segment containing `<`, `>`, `*` or `&`), following it lands on the web application's HTML error page, which answers 200 with `text/html`. Check the content type before parsing JSON.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* after a successful update:\n\n```\nPOST /people/102714580         {\"firstName\": \"Cre\", …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714580   (same URL)\n    {\"vanId\": 102714580, \"status\": \"Matched\"}\n\nGET /people/102714580          ← client re-issues the request at Location\n  ← 200 OK\n    { the merged person record — the body documented here }\n```\n\nA happy accident: the update itself never returns the person, but the followed GET does, so redirect-following clients get the merged result for free. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.\n\nThe other way to reach a 200 is a failure: when the 302 was the ASP.NET request-validation bounce (a path segment containing `<`, `>`, `*` or `&`), following it lands on the web application's HTML error page, which answers 200 with `text/html`. Check the content type before parsing JSON.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Chain observed end to end with httpx: POST /people/{vanId} with an empty body → 302 back to the same URL → GET → 200 with the full record."
+              "note": "Chain observed end to end with httpx: POST /people/{vanId} with an empty body → 302 back to the same URL → GET → 200 with the full person record."
             },
             "content": {
               "application/json": {
@@ -316,7 +316,7 @@
             }
           },
           "302": {
-            "description": "The record was updated. `Location` points back at the person resource; the body is a match stub, not the updated record.\n\nThe same status also covers a failure that never reaches the API: a path segment containing `<`, `>`, `*` or `&` is rejected by ASP.NET request validation and redirected to `/Error.aspx?EID={code}` with an HTML body. Check the content type to tell them apart.",
+            "description": "The person was updated. `Location` points back at the person resource; the body is a match stub, not the updated person.\n\nThe same status also covers a failure that never reaches the API: a path segment containing `<`, `>`, `*` or `&` is rejected by ASP.NET request validation and redirected to `/Error.aspx?EID={code}` with an HTML body. Check the content type to tell them apart.",
             "headers": {
               "Location": {
                 "description": "URL of the updated person — or of the web application's error page when request validation rejected the path.",
@@ -349,7 +349,7 @@
                 "parameters": {
                   "vanId": "$response.body#/vanId"
                 },
-                "description": "Fetch the record to see the merged result — the update response does not include it."
+                "description": "Fetch the person to see the merged result — the update response does not include it."
               }
             }
           },
@@ -375,7 +375,7 @@
       "get": {
         "operationId": "searchPeople",
         "summary": "Search for people",
-        "description": "Searches for people matching the given criteria and returns full person records in the standard pagination envelope. At least one search parameter must be set: firstName, lastName, middleName, streetAddress, city, stateOrProvince, zipOrPostalCode, phoneNumber, email, commonName, or officialName. A request with none of these — even one with filter or paging parameters set — returns 400 INVALID_PARAMETER with the text \"This endpoint requires at least one search parameter to be set.\" Text criteria are case-insensitive prefix matches: lastName=Testpers matches \"Testperson\", lastName=estperson does not. Related collections on the returned records are null unless requested via $expand.\n\n**This is the endpoint to use when you only have loose criteria.** Unlike POST /people/find and POST /people/findOrCreate — which refuse to attempt a match until you supply one of a handful of minimum field combinations, and answer Unmatched (or create a duplicate) when you cannot — this search has no such threshold. A single name is a perfectly valid query. In exchange it makes no identity claim: it hands back every record whose fields start with what you typed, and deciding which one is your person, or that none of them is, is your job. Inspect the candidates (with $expand for addresses, emails and phones if you need them) and take the vanId from there.",
+        "description": "Searches for people matching the given criteria and returns full person records in the standard pagination envelope. At least one search parameter must be set: firstName, lastName, middleName, streetAddress, city, stateOrProvince, zipOrPostalCode, phoneNumber, email, commonName, or officialName. A request with none of these — even one with filter or paging parameters set — returns 400 INVALID_PARAMETER with the text \"This endpoint requires at least one search parameter to be set.\" Text criteria are case-insensitive prefix matches: lastName=Testpers matches \"Testperson\", lastName=estperson does not. Related collections on the returned person records are null unless requested via $expand.\n\n**This is the endpoint to use when you only have loose criteria.** Unlike POST /people/find and POST /people/findOrCreate — which refuse to attempt a match until you supply one of a handful of minimum field combinations, and answer Unmatched (or create a duplicate) when you cannot — this search has no such threshold. A single name is a perfectly valid query. In exchange it makes no identity claim: it hands back every person whose fields start with what you typed, and deciding which one is your person, or that none of them is, is your job. Inspect the candidates (with $expand for addresses, emails and phones if you need them) and take the vanId from there.",
         "x-provenance": {
           "source": "van-cli people.ts (list command) plus live sandbox probing; the endpoint is absent from the official docs' page index (llms.txt lists only /people/find).",
           "lastProbed": "2026-08-04"
@@ -414,7 +414,12 @@
           {
             "name": "streetAddress",
             "in": "query",
-            "description": "Street address.",
+            "description": "Street address, matched as a case-insensitive prefix — but only against the person's **Voting (home) address**, as are `city`, `stateOrProvince` and `zipOrPostalCode`. All four read the single address VAN files as Voting; Work and Custom addresses are not indexed at all, and a Mailing address is only reachable when the person has no separate Voting address (VAN then serves the mailing one under both types, and it becomes findable). So a person can hold an address and still not be findable by it.\n\nThe comparison also runs against the *standardized* form VAN stored rather than the text that was written: a person created with `1000 W 5th Ave` is found by `1000 5Th Ave Mall` and **not** by `1000 W 5th Ave`.\n\nPOST /people/find has neither limitation — it matches every address type, including the Work and Custom addresses that $expand=addresses never shows.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "Probed on a person carrying four addresses (Home, Work, Mailing, Custom): only the Home/Voting one was findable here, and only under its standardized form, while POST /people/find matched all four. Calibrated while re-testing what PUT /people/{vanId}/mergeInto does to addresses, where this parameter had been used as an instrument and produced a false negative. Re-probed 2026-08-06 with single-address people: a Mailing-only person reads back with that address listed under both Voting and Mailing (same addressId) and is findable by streetAddress/city/state/zip; a Work-only person is findable by none of them."
+            },
             "schema": {
               "type": "string"
             },
@@ -423,7 +428,12 @@
           {
             "name": "city",
             "in": "query",
-            "description": "City.",
+            "description": "City, matched as a case-insensitive prefix (`anchor` finds Anchorage; `nchorage` finds nothing). Like `streetAddress`, it reads the **Voting (home) address only** — a person whose mailing or work address sits in a different city is not returned for that city — and it compares against the city VAN standardized at write time, which is not always the one that was written.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "Probe person with Voting=Anchorage AK, Mailing=Seattle WA, Work=Portland OR, Custom=Sacramento CA: found by Anchorage only. Prefix and case behavior probed with anchor/ANCHORAGE/nchorage."
+            },
             "schema": {
               "type": "string"
             },
@@ -432,7 +442,12 @@
           {
             "name": "stateOrProvince",
             "in": "query",
-            "description": "State or province.",
+            "description": "State or province, as the two/three character code — case-insensitive but **not** a prefix match and not the spelled-out name: `AK` and `ak` match, `A` and `Alaska` return nothing. Like `streetAddress`, it reads the **Voting (home) address only**.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "Same four-address probe person (Voting AK, Mailing WA, Work OR, Custom CA): found by AK/ak only; WA, OR, CA, A and Alaska all returned 0."
+            },
             "schema": {
               "type": "string"
             },
@@ -441,7 +456,12 @@
           {
             "name": "zipOrPostalCode",
             "in": "query",
-            "description": "ZIP or postal code.",
+            "description": "ZIP or postal code. Like `streetAddress`, this matches the **Voting (home) address only** — a person whose mailing address sits in a different ZIP is not returned for that ZIP.\n\nThe value is validated as a postal code (`995` and `995012357` both return 400 INVALID_PARAMETER \"is not a valid Postal Code for UsaAndInternational\"), and only the 5-digit form matches: a person whose stored ZIP is `99501-2357` is found by `99501` and not by `99501-2357`, which is accepted but returns nothing.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "The four-address probe person was found by its home ZIP 99501 and not by its mailing ZIP 99503; re-probed with Voting 99501 / Mailing 98101 / Work 97201 / Custom 95814 to the same effect. ZIP+4 and unpunctuated-9-digit forms tested against a person whose address standardized to 99501-2357."
+            },
             "schema": {
               "type": "string"
             },
@@ -450,7 +470,12 @@
           {
             "name": "phoneNumber",
             "in": "query",
-            "description": "Phone number. Non-numeric characters are stripped, then the value must be a valid North American number matching `^1?[2-9][0-8]\\d[2-9]\\d{6,6}$`; anything else returns 400 INVALID_PARAMETER with that regular expression in the hint.",
+            "description": "Phone number. **Send bare 10 digits — `9072223333`.** Anything else silently finds nothing: the comparison is against the stored 10-digit string, so `(907) 222-3333`, `907-222-3333` and the `1`-prefixed `19072223333` are all *accepted* and then match no one. (Validation is laxer than matching: non-numeric characters are stripped before the value is checked against `^1?[2-9][0-8]\\d[2-9]\\d{6,6}$`, which is why the formatted forms get through. Failing that regex returns 400 INVALID_PARAMETER with it in the hint.)\n\nThis checks **one number per person**: the number VAN flags `isBest` (the first entry `$expand=phones` returns). A person holding home, work, cell and fax numbers is findable only by whichever one is best — for that person the cell — even though the others are on the person record and POST /people/find matches them. A person can also have **no** best number — when every number on it is a work, other or fax number and none was written `isPreferred` — and such a person cannot be found through this parameter at all. See `PersonPhone.isBest` for how the best number is picked.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "Person with four phones (H 9072223333, W 9073334444, C 9074445555, F 9075556666): only 9074445555 — the isBest/cell one — was findable. Confirmed on three further people that the isBest phone is always the matching one, including a home-only person (isBest home, findable) and a cell+explicitly-preferred-home person (findable by the home number, not the cell). isPreferred is not required: the four-phone person had no preferred phone. The no-best case was probed 2026-08-06: work-only, other-only and Personal/fax-only people each returned an empty items array for their own number, while an otherwise identical work-only person whose number was written with isPreferred:true was found."
+            },
             "schema": {
               "type": "string",
               "pattern": "^1?[2-9][0-8]\\d[2-9]\\d{6,6}$"
@@ -460,7 +485,12 @@
           {
             "name": "email",
             "in": "query",
-            "description": "Email address. Case-insensitive prefix match, checked against all of the person's email addresses, not just the preferred one.",
+            "description": "Email address. Case-insensitive prefix match, checked against **all** of the person's email addresses, not just the preferred one. Prefix means from the start of the address: `probe.charlie` finds `probe.charlie@example.com`, `charlie@example.com` does not.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-06",
+              "note": "Person with three emails (personal/work/other, the second flagged preferred): all three matched in full, uppercased, and by leading prefix; a mid-string substring did not."
+            },
             "schema": {
               "type": "string"
             },
@@ -487,7 +517,7 @@
           {
             "name": "contactMode",
             "in": "query",
-            "description": "Filters the results to Person or Organization records. Does not count toward the at-least-one-search-parameter requirement, and any other value is ignored rather than rejected.",
+            "description": "Filters the results to Person or Organization contacts. Does not count toward the at-least-one-search-parameter requirement, and any other value is ignored rather than rejected.",
             "schema": {
               "type": "string",
               "enum": ["Person", "Organization"]
@@ -608,36 +638,7 @@
                   "$ref": "#/components/schemas/PersonList"
                 },
                 "examples": {
-                  "No Matches": {
-                    "value": {
-                      "items": [],
-                      "nextPageLink": null,
-                      "count": 0
-                    }
-                  },
-                  "First of Many Pages (no $expand)": {
-                    "description": "First of 120 matches for lastName=Testperson with $top=1 (item abridged: null-only fields omitted)",
-                    "value": {
-                      "items": [
-                        {
-                          "vanId": 102714808,
-                          "firstName": null,
-                          "lastName": "Testperson",
-                          "contactSource": "API",
-                          "contactMode": "Person",
-                          "isDeceased": false,
-                          "dateCreated": "2026-08-03T17:31:00Z",
-                          "dateAcquired": "0001-01-01T00:00:00Z",
-                          "emails": null,
-                          "phones": null,
-                          "addresses": null
-                        }
-                      ],
-                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$skip=1",
-                      "count": 120
-                    }
-                  },
-                  "First of Many Pages (with $expand)": {
+                                    "First of Many Pages (with $expand)": {
                     "description": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields, sandbox fuzz noise, and the duplicate Mailing copy of the address omitted — see GET /people/{vanId} for that quirk)",
                     "value": {
                       "items": [
@@ -752,6 +753,35 @@
                       "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$orderby=Name%20desc&$expand=emails%2Cphones%2Caddresses%2Cdistricts&$skip=1",
                       "count": 131
                     }
+                  },
+                  "No Matches": {
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
+                  },
+                  "First of Many Pages (no $expand)": {
+                    "description": "First of 120 matches for lastName=Testperson with $top=1 (item abridged: null-only fields omitted)",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 102714808,
+                          "firstName": null,
+                          "lastName": "Testperson",
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "isDeceased": false,
+                          "dateCreated": "2026-08-03T17:31:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "emails": null,
+                          "phones": null,
+                          "addresses": null
+                        }
+                      ],
+                      "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$skip=1",
+                      "count": 120
+                    }
                   }
                 }
               }
@@ -863,11 +893,11 @@
       "post": {
         "operationId": "findPerson",
         "summary": "Find a person matching the given criteria",
-        "description": "Attempts to match a person in the database. Read-only: never creates records (use POST /people/findOrCreate for that).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — that record is returned as a **302** and every other criterion is ignored, no threshold involved.\n- **One record matches** — **302 Found**, with a `Location` header pointing at `/people/{vanId}` and a small match-stub body, `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several records match** — still a **302** for exactly one of them, and nothing in the response says the match was ambiguous. Which one you get depends on the shape of the criteria; see **When more than one record matches** below.\n- **Nothing matches** — **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}` (a match stub, not the standard error envelope).\n- **The criteria fall short of the minimum combination** — **404 Unmatched** as well, not a 400, and indistinguishable from a genuine no-match. This is the common case to guard against; see **The criteria must reach a minimum combination** below.\n\n## The criteria must reach a minimum combination\n\nThis endpoint is deliberately conservative — it would rather return nothing than return the wrong person. It does not attempt a match at all until the criteria reach one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own matches too, though the docs list only email)\n\nAnything short of that — a name on its own, name + date of birth, name + zip — comes back **404 Unmatched** regardless of who is in the database.\n\n**A 404 here does not mean the person does not exist.** It usually means you did not supply enough to identify them. Do not treat Unmatched as \"not in the database\", and in particular do not follow it with a create — see POST /people/findOrCreate, which silently creates a duplicate for exactly this reason.\n\n**If all you have is a name, use GET /people instead.** That endpoint is a loose prefix search with no threshold: `GET /people?firstName=Match&lastName=Threshold` returns full records for every candidate, and you decide which one (if any) is your person by inspecting them. Use /people/find only once you hold a strong identifier.\n\n## How the criteria are compared\n\n- Everything you send must agree with the record. Adding a **wrong** first name to a correct email turns a match into Unmatched — extra criteria narrow, they never widen.\n- Comparison is case- and format-insensitive: `MATCH.THRESHOLD@EXAMPLE.COM` matches the stored lowercase address, `907-555-4242` matches the stored `9075554242`, and per the docs it is accent-insensitive too (\"Pérez\" matches \"Perez\"). Names may match on nicknames and variants unless the context has \"Disable Partial Matching\" turned on.\n- The address combination needs the street **number**: `742 Evergreen Terrace` + zip matched; `Evergreen Terrace` + the same zip did not. A wrong zip with a right street also fails.\n\n## When more than one record matches\n\nDuplicates are common in VAN databases, and this endpoint does not warn you about them: **it returns exactly one vanId with no indication that others also matched.** A 302 is not proof that the match was unique.\n\nThe pick is deterministic, but the tiebreak depends on the shape of the criteria — with three identical records (102719047 < 102719048 < 102720144, same name, email and phone):\n\n- criteria **including a name** (name+email, name+phone, name+dob+zip) → always the **lowest vanId**, i.e. the oldest record\n- criteria **without a name** (email alone, phone alone) → always the **highest vanId**, i.e. the newest record\n\nIt is not the best-matching record and not the most recently updated one: enriching the newer duplicate so it matched the criteria at least as fully did not move a name-based match off the oldest record, and touching either record changed nothing.\n\nThe consequence to plan for: at the threshold you may be handed a stale or partial duplicate, and a follow-up write through POST /people/{vanId} then lands on whichever record won the tiebreak while the other keeps drifting. When it matters that you have *the* record rather than *a* record, list the candidates with GET /people and reconcile them yourself.",
-        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only. Criteria below the documented minimum combinations are also answered 404 Unmatched rather than rejected, so under-specified requests are indistinguishable from genuine no-matches. The docs are also silent on ambiguous matches: when several records satisfy the criteria the API returns one of them with no indication that others matched.",
+        "description": "Attempts to match a person in the database. Read-only: never creates person records (use POST /people/findOrCreate for that).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — that person is returned as a **302** and every other criterion is ignored, no threshold involved.\n- **One person record matches** — **302 Found**, with a `Location` header pointing at `/people/{vanId}` and a small match-stub body, `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, and nothing in the response says the match was ambiguous. Which one you get depends on the shape of the criteria; see **When more than one person record matches** below.\n- **Nothing matches** — **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}` (a match stub, not the standard error envelope).\n- **The criteria fall short of the minimum combination** — **404 Unmatched** as well, not a 400, and indistinguishable from a genuine no-match. This is the common case to guard against; see **The criteria must reach a minimum combination** below.\n\n## The criteria must reach a minimum combination\n\nThis endpoint is deliberately conservative — it would rather return nothing than return the wrong person. It does not attempt a match at all until the criteria reach one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own matches too, though the docs list only email)\n\nAnything short of that — a name on its own, name + date of birth, name + zip — comes back **404 Unmatched** regardless of who is in the database.\n\n**A 404 here does not mean the person does not exist.** It usually means you did not supply enough to identify them. Do not treat Unmatched as \"not in the database\", and in particular do not follow it with a create — see POST /people/findOrCreate, which silently creates a duplicate for exactly this reason.\n\n**If all you have is a name, use GET /people instead.** That endpoint is a loose prefix search with no threshold: `GET /people?firstName=Match&lastName=Threshold` returns full person records for every candidate, and you decide which one (if any) is your person by inspecting them. Use /people/find only once you hold a strong identifier.\n\n## How the criteria are compared\n\n- Everything you send must agree with the person record. Adding a **wrong** first name to a correct email turns a match into Unmatched — extra criteria narrow, they never widen.\n- Comparison is case- and format-insensitive: `MATCH.THRESHOLD@EXAMPLE.COM` matches the stored lowercase address, `907-555-4242` matches the stored `9075554242`, and per the docs it is accent-insensitive too (\"Pérez\" matches \"Perez\"). Names may match on nicknames and variants unless the context has \"Disable Partial Matching\" turned on.\n- The address combination needs the street **number**: `742 Evergreen Terrace` + zip matched; `Evergreen Terrace` + the same zip did not. A wrong zip with a right street also fails.\n\n## When more than one person record matches\n\nDuplicates are common in VAN databases, and this endpoint does not warn you about them: **it returns exactly one vanId with no indication that others also matched.** A 302 is not proof that the match was unique.\n\nThe pick is deterministic, but the tiebreak depends on the shape of the criteria — with three identical person records (102719047 < 102719048 < 102720144, same name, email and phone):\n\n- criteria **including a name** (name+email, name+phone, name+dob+zip) → always the **lowest vanId**, i.e. the oldest person record\n- criteria **without a name** (email alone, phone alone) → always the **highest vanId**, i.e. the newest person record\n\nIt is not the best-matching person record and not the most recently updated one: enriching the newer duplicate so it matched the criteria at least as fully did not move a name-based match off the oldest person record, and touching either duplicate changed nothing.\n\nThe consequence to plan for: at the threshold you may be handed a stale or partial duplicate, and a follow-up write through POST /people/{vanId} then lands on whichever duplicate won the tiebreak while the other keeps drifting. When it matters that you have *the* person record rather than *a* person record, list the candidates with GET /people and reconcile them yourself.",
+        "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only. Criteria below the documented minimum combinations are also answered 404 Unmatched rather than rejected, so under-specified requests are indistinguishable from genuine no-matches. The docs are also silent on ambiguous matches: when several person records satisfy the criteria the API returns one of them with no indication that others matched.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
-          "note": "Minimum combinations taken from the docs' Match Candidate common model (https://docs.ngpvan.com/reference/common-models) and confirmed one by one against a purpose-built sandbox record (vanId 102719047: Match Threshold, dob 1980-04-15, match.threshold@example.com, 9075554242, 742 Evergreen Terrace / 99501). Unmatched: lastName alone; firstName+lastName; firstName+lastName+dateOfBirth; firstName+lastName+zip; firstName+lastName+street-name-without-number+zip; firstName+lastName+street+wrong zip; wrong firstName + correct email. Matched: email alone; phone alone; name+email; name+phone; name+dob+zip; name+street+zip; uppercased email; phone with dashes; miscased names. Ambiguous-match behavior probed 2026-08-04 with three deliberately identical records (102719047, 102719048, 102720144 — same name, email and phone): exactly one vanId is returned with no ambiguity signal; name-bearing criteria always returned the lowest vanId and name-less criteria (email alone, phone alone) always the highest, across repeated runs, after touching either record, and after enriching the newer duplicate to match the criteria as fully as the older one."
+          "note": "Minimum combinations taken from the docs' Match Candidate common model (https://docs.ngpvan.com/reference/common-models) and confirmed one by one against a purpose-built sandbox person (vanId 102719047: Match Threshold, dob 1980-04-15, match.threshold@example.com, 9075554242, 742 Evergreen Terrace / 99501). Unmatched: lastName alone; firstName+lastName; firstName+lastName+dateOfBirth; firstName+lastName+zip; firstName+lastName+street-name-without-number+zip; firstName+lastName+street+wrong zip; wrong firstName + correct email. Matched: email alone; phone alone; name+email; name+phone; name+dob+zip; name+street+zip; uppercased email; phone with dashes; miscased names. Ambiguous-match behavior probed 2026-08-04 with three deliberately identical person records (102719047, 102719048, 102720144 — same name, email and phone): exactly one vanId is returned with no ambiguity signal; name-bearing criteria always returned the lowest vanId and name-less criteria (email alone, phone alone) always the highest, across repeated runs, after touching either person record, and after enriching the newer duplicate to match the criteria as fully as the older one."
         },
         "tags": [
           "People"
@@ -1068,12 +1098,12 @@
       "post": {
         "operationId": "findOrCreatePerson",
         "summary": "Find a person, or create one if nothing matches",
-        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that record is returned as **302 Found**, and nothing is created.\n- **One record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second record.** Posting `{\"firstName\": \"Match\", \"lastName\": \"Threshold\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two records now both exist. This is the main way duplicate records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new person record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that person is returned as **302 Found**, and nothing is created.\n- **One person record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new person record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new person record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank person record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second person record.** Posting `{\"firstName\": \"Match\", \"lastName\": \"Threshold\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two person records now both exist. This is the main way duplicate person records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
-          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03). Threshold behavior confirmed 2026-08-04: firstName+lastName for existing vanId 102719047 created duplicate 102719048 (201 UnmatchedStored); the same name plus the record's email returned 302 Matched."
+          "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03). Threshold behavior confirmed 2026-08-04: firstName+lastName for existing vanId 102719047 created duplicate 102719048 (201 UnmatchedStored); the same name plus the person's email returned 302 Matched."
         },
-        "x-docs-discrepancy": "The docs present the minimum match combinations as a matching quality note; in practice, on this endpoint, falling short of them is what silently produces duplicate records (observed 2026-08-04).",
+        "x-docs-discrepancy": "The docs present the minimum match combinations as a matching quality note; in practice, on this endpoint, falling short of them is what silently produces duplicate person records (observed 2026-08-04).",
         "tags": [
           "People"
         ],
@@ -1145,7 +1175,7 @@
             }
           },
           "201": {
-            "description": "Nothing matched, so a new record was created. No `Location` header is sent — the new id is in the body, and redirect-following clients see this response unchanged.",
+            "description": "Nothing matched, so a new person record was created. No `Location` header is sent — the new id is in the body, and redirect-following clients see this response unchanged.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1159,7 +1189,7 @@
                 "parameters": {
                   "vanId": "$response.body#/vanId"
                 },
-                "description": "Fetch the record that was just created."
+                "description": "Fetch the person record that was just created."
               }
             }
           },
@@ -1200,7 +1230,7 @@
       "post": {
         "operationId": "createPerson",
         "summary": "Create a person without matching",
-        "description": "Stores the payload as a new record. **No de-duplication happens**: posting a name and email identical to an existing record creates a second record. Use POST /people/findOrCreate when you want matching — bearing in mind that it too creates a second record unless your payload reaches the minimum match combination documented there (name alone never does).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — nothing is created and that record is returned as **302 Found**, exactly as findOrCreate would answer. This is the only way this endpoint declines to create a record.\n- **Anything else** — **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. A payload identical to an existing person is not a special case: it creates a duplicate.\n- **The body is empty (`{}`)** — every field is optional, so this too returns **201**, creating a blank record with no name.",
+        "description": "Stores the payload as a new person record. **No de-duplication happens**: posting a name and email identical to an existing person's creates a second person record. Use POST /people/findOrCreate when you want matching — bearing in mind that it too creates a second person record unless your payload reaches the minimum match combination documented there (name alone never does).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — nothing is created and that person is returned as **302 Found**, exactly as findOrCreate would answer. This is the only way this endpoint declines to create a person record.\n- **Anything else** — **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. A payload identical to an existing person is not a special case: it creates a duplicate.\n- **The body is empty (`{}`)** — every field is optional, so this too returns **201**, creating a blank person record with no name.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts create), which requires firstName and lastName client-side. The API requires neither. Duplicate behaviour confirmed by posting an exact copy of an existing person's name and email and receiving a new vanId (observed 2026-08-03)."
@@ -1249,7 +1279,7 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on the vanId path your code sees this 200 and a full `Person` — and, critically, a response that looks nothing like the 201 you get when a record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on the vanId path your code sees this 200 and a full `Person` — and, critically, a response that looks nothing like the 201 you get when a person record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Chain observed end to end with httpx (302 → GET → 200 Person) by posting an existing vanId; identical to the POST /people/findOrCreate and POST /people/find redirects."
@@ -1282,7 +1312,7 @@
             }
           },
           "201": {
-            "description": "A new record was created. No `Location` header is sent — the new id is in the body.",
+            "description": "A new person record was created. No `Location` header is sent — the new id is in the body.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1290,7 +1320,7 @@
                 },
                 "examples": {
                   "created": {
-                    "summary": "New record stored",
+                    "summary": "New person record stored",
                     "value": {
                       "vanId": 102714580,
                       "status": "Stored"
@@ -1305,7 +1335,7 @@
                 "parameters": {
                   "vanId": "$response.body#/vanId"
                 },
-                "description": "Fetch the record that was just created."
+                "description": "Fetch the person record that was just created."
               }
             }
           },
@@ -1338,6 +1368,220 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/people/{vanId}/mergeInto": {
+      "put": {
+        "operationId": "mergePerson",
+        "summary": "Merge one person into another",
+        "description": "Merges the **secondary** person named in the path into the **primary** person named in the body. The secondary is deleted; the primary survives and keeps its own vanId.\n\n> **Merges are permanent and cannot be undone.** There is no API to reverse one. Afterwards `GET /people/{secondaryVanId}` answers 404 and the id can never be used again. Send `?whatIf=true` first to find out whether a pair is mergeable — but read the warning on that parameter, because only the literal value `true` simulates.\n\n**What happens to the data**, observed on pairs built with conflicting values on both sides:\n\n- Scalar fields the two people disagree on keep the **primary's** value (`firstName`, `sex`, `dateOfBirth`…) — the same defaults the Contacts Merge Wizard applies in the UI.\n- Scalar fields the primary left empty are **filled in from the secondary** (`middleName`, `party`, `employer`, `occupation`…), so the primary can come out of a merge holding more data than it went in with.\n- `emails`, `phones` and `addresses` are all **combined**, and exact duplicates are collapsed rather than doubled:\n  - **Emails** dedupe case-insensitively and regardless of `type`. The primary's copy is the one kept, so its `type` is what survives.\n  - **Phones** dedupe on the normalized number — formatting and a leading `1` are ignored — but only within the same `phoneType`. The same number held once as `Personal` and once as `Work` stays as two entries.\n  - **Addresses** are combined too, but you will usually not be able to see it. `$expand=addresses` only ever surfaces the best Voting and the best Mailing address, and the primary's own address takes both slots whenever it has one, so a merged-in address is masked rather than missing — `POST /people/find` still matches it. Whether identical addresses are deduped cannot be determined through the API.\n- **Notes move to the primary**, keeping their `noteId`.\n- The primary inherits the secondary's reachability: `POST /people/find` with an email, phone or address that belonged only to the secondary now resolves to the primary's vanId.\n\n**The preferred email follows the ordinary rule, not a merge-specific one.** The two sets of addresses are pooled and the newest address in the combined set carries the flag — so the primary loses its preferred address whenever the secondary brings in a more recently added one. The exception is an address pinned by an explicit `isPreferred: true` write, which keeps the flag even against a newer incoming address. Phones are unaffected: they only ever take the flag from an explicit write, and where both people had one the primary's survived. Phone ordering after a merge is not stable enough to rely on.\n\nTo keep a secondary value the primary overwrote, read both people before merging and write the value back with `POST /people/{vanId}` afterwards.\n\n**Merged-away ids are remembered, but only here.** A vanId that has been merged away is refused on either side of any later merge with `One or more of these contacts has already been merged.` — a different message from the one an id that never existed gets. `GET /people/{vanId}` does not expose that distinction: both simply answer 404. So this endpoint, called with `?whatIf=true`, is the only way to tell a merged-away vanId from one that never existed.\n\nOutcomes:\n\n- **Both ids exist, share a `contactMode`, and neither has been merged before** — **200** with the primary's vanId and a `Location` header pointing at it.\n- **Anything else** — **400** with the reason in `text`. Unknown ids are a **400**, not a 404; this endpoint never returns a JSON 404.\n- **A secondary equal to the primary** — **500**.",
+        "x-provenance": {
+          "source": "docs + sandbox probe",
+          "lastProbed": "2026-08-05",
+          "note": "Not in van-cli (no merge command exists there); path and body from the official docs, all behavior from live probing. Scalar semantics observed by merging 102720707 into 102720708, two purpose-built people with deliberately conflicting values: the primary's firstName/sex/dateOfBirth won, its empty middleName/party/employer/occupation were filled from the secondary, and the note moved with its noteId. Merged-away ids were confirmed permanently unusable on both sides against a freshly created person.\n\nContact-method semantics re-probed 2026-08-06 across 17 purpose-built pairs. Dedup: an email shared by both people came back once — also when the two differed only in case, and when they carried different `type` values, where the primary's type survived; a phone shared as `(907) 555-2001` and `9075552001`, and as `19075552011` and `907-555-2011`, came back once keeping the primary's phoneId; the same number under two different phoneTypes came back twice.\n\nThe preferred-email behaviour was probed with the two people created 65 seconds apart, so their addresses carry different dateCreated values: with the secondary's address newer the flag moved to it, with the primary's newer the flag stayed, and with the primary's address explicitly pinned the flag stayed even though the secondary's was newer. Nothing merge-specific is happening — it is the ordinary rule that a newly arrived address takes the flag unless one is pinned.\n\nAn earlier pass over the same question (also 2026-08-06) built every pair inside a single minute, and since dateCreated has only minute resolution the addresses tied and the flag appeared to obey a positional 'second entry wins' rule across a dozen pairs. That reading was wrong and has been removed; space the writes out when re-probing anything that depends on address ordering.\n\nCorrection: an earlier probe (2026-08-05) concluded the secondary's address was discarded. That was an instrument error — it used GET /people?streetAddress=, which indexes only the Voting address. Re-tested 2026-08-06 with POST /people/find, which matches every address type: merging into a primary that had no address of its own surfaced the secondary's address on the primary, keeping its addressId, and where the primary did have one, find still matched the secondary's address on the merged person even though $expand=addresses showed only the primary's. Addresses are combined, as the docs say; the readback is what hides them."
+        },
+        "x-docs-discrepancy": "Official docs say emails, phones and addresses are all combined into the primary, which holds — though a merged-in address is normally invisible afterwards, since $expand=addresses surfaces only the best Voting and Mailing address and the primary's own takes both slots (POST /people/find still matches it). The docs are silent on four further behaviours: duplicate emails and phones are collapsed rather than doubled, the primary can lose its preferred email address to a more recently added one coming from the secondary, notes move to the primary, and unknown vanIds are answered 400 rather than 404 (observed 2026-08-06).",
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "vanId",
+            "in": "path",
+            "required": true,
+            "description": "VAN id of the **secondary** person record — the one that is deleted by the merge.\n\nZero is rejected with 400. Negative values return 500, so this schema requires a positive id.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 102720707,
+            "x-docs-discrepancy": "Official docs place no constraint on this parameter; a negative id returns 500 rather than a validation error, and a non-integer segment matches no route and returns an IIS HTML 404 page (observed 2026-08-05)."
+          },
+          {
+            "name": "whatIf",
+            "in": "query",
+            "required": false,
+            "description": "Simulate the merge rather than performing it. The mergeability checks run and the response is the same, but nothing is written.\n\n**Only the exact string `true`, case-insensitive, simulates.** Every other non-empty value — including `1` and `yes` — is read as `false` and **performs the merge for real**. The response to a simulation is byte-identical to the response to a completed merge (same 200, same body, same `Location`), so nothing in it reveals which one happened. An empty value (`?whatIf=`) is rejected with 400, and omitting the parameter performs the merge.\n\nBecause a typo here silently destroys a person record, send the literal `true` or leave the parameter off — never a computed truthy value.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "example": true,
+            "x-docs-discrepancy": "Official docs type this as a plain boolean and say \"if true, simulates the merge request without actually executing the merge\", implying any truthy value is safe. Only case-insensitive `true` simulates: `whatIf=1`, `whatIf=yes` and `whatIf=xyz` each performed a real, irreversible merge, and `whatIf=` returned 400 (each value confirmed on its own freshly created pair, 2026-08-05)."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonMergeInput"
+              },
+              "examples": {
+                "primary": {
+                  "summary": "The person that survives the merge",
+                  "value": {
+                    "vanId": 102720504
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The two people are mergeable. The body carries the **primary's** vanId — the person that survived — not the secondary's.\n\nThis is also the response to `?whatIf=true`, where nothing was written. The two are indistinguishable: same status, same body, same `Location`. Whether the merge actually happened depends entirely on the request you sent.",
+            "headers": {
+              "Location": {
+                "description": "Absolute URL of the surviving primary person.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "example": "https://api.securevan.com/v4/people/102720708"
+              }
+            },
+            "x-docs-discrepancy": "Official docs document only the JSON body; the response also carries a Location header pointing at the surviving primary (observed 2026-08-05).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMergeResult"
+                },
+                "examples": {
+                  "merged": {
+                    "summary": "Primary vanId",
+                    "value": {
+                      "vanId": 102720708
+                    }
+                  }
+                }
+              }
+            },
+            "links": {
+              "getMergedPerson": {
+                "operationId": "getPerson",
+                "parameters": {
+                  "vanId": "$response.body#/vanId"
+                },
+                "description": "Fetch the surviving primary to see the merged result — the merge response carries only its id."
+              }
+            }
+          },
+          "302": {
+            "$ref": "#/components/responses/RequestValidationRedirect"
+          },
+          "400": {
+            "description": "The merge was refused, with the reason in `text`. This is the endpoint's catch-all failure status: it covers unknown ids, which are **not** answered 404.\n\nRefusals observed live:\n\n| `text` | Cause |\n|---|---|\n| `You must have access to both contacts to merge them.` | Either id does not exist, or is outside the key's committee. |\n| `One or more of these contacts has already been merged.` | Either id was merged away by an earlier call. Permanent, and applies whichever side the id is on. |\n| `Must specify VanIDs for merging` | The body is missing `vanId`, or it is null, `0`, or too large for `int32`. |\n| `The body of the request is null or cannot be parsed.` | No body, or a body that is not a JSON object. |\n| `VANID {a} and VANID {b} cannot be be merged as they are not the same type of Contact…` | One contact is a person and the other an organization. (The doubled \"be be\" is the API's own wording.) |\n\n`?whatIf=` with an empty value is also rejected here, with the generic `BAD_REQUEST` / `The request is invalid.`\n\nTwo cases answer `text/html` instead, because the request is rejected in front of the API: a percent-encoded control character such as `%7F` in the path gets IIS's \"Bad Request - Invalid URL\" page, and `%00` gets Cloudflare's. Check the content type before parsing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "noAccess": {
+                    "summary": "One of the ids does not exist",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "You must have access to both contacts to merge them."
+                        }
+                      ]
+                    }
+                  },
+                  "alreadyMerged": {
+                    "summary": "An id that was merged away by an earlier call",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "One or more of these contacts has already been merged."
+                        }
+                      ]
+                    }
+                  },
+                  "missingVanId": {
+                    "summary": "Body without a usable vanId",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "Must specify VanIDs for merging"
+                        }
+                      ]
+                    }
+                  },
+                  "unparseableBody": {
+                    "summary": "No body, or a body that is not a JSON object",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "The body of the request is null or cannot be parsed."
+                        }
+                      ]
+                    }
+                  },
+                  "contactModeMismatch": {
+                    "summary": "A person and an organization",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "VANID 102720679 and VANID 102720681 cannot be be merged as they are not the same type of Contact. In order to merge contacts, both records must either be people or organizations. To enable the merge, navigate to the incorrectly typed record and change its type."
+                        }
+                      ]
+                    }
+                  },
+                  "emptyWhatIf": {
+                    "summary": "?whatIf= with no value",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "BAD_REQUEST",
+                          "text": "The request is invalid."
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "x-provenance": {
+                  "note": "IIS and Cloudflare rejection pages for control characters in the path; see the shared BadRequest response for the full story and examples. Not specific to this operation."
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Never returned by the API itself — an unknown vanId is a **400** here, not a 404. This status only comes from IIS, in front of the API, and always as HTML: a non-integer path segment matches no route, and a query string longer than ~2048 characters is rejected outright.",
+            "x-provenance": {
+              "source": "sandbox probe",
+              "lastProbed": "2026-08-05",
+              "note": "PUT /people/abc/mergeInto returns the IIS \"404 - File or directory not found\" page. Unlike the other person endpoints, there is no JSON 404 to pair with it: unknown, zero and already-merged ids are all answered 400."
+            },
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
@@ -1465,7 +1709,7 @@
       "post": {
         "operationId": "createPersonNote",
         "summary": "Add a note to a person",
-        "description": "Creates a note on the person.\n\nOn success the response is **204 No Content** with an empty body: the new `noteId` is not returned and there is no `Location` header, so the only way to learn it is to read the notes back. Two notes with identical text are two separate records — the endpoint is not idempotent.\n\n`isPinned` is accepted and ignored; notes always read back `isPinned: false`. Unknown fields are ignored too. A `contactHistory` object records a Contact History entry alongside the note, but the note's own `contactHistory` stays null in every response.\n\nA note saved with `isViewRestricted: true` can be written but never read back through the API — it is excluded from `GET /people/{vanId}/notes` and from `$expand=notes` on the person.",
+        "description": "Creates a note on the person.\n\nOn success the response is **204 No Content** with an empty body: the new `noteId` is not returned and there is no `Location` header, so the only way to learn it is to read the notes back. Two notes with identical text are two separate notes — the endpoint is not idempotent.\n\n`isPinned` is accepted and ignored; notes always read back `isPinned: false`. Unknown fields are ignored too. A `contactHistory` object records a Contact History entry alongside the note, but the note's own `contactHistory` stays null in every response.\n\nA note saved with `isViewRestricted: true` can be written but never read back through the API — it is excluded from `GET /people/{vanId}/notes` and from `$expand=notes` on the person.",
         "tags": [
           "Notes"
         ],
@@ -1663,7 +1907,7 @@
       "get": {
         "operationId": "listNoteCategories",
         "summary": "List note categories",
-        "description": "Returns every note category available in the current context as a **bare JSON array** — this endpoint does not use the pagination envelope, and it ignores query parameters such as `$top`.\n\nA category only appears here once it has been opted in to the current context's committee through the Committees picker on its detail page in the VAN UI; being listed on the Note Categories page is not enough. The sandbox committee has none opted in, so only the empty array has been observed live.\n\nOnly a category whose `assignableTypes` include people can be used on a person note; sending any other id to `POST /people/{vanId}/notes` returns 400.",
+        "description": "Returns every note category available in the current context as a **bare JSON array** — this endpoint does not use the pagination envelope, and it ignores query parameters such as `$top`.\n\nA category only appears here once it has been opted in to the current context's committee through the Committees picker on its detail page in the VAN UI; being listed on the Note Categories page is not enough. The sandbox committee has none opted in, so only the empty array has been observed live.\n\nOnly a category whose `assignableTypes` contain `Person` can be used on a person note; sending any other id to `POST /people/{vanId}/notes` returns 400. See `GET /notes/categoryTypes` for the full vocabulary of `assignableTypes`.",
         "tags": [
           "Notes"
         ],
@@ -1716,6 +1960,142 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/QueryStringTooLong"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/notes/categories/{noteCategoryId}": {
+      "get": {
+        "operationId": "getNoteCategory",
+        "summary": "Get a note category",
+        "description": "Returns a single note category as a bare object, in the same shape as the items of `GET /notes/categories`.\n\nUnlike the list endpoint, this one is not filtered by the committee opt-in: it addresses a category by id directly. The sandbox committee has no categories at all, so every id probed answered 404 and the populated shape has still not been observed live.\n\nOnly ids in the int32 range route here. An id of `0` or a negative id reaches the handler and 500s; anything above 2147483647 or non-numeric matches no route and gets an IIS HTML 404.",
+        "x-provenance": {
+          "source": "docs, sandbox probe",
+          "lastProbed": "2026-08-08",
+          "note": "Route confirmed live: ids 1, 10, 999999999 and 2147483647 all returned the JSON 404 envelope (not the 403 the restricted note actions give, and not the IIS 404 an unrouted path gives), so the sandbox key is permitted this action — the committee simply has no categories. Ids 0 and -1 returned 500 INTERNAL_SERVER_ERROR with a referenceCode. The 200 shape is from https://docs.ngpvan.com/reference/notescategoriesnotecategoryid."
+        },
+        "tags": [
+          "Notes"
+        ],
+        "parameters": [
+          {
+            "name": "noteCategoryId",
+            "in": "path",
+            "required": true,
+            "description": "Id of the note category, as returned by GET /notes/categories.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The note category, as a bare object.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteCategory"
+                },
+                "examples": {
+                  "ask": {
+                    "summary": "A category assignable to organizations and people",
+                    "x-provenance": {
+                      "source": "docs",
+                      "note": "From the official docs; not observed live — the sandbox committee has no note categories."
+                    },
+                    "value": {
+                      "assignableTypes": [
+                        "Organization",
+                        "Person"
+                      ],
+                      "noteCategoryId": 10,
+                      "name": "Ask"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NoteCategoryNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/notes/categoryTypes": {
+      "get": {
+        "operationId": "listNoteCategoryTypes",
+        "summary": "List note category types",
+        "description": "Returns the entity types a note category can be assigned to — the vocabulary of `NoteCategory.assignableTypes` — as a **bare JSON array of strings**, with no pagination envelope.\n\nThe official docs state that \"in almost all cases\" the available types are `Event`, `Location`, `Person` and `Organization`, and give `[\"Person\", \"Organization\", \"Event\", \"Location\"]` as the example response. They are singular and PascalCase. Because a context can in principle expose a different set, this endpoint is the authoritative list for a given context and the schema below does not close the set with an `enum`.\n\n**This action is restricted for the key used to research this spec.** Every request returns 403 FORBIDDEN \"Access to this action is restricted\", so the live response has never been observed — the 200 below comes from the official docs.",
+        "x-provenance": {
+          "source": "docs, sandbox probe",
+          "lastProbed": "2026-08-08",
+          "note": "The route exists: it answers 403, not the IIS HTML 404 an unrouted path such as /notes/types gives. Both /notes/categoryTypes and /notes/categorytypes 403, with and without query parameters. The 200 response and the four type names are from https://docs.ngpvan.com/reference/notescategorytypes."
+        },
+        "tags": [
+          "Notes"
+        ],
+        "responses": {
+          "200": {
+            "description": "All note category types available in the context, as a bare array of strings.",
+            "x-provenance": {
+              "source": "docs",
+              "note": "From the official docs; not observed live — the sandbox key gets 403 for this action."
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NoteCategoryType"
+                  }
+                },
+                "examples": {
+                  "typical": {
+                    "summary": "The usual four types",
+                    "value": [
+                      "Person",
+                      "Organization",
+                      "Event",
+                      "Location"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/ActionRestricted"
           },
           "404": {
             "$ref": "#/components/responses/QueryStringTooLong"
@@ -2004,7 +2384,7 @@
         }
       },
       "ActionRestricted": {
-        "description": "The API key's profile does not permit this action at all. The body carries nothing beyond the code, and the check runs before the target is looked up, so a restricted action answers 403 even for an id that does not exist — which also means a 403 here says nothing about whether the record is there.\n\nDistinct from the other 403 in this spec: that one refuses a particular *section* of an otherwise-allowed request (`$expand=scores` from a My Campaign key), while this one refuses the whole operation.",
+        "description": "The API key's profile does not permit this action at all. The body carries nothing beyond the code, and the check runs before the target is looked up, so a restricted action answers 403 even for an id that does not exist — which also means a 403 here says nothing about whether the target exists.\n\nDistinct from the other 403 in this spec: that one refuses a particular *section* of an otherwise-allowed request (`$expand=scores` from a My Campaign key), while this one refuses the whole operation.",
         "x-provenance": {
           "source": "sandbox probe",
           "lastProbed": "2026-08-04",
@@ -2041,6 +2421,43 @@
           "text/html": {
             "schema": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "NoteCategoryNotFound": {
+        "description": "No note category with that id exists in the current context, as the standard error envelope. A non-integer path segment, or an id above 2147483647, matches no route at all and gets an IIS HTML page instead; an id of zero or below does reach the handler and answers 500 rather than 404.",
+        "x-provenance": {
+          "source": "sandbox probe",
+          "lastProbed": "2026-08-08",
+          "note": "GET /notes/categories/{1,10,999999999,2147483647} all returned this envelope; /notes/categories/abc and /notes/categories/2147483648 returned the IIS HTML 404."
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "notFound": {
+                "summary": "Unknown noteCategoryId",
+                "value": {
+                  "errors": [
+                    {
+                      "code": "NOT_FOUND",
+                      "text": "The specified resource cannot be found."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string"
+            },
+            "x-provenance": {
+              "lastProbed": "2026-08-08",
+              "note": "IIS \"404 - File or directory not found\" page, served when the path segment is not an int32 so no API route matches."
             }
           }
         }
@@ -2206,7 +2623,7 @@
         }
       },
       "ServerError": {
-        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find, a null phone entry on the person write endpoints, and an `identifiers` entry with the valid type `dwid` on POST /people/create. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
+        "description": "Internal server error. The API returns 500 (not 400) for various malformed inputs, e.g. negative delayInMilliseconds on /echoes, non-ASCII filter values on /surveyQuestions, vanId 0 or null phone entries on /people/find, a null phone entry on the person write endpoints, an `identifiers` entry with the valid type `dwid` on POST /people/create, and a negative vanId — in the path or the body — or a secondary equal to the primary on PUT /people/{vanId}/mergeInto. Two body shapes occur: the standard errors envelope (with a referenceCode for support), or a raw ASP.NET exception payload including a stack trace when the request fails before reaching the API's own error handling (e.g. a query-string key containing '[').",
         "content": {
           "application/json": {
             "schema": {
@@ -2425,7 +2842,7 @@
               "string",
               "null"
             ],
-            "description": "Required by every combination except the email-only (or phone-only) one. Compared case- and accent-insensitively, and may match nicknames and variants unless the context has \"Disable Partial Matching\" enabled. A first name that disagrees with the record turns an otherwise-matching request into Unmatched."
+            "description": "Required by every combination except the email-only (or phone-only) one. Compared case- and accent-insensitively, and may match nicknames and variants unless the context has \"Disable Partial Matching\" enabled. A first name that disagrees with the person record turns an otherwise-matching request into Unmatched."
           },
           "middleName": {
             "type": [
@@ -2475,7 +2892,7 @@
               "array",
               "null"
             ],
-            "description": "Addresses to match on — the only way to supply the zip5 that two of the minimum combinations require. Never sufficient on its own, and never with a name alone: firstName + lastName + zipOrPostalCode returns Unmatched unless a dateOfBirth or a street address comes with it. Unlike phones, a null array entry is tolerated (404 Unmatched, not 500).",
+            "description": "Addresses to match on — the only way to supply the zip5 that two of the minimum combinations require. Never sufficient on its own, and never with a name alone: firstName + lastName + zipOrPostalCode returns Unmatched unless a dateOfBirth or a street address comes with it. A null entry in this array is tolerated (404 Unmatched, not 500).",
             "items": {
               "$ref": "#/components/schemas/PersonMatchAddress"
             }
@@ -2516,7 +2933,7 @@
               "string",
               "null"
             ],
-            "description": "The zip5 that the date-of-birth and street-address combinations both require. Must agree with the record — a right street with a wrong zip does not match."
+            "description": "The zip5 that the date-of-birth and street-address combinations both require. Must agree with the person record — a right street with a wrong zip does not match."
           },
           "countryCode": {
             "type": [
@@ -2564,7 +2981,7 @@
       },
       "PersonMatched": {
         "type": "object",
-        "description": "An existing record was found and nothing was written. The only match-stub shape that accompanies a 302: from find, findOrCreate, create when the body's vanId exists, and update.",
+        "description": "An existing person was found and nothing was written. The only match-stub shape that accompanies a 302: from find, findOrCreate, create when the body's vanId exists, and update.",
         "required": [
           "vanId",
           "status"
@@ -2596,7 +3013,7 @@
       },
       "PersonUnmatchedStored": {
         "type": "object",
-        "description": "Nothing matched, so a new record was created — the 201 body from findOrCreate.",
+        "description": "Nothing matched, so a new person record was created — the 201 body from findOrCreate.",
         "required": [
           "vanId",
           "status"
@@ -2612,7 +3029,7 @@
       },
       "PersonStored": {
         "type": "object",
-        "description": "A new record was created with no attempt to match — the 201 body from create.",
+        "description": "A new person record was created with no attempt to match — the 201 body from create.",
         "required": [
           "vanId",
           "status"
@@ -2778,12 +3195,28 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/NoteCategoryType"
             },
-            "description": "Entity types the category can be applied to, e.g. Event or Organization. A category not assignable to people cannot be used on a person note.",
+            "description": "The note category types this category can be applied to — the entities a note in it can hang off. Values are drawn from `GET /notes/categoryTypes`, which in almost all contexts is `Event`, `Location`, `Person` and `Organization`.\n\nA category can only be used on a person note if this array contains `Person`; sending the id of any other category to `POST /people/{vanId}/notes` returns 400.",
             "example": ["Event", "Organization"]
           }
         }
+      },
+      "NoteCategoryType": {
+        "type": "string",
+        "description": "An entity type a note category can be assigned to. The official docs say that \"in almost all cases\" the available types are `Event`, `Location`, `Person` and `Organization` — singular and PascalCase — but a context can expose a different set, so this is deliberately not an `enum`. `GET /notes/categoryTypes` is the authoritative list for a given context.",
+        "x-provenance": {
+          "source": "docs",
+          "lastProbed": "2026-08-08",
+          "note": "From https://docs.ngpvan.com/reference/notescategorytypes, whose example response is [\"Person\", \"Organization\", \"Event\", \"Location\"]. Corroborated by the Notes overview page, which says notes can be applied to People, Events, Locations and Organizations. Not observable live: the sandbox key gets 403 on /notes/categoryTypes and the committee has no categories to read the names off."
+        },
+        "examples": [
+          "Person",
+          "Organization",
+          "Event",
+          "Location"
+        ],
+        "example": "Person"
       },
       "NoteInput": {
         "type": "object",
@@ -2860,7 +3293,7 @@
             "type": "integer",
             "format": "int32",
             "minimum": 1,
-            "description": "Id of a category from GET /notes/categories that is assignable to people. An id outside that set returns 400 INVALID_PARAMETER. `noteCategoryId: 0` — the value the API itself reports for an uncategorized note — returns 500, so omit `category` entirely instead of sending zero.",
+            "description": "Id of a category from GET /notes/categories whose `assignableTypes` contain `Person`. An id outside that set returns 400 INVALID_PARAMETER. `noteCategoryId: 0` — the value the API itself reports for an uncategorized note — returns 500, so omit `category` entirely instead of sending zero.",
             "example": 24,
             "x-provenance": {
               "source": "sandbox probe",
@@ -3047,10 +3480,10 @@
       },
       "PersonEmail": {
         "type": "object",
-        "description": "An email address on a person record, returned when $expand=emails is requested.",
+        "description": "An email address on a person record, returned when $expand=emails is requested. Every email a person holds is returned; there is no best-email flag, and `isPreferred` is the only ranking among them.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
-          "note": "Enums taken from the API's own INVALID_PARAMETER responses to POST /people/findOrCreate and confirmed by round-tripping every value through GET /people/{vanId}?$expand=emails. Unlike phones, email codes come back as the same single letters that were written. Nullability probed 2026-08-04: an email written with only the address, and another written with every optional field explicitly null, both read back fully populated with defaults (type P, isPreferred, subscriptionStatus S) — isSubscribed is the only field observed null."
+          "note": "Enums taken from the API's own INVALID_PARAMETER responses to POST /people/findOrCreate and confirmed by round-tripping every value through GET /people/{vanId}?$expand=emails. Email codes come back as the same single letters that were written. Nullability probed 2026-08-04: an email written with only the address, and another written with every optional field explicitly null, both read back fully populated with defaults (type P, isPreferred, subscriptionStatus S) — isSubscribed is the only field observed null."
         },
         "properties": {
           "email": {
@@ -3072,11 +3505,11 @@
           "dateCreated": {
             "type": "string",
             "format": "date-time",
-            "description": "When the address was added to the record. Set by the server."
+            "description": "When the address was added to the person record. Set by the server."
           },
           "isPreferred": {
             "type": "boolean",
-            "description": "Whether this is the person's preferred email address. Exactly one address per person carries it."
+            "description": "Whether this is the person's preferred email address. Exactly one address per person carries it — normally the most recently added one, unless an address was pinned by an explicit write; see `PersonEmailInput.isPreferred`.\n\nThe array comes back **preferred first, then the remaining addresses by `dateCreated` descending**. Addresses that share a `dateCreated` — it has only minute resolution — have no defined order among themselves."
           },
           "isSubscribed": {
             "type": [
@@ -3085,7 +3518,7 @@
             ],
             "description": "The pre-Targeted-Email view of `subscriptionStatus`: whether the address may be used in a broadcast email. Derived from `subscriptionStatus` — `S` maps to true, `U` to false, and `N` to null, since neutral has no boolean equivalent.",
             "x-provenance": {
-              "note": "The S/U/N -> true/false/null mapping was observed by writing each subscriptionStatus and reading the record back (2026-08-03). The docs describe isSubscribed only as a write field and mark it deprecated where Targeted Email is available; they do not say what it reads back as."
+              "note": "The S/U/N -> true/false/null mapping was observed by writing each subscriptionStatus and reading the person back (2026-08-03). The docs describe isSubscribed only as a write field and mark it deprecated where Targeted Email is available; they do not say what it reads back as."
             }
           },
           "subscriptionStatus": {
@@ -3141,7 +3574,7 @@
           "dateCreated": {
             "type": "string",
             "format": "date-time",
-            "description": "When the number was added to the record. Set by the server."
+            "description": "When the number was added to the person record. Set by the server."
           },
           "phoneType": {
             "type": "string",
@@ -3152,7 +3585,7 @@
             ],
             "description": "Which sphere of the person's life the number belongs to. Defaults to `Personal` when no type is written, so it is never null. The cell/fax/landline/etc distinction is stored in `deviceType`, not here.",
             "x-provenance": {
-              "note": "Mapping established by writing all seven accepted codes to one record and reading them back (2026-08-03). Enum lists the read values observed for those codes; records created outside the API were not sampled. Phones written with no phoneType, or with an explicit null, read back \"Personal\" (observed 2026-08-04)."
+              "note": "Mapping established by writing all seven accepted codes to one person and reading them back (2026-08-03). Enum lists the read values observed for those codes; phones created outside the API were not sampled. Phones written with no phoneType, or with an explicit null, read back \"Personal\" (observed 2026-08-04)."
             },
             "x-docs-discrepancy": "Official docs document only the write codes and imply they are echoed back. GET returns an expanded category name instead, and seven write codes collapse onto three of them (observed 2026-08-03)."
           },
@@ -3173,20 +3606,26 @@
           },
           "isPreferred": {
             "type": "boolean",
-            "description": "Whether this is the person's preferred phone number. At most one number per person carries it.",
+            "description": "Whether this is the person's preferred phone number. At most one number per person carries it, and it is only ever set by an explicit write — there is no positional default, so a person with phones usually has none. Setting it also makes the number `isBest`, overriding the type ranking that flag otherwise follows, and writing a new preferred number clears the flag from the old one.",
             "x-provenance": {
-              "note": "Records with several phones never showed more than one preferred; whether a record with phones always has exactly one was not established."
+              "lastProbed": "2026-08-06",
+              "note": "People with several phones never showed more than one preferred. The isBest interaction was probed on two people: a work-only phone written with isPreferred:true came back best (a work-only phone without it does not), and appending a second preferred number moved both isPreferred and isBest off the first."
             }
           },
           "isBest": {
             "type": "boolean",
-            "description": "Read-only; whether this is the best known number of its type — the most recently updated one."
+            "description": "Read-only; whether this is the number VAN treats as the person's best. **At most one number per person carries it, across all types — it is not per `phoneType`**, and a person can have several phones and no best one at all. It is also what `GET /people?phoneNumber=` searches, so a person with no best number cannot be found by phone there.\n\nWhich number gets it, in order:\n\n1. The number written with `isPreferred: true`, whatever its type or device — including a Work or Fax number that could not otherwise qualify. Writing a new preferred number moves both flags to it.\n2. Otherwise the most recently added number among those that qualify — `phoneType` `Personal` with a `deviceType` other than `Fax`. A `Cell` outranks every other device: once a person has one, a later `Landline`, `VoIP` or `Unknown` number does not take the flag, while a newer `Cell` does.\n3. If nothing qualifies — every number is `Work`, `Other` or a Personal fax, and none is preferred — **no number is best** and every entry reads `false`.\n\nThe returned `phones` array is ordered best-first when a best number exists; the rest of the order is not meaningful.",
+            "x-provenance": {
+              "lastProbed": "2026-08-06",
+              "note": "Not in the documented model — the official common models table does not list isBest for phones at all. Corrects an earlier reading of \"best known number of its type — the most recently updated one\"; neither half holds.\n\nProbed on 14 purpose-built people. Not per type: a person with one Personal, one Work and one Other number had a single best (the Personal one), and a person with four Personal and one Work had one best in total. Not simply most recent: appending Work, Other or Personal/Fax numbers never moved the flag, an existing Cell held it against later Landline, VoIP and Unknown additions, and a Personal/Other written with deviceType Cell lost to a plain Personal — phoneType outranks deviceType. Recency does decide between equals: a second plain Personal took it from the first, and a second Cell from the first — including two Cells written in the same request, where the later array entry won despite an identical dateCreated, so the tiebreak is insertion order rather than the minute-resolution timestamp. The zero-best case was confirmed on work-only, other-only and Personal/fax-only people, each of whom GET /people?phoneNumber= then failed to find, while a work-only person whose number was written with isPreferred:true was best and was found."
+            },
+            "x-docs-discrepancy": "The official common models do not document isBest for phones; it is returned on every phone, and is awarded to at most one number per person — not one per phoneType — by a phoneType/deviceType ranking rather than by recency alone (observed 2026-08-06)."
           },
           "isDisclosure": {
             "type": "boolean",
             "description": "Read-only; whether the number is usable for campaign-finance disclosure reporting.",
             "x-provenance": {
-              "note": "Not in the documented model. Observed true on the first number written to a record and on numbers written with deviceType Cell, false otherwise; the exact rule was not pinned down."
+              "note": "Not in the documented model. Observed true on the first number written to a person and on numbers written with deviceType Cell, false otherwise; the exact rule was not pinned down."
             }
           },
           "smsOptInStatus": {
@@ -3289,7 +3728,7 @@
       },
       "PersonAddress": {
         "type": "object",
-        "description": "An address on a person record, returned when $expand=addresses is requested. The expansion returns the best known Home address and the best known Mailing address only — at most two entries, and the same address appears twice (once per type, sharing an addressId) when it serves as both. Work and Custom addresses are stored but not surfaced here.",
+        "description": "An address on a person record, returned when $expand=addresses is requested. The expansion returns only the best known type=Home address and the best known type=Mailing address — at most two entries, and the same address appears twice (once per type, sharing an addressId) when it serves as both. type=Work and type=Custom addresses are stored but not surfaced here.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
           "note": "Shape observed live by writing addresses of each documented type through POST /people/findOrCreate and reading them back. Fields not in the documented model (unitNo, geoLocation, preview, streetAddress, displayMode) are read-only additions seen on every address returned. Nullability probed 2026-08-04: a zip-only address reads back with city/state inferred from the zip and addressLine1 null; a city+state-only address reads back zipOrPostalCode \"\" (empty string, not null); addresses too sparse or unresolvable to standardize (street line only, or an unknown zip) are not surfaced by the expansion at all — so city, stateOrProvince, zipOrPostalCode and countryCode were never observed null."
@@ -3299,6 +3738,18 @@
             "type": "integer",
             "format": "int64",
             "description": "Read-only; unique identifier of the address on this person. Shared by the Home and Mailing entries when one address fills both roles."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Voting",
+              "Mailing"
+            ],
+            "description": "Which role the address plays for the person. This expansion only ever returns \"Voting\" or \"Mailing\", even though the database can also store \"Work\" and \"Custom\"; a person with no mailing address of their own has their home address returned under \"Mailing\" as well.",
+            "x-provenance": {
+              "note": "Read values observed by writing Home, Work, Mailing and Custom addresses (2026-08-03). An address written as Work or Custom did not appear in the expansion at all."
+            },
+            "x-docs-discrepancy": "Official docs list five address types with no indication that reads are restricted; $expand=addresses only ever returns Voting and Mailing, and Work and Custom addresses are omitted from the response entirely (observed 2026-08-03)."
           },
           "addressLine1": {
             "type": [
@@ -3360,25 +3811,21 @@
               "note": "Not in the documented model. Observed as address lines 1 and 2 joined by a space, with a trailing space when line 2 is empty."
             }
           },
-          "type": {
-            "type": "string",
-            "enum": [
-              "Voting",
-              "Mailing"
-            ],
-            "description": "Which role the address plays for the person. This expansion only ever returns \"Voting\" or \"Mailing\"; a person with no mailing address of their own has their home address returned under \"Mailing\" as well.",
-            "x-provenance": {
-              "note": "Read values observed by writing Home, Work, Mailing and Custom addresses (2026-08-03). An address written as Work or Custom did not appear in the expansion at all."
-            },
-            "x-docs-discrepancy": "Official docs list five address types with no indication that reads are restricted; $expand=addresses only ever returns Voting and Mailing, and Work and Custom addresses are omitted from the response entirely (observed 2026-08-03)."
-          },
           "isPreferred": {
             "type": "boolean",
-            "description": "Read-only; whether this is the person's preferred address."
+            "description": "Read-only; whether this is the person's preferred address. It marks the entry filling the `Voting` slot: `true` on that entry, and on the `Mailing` entry only when the same address fills both slots. A mailing address of the person's own always reads `false`.",
+            "x-provenance": {
+              "lastProbed": "2026-08-06",
+              "note": "Observed on nine people covering home-only, mailing-only, home+mailing and repeated writes of each type. No person was seen with a preferred address that was not the Voting one, and none lacked a preferred address entirely."
+            }
           },
           "isBest": {
             "type": "boolean",
-            "description": "Read-only; whether this is the best known address of its type — the most recently updated one."
+            "description": "Read-only; whether this is the best known address of its type — the most recently added address of that type. **The flag is per type**, so a person can have two best addresses at once, one `Voting` and one `Mailing` (and when a single address fills both slots, that one address is returned twice, best in each).\n\nIn practice the field carries no information on read: this expansion returns nothing but the best `Voting` and the best `Mailing` address, so every entry it returns reads `true`. To learn that an older address exists at all, match it with `POST /people/find`.",
+            "x-provenance": {
+              "lastProbed": "2026-08-06",
+              "note": "Per-type behavior and the always-true reading observed on nine people; isBest false was never seen on an address. Recency confirmed by appending addresses in separate update calls to one person: each new Home address took the Voting slot (501 → 502 → 504) and each new Mailing address took the Mailing slot, while POST /people/find still matched the displaced ones, so they are hidden rather than replaced. Within a single request the rule does not apply to home addresses — three Home addresses written in one call stored only the first, the other two matching nothing afterwards — whereas three Mailing addresses in one call were all stored, with the last best."
+            }
           },
           "streetAddress": {
             "type": [
@@ -3433,9 +3880,9 @@
               "boolean",
               "null"
             ],
-            "description": "Whether this becomes the person's preferred address. Documented as defaulting to false, but the flag moves to the most recently added address on its own: writing three addresses in turn without ever setting this leaves only the newest preferred. Phones do not behave this way — an unflagged phone stays unpreferred.",
+            "description": "Whether this becomes the person's preferred address. Documented as defaulting to false; in practice **a newly written address takes the flag**, off whichever address held it before.\n\nWriting `true` explicitly **pins** the address: the flag then stops following new additions and survives a merge that brings in a more recently added address. Pinning works on an address the person already holds too — re-writing it with the flag set makes it preferred again.\n\n`dateCreated` has only minute resolution, and addresses written within the same minute are not ordered against each other; which of them ends up preferred is not predictable. Space writes at least a minute apart if you need the outcome to be deterministic.",
             "x-provenance": {
-              "note": "Observed by appending three emails to one record in separate requests, none setting isPreferred, and seeing the flag follow the newest each time (2026-08-03)."
+              "note": "Probed 2026-08-06 by appending addresses at 65-second intervals so that dateCreated actually distinguishes them: each new address took the flag in turn, while an address written with isPreferred:true held it against two later additions and against a merge that brought in a newer address.\n\nA caution for anyone re-probing this: same-minute writes give a badly misleading picture. When every address shares a dateCreated the flag settles on one of them and stops following later writes, which reads as a positional rule — that artifact produced a wrong 'the second address is always preferred' reading here on 2026-08-06 before the spacing was added, and it is why the original 2026-08-03 reading (a new address takes the flag) was briefly and wrongly overturned."
             }
           },
           "isSubscribed": {
@@ -3536,9 +3983,9 @@
               "boolean",
               "null"
             ],
-            "description": "Whether this becomes the person's preferred number. Defaults to false and stays there — unlike emails, a newly added phone does not take the preferred flag from the existing one.",
+            "description": "Whether this becomes the person's preferred number. Defaults to false and stays there — a newly added phone never takes the preferred flag implicitly, however many are written. An explicit `true` is honoured.",
             "x-provenance": {
-              "note": "Seven phones written to one record with no isPreferred flag all read back isPreferred false (2026-08-03)."
+              "note": "Seven phones written to one person with no isPreferred flag all read back isPreferred false (2026-08-03); a phone written with an explicit isPreferred:true was confirmed to read back preferred (2026-08-06)."
             }
           },
           "phoneOptInStatus": {
@@ -3712,7 +4159,7 @@
       },
       "PersonInput": {
         "type": "object",
-        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the \"Match Candidate\" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
+        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the \"Match Candidate\" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank person record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Field list from the official docs' Match Candidate model; max lengths and the enforced/unenforced split established by probing POST /people/create with out-of-range values. Not modelled here, because the sandbox has no lookup values to write against and only the 400 path could be seen: pronouns, selfReportedRaces, selfReportedEthnicities, selfReportedGenders, selfReportedSexualOrientations and selfReportedLanguagePreference. Each takes an id that must exist in the context, e.g. 'reportedRaceId' is not a valid ReportedRace in this context."
@@ -3723,7 +4170,7 @@
               "integer",
               "null"
             ],
-            "description": "Id of an existing record. When it matches, all other criteria are ignored and the endpoint returns 302 Matched instead of creating anything — this is the only way POST /people/create will decline to create a record. A vanId of 0, or one matching nothing, is silently ignored and a new record is created.",
+            "description": "Id of an existing person record. When it matches, all other criteria are ignored and the endpoint returns 302 Matched instead of creating anything — this is the only way POST /people/create will decline to create a person record. A vanId of 0, or one matching nothing, is silently ignored and a new person record is created.",
             "x-provenance": {
               "note": "Unlike POST /people/find, which returns 500 for vanId 0, the write endpoints tolerate it (observed 2026-08-03), so no minimum is imposed here."
             }
@@ -3865,7 +4312,7 @@
             ],
             "format": "date",
             "examples": ["2001-11-23"],
-            "description": "ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 \"'dateOfBirth' must be in the 20th or 21st century.\". A value that is not a parseable date is not an error: it is silently dropped and the record stores null.",
+            "description": "ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 \"'dateOfBirth' must be in the 20th or 21st century.\". A value that is not a parseable date is not an error: it is silently dropped and the person record stores null.",
             "x-provenance": {
               "note": "\"not-a-date\" returned 201 with dateOfBirth null (observed 2026-08-03)."
             }
@@ -3912,7 +4359,7 @@
               "array",
               "null"
             ],
-            "description": "Appended to the record's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
+            "description": "Appended to the person's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
             "items": {
               "$ref": "#/components/schemas/PersonEmailInput"
             }
@@ -3922,7 +4369,7 @@
               "array",
               "null"
             ],
-            "description": "Appended to the record's existing numbers, not substituted for them. A bare object instead of an array is silently ignored. A null array entry returns 500.",
+            "description": "Appended to the person's existing numbers, not substituted for them. A bare object instead of an array is silently ignored. A null array entry returns 500.",
             "items": {
               "$ref": "#/components/schemas/PersonPhoneInput"
             }
@@ -3932,7 +4379,7 @@
               "array",
               "null"
             ],
-            "description": "Appended to the record's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
+            "description": "Appended to the person's existing addresses, not substituted for them. A bare object instead of an array is silently ignored.",
             "items": {
               "$ref": "#/components/schemas/PersonAddressInput"
             }
@@ -3979,11 +4426,46 @@
             ],
             "enum": ["Person", "Organization", null],
             "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
-            "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the record reads back with contactMode \"Person\" (observed 2026-08-03)."
+            "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the person reads back with contactMode \"Person\" (observed 2026-08-03)."
           }
         }
       },
-      "PersonList": {
+      "PersonMergeInput": {
+      "type": "object",
+      "description": "Names the **primary** of a merge — the person that survives. The secondary is the vanId in the path.",
+      "required": [
+        "vanId"
+      ],
+      "properties": {
+        "vanId": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "description": "VAN id of the primary person, which survives the merge and keeps this id.\n\nAbsent, null, `0` and values too large for `int32` are all rejected with 400 `Must specify VanIDs for merging`. A negative id returns 500, so this schema requires a positive one. A numeric string is accepted and coerced, and a non-integer number is truncated — neither is worth relying on.",
+          "example": 102720504
+        }
+      },
+      "x-provenance": {
+        "source": "docs + sandbox probe",
+        "lastProbed": "2026-08-05",
+        "note": "Unknown fields alongside vanId are ignored (a body with a bogus extra key merged normally). minimum is 1 rather than 0 because a negative vanId 500s; 0 is a clean 400."
+      }
+    },
+    "PersonMergeResult": {
+      "type": "object",
+      "description": "The outcome of a merge: the vanId of the person that survived, which is always the primary from the request body. The secondary's vanId is not echoed back, and is no longer resolvable.",
+      "required": [
+        "vanId"
+      ],
+      "properties": {
+        "vanId": {
+          "type": "integer",
+          "description": "VAN id of the surviving primary person.",
+          "example": 102720708
+        }
+      }
+    },
+    "PersonList": {
         "description": "A page of person records.",
         "allOf": [
           {
@@ -4010,7 +4492,7 @@
         "description": "A person record: returned by GET /people/{vanId}, as the items of GET /people, and as what a redirect-following client lands on after the write endpoints. A few fields read differently between get-by-id and search — see `formalSalutation` and `formalEnvelopeName`.\n\nThe properties listed below with no type were only ever observed as null, either because the section needs `$expand` or because the sandbox committee holds no such data. They are listed to document that the API returns them, but their shape is unverified.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
-          "note": "Field inventory observed live on a minimal API-created record; the untyped fields need a richer record to pin down. Nullability checked against a fully blank record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
+          "note": "Field inventory observed live on a minimal API-created person; the untyped fields need a more fully populated person record to pin down. Nullability checked against a fully blank person record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
         },
         "properties": {
           "vanId": {
@@ -4048,15 +4530,15 @@
           },
           "contactSource": {
             "type": "string",
-            "description": "How the record entered the database, e.g. \"API\".",
+            "description": "How the person record entered the database, e.g. \"API\".",
             "x-provenance": {
-              "note": "Only \"API\" observed (the sandbox has no UI-created records); other values not enumerated. Present even on a blank record, so typed non-null."
+              "note": "Only \"API\" observed (the sandbox has no UI-created people); other values not enumerated. Present even on a blank person record, so typed non-null."
             }
           },
           "contactMode": {
             "type": "string",
             "enum": ["Person", "Organization"],
-            "description": "Defaults to \"Person\" even on a blank record; an unrecognized written value is stored as \"Person\"."
+            "description": "Defaults to \"Person\" even on a blank person record; an unrecognized written value is stored as \"Person\"."
           },
           "salutation": {
             "type": [
@@ -4069,7 +4551,7 @@
               "string",
               "null"
             ],
-            "description": "On GET /people/{vanId}, derived from the name — \"Friend\" when there is no name to derive from, unlike `salutation`, which is null in that case. Always null in GET /people search results, even for records where get-by-id derives a value.",
+            "description": "On GET /people/{vanId}, derived from the name — \"Friend\" when there is no name to derive from, unlike `salutation`, which is null in that case. Always null in GET /people search results, even for people where get-by-id derives a value.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Null-in-search-results found by the fuzzer on GET /people; confirmed against vanId 102704536, which reads back \"Scgapi Matchrules\" here via get-by-id but null via search."
@@ -4086,7 +4568,7 @@
               "string",
               "null"
             ],
-            "description": "On GET /people/{vanId}, derived from the name — \"Our Friend At\" when there is no name to derive from, unlike `envelopeName`, which is null in that case. Always null in GET /people search results, even for records where get-by-id derives a value.",
+            "description": "On GET /people/{vanId}, derived from the name — \"Our Friend At\" when there is no name to derive from, unlike `envelopeName`, which is null in that case. Always null in GET /people search results, even for people where get-by-id derives a value.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Null-in-search-results found by the fuzzer on GET /people; same evidence as formalSalutation."
@@ -4126,7 +4608,7 @@
               "F",
               null
             ],
-            "description": "Always the uppercase one-letter code, even when the record was written with a lowercase value.",
+            "description": "Always the uppercase one-letter code, even when the value was written in lowercase.",
             "x-provenance": {
               "source": "sandbox probe + official docs (common-models.md: \"must be M or F\")",
               "lastProbed": "2026-08-04",
@@ -4160,7 +4642,7 @@
             "description": "The birth date broken into components; null when dateOfBirth is null. Returned by both GET /people and GET /people/{vanId}.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
-              "note": "Surfaced by fuzzing GET /people — earlier field inventories missed it because every probed record had a null dateOfBirth, which nulls this field too. Only full dates observed (month, day and year all set); whether a genuinely partial date omits components is unverified."
+              "note": "Surfaced by fuzzing GET /people — earlier field inventories missed it because every probed person had a null dateOfBirth, which nulls this field too. Only full dates observed (month, day and year all set); whether a genuinely partial date omits components is unverified."
             }
           },
           "isDeceased": {
@@ -4173,7 +4655,7 @@
           "dateAcquired": {
             "type": "string",
             "format": "date-time",
-            "description": "For API-created records this is \"0001-01-01T00:00:00Z\" (the .NET default date)."
+            "description": "For API-created people this is \"0001-01-01T00:00:00Z\" (the .NET default date)."
           },
           "emails": {
             "type": [
@@ -4190,7 +4672,7 @@
               "array",
               "null"
             ],
-            "description": "Null unless the request included $expand=phones; an empty array when expanded and none exist. Every phone on the record is returned, not just the best known one.",
+            "description": "Null unless the request included $expand=phones; an empty array when expanded and none exist. Every phone on the person is returned, not just the best known one.",
             "items": {
               "$ref": "#/components/schemas/PersonPhone"
             }
