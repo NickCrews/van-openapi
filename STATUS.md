@@ -20,7 +20,7 @@ Sources per endpoint group:
 | People — find | `POST /people/find` | docs, van-cli | **validated** (incl. minimum match combinations) | 2026-08-04 |
 | Survey Questions — list | `GET /surveyQuestions` | docs, van-cli | **validated** | 2026-08-03 |
 | People — get by id | `GET /people/{vanId}` | docs, van-cli | **validated** (incl. stateful links from `/people/find`, and what `isBest`/`isPreferred` mean on each contact method) | 2026-08-06 |
-| People — write | `POST /people/create`, `POST /people/findOrCreate`, `POST /people/{vanId}` (update) | docs (common models only), van-cli | **validated** | 2026-08-04 |
+| People — write | `POST /people/create`, `POST /people/findOrCreate`, `POST /people/{vanId}` (update) | docs (common models only), van-cli | **validated** | 2026-08-08 |
 | People — search | `GET /people` (requires ≥1 search param; `GET /people/quickSearch` does **not** exist — 404 "No HTTP resource") | van-cli | **validated** (incl. what each address/contact filter actually reads: `streetAddress`/`city`/`stateOrProvince`/`zipOrPostalCode` the Voting address only, `phoneNumber` the single best phone, `email` every address) | 2026-08-06 |
 | People — merge | `PUT /people/{vanId}/mergeInto` | docs | **validated** (sandbox key is permitted; `whatIf` parsing trap, contact-method dedup and preferred-email recomputation confirmed live) | 2026-08-06 |
 | People — delete | `DELETE /people/{vanId}` | van-cli | researched (route exists; sandbox key gets `403 FORBIDDEN` "Access to this action is restricted", so success shape unknown — deliberately left out of the spec) | 2026-08-03 |
@@ -71,6 +71,7 @@ Things probing has *not* settled. Everything already settled is written up in th
 - **`isCellStatus`** is validated on write but always reads back null; `GET /phones/isCellStatuses` returns an empty array here, so the real status list is unknown.
 - **`$expand=recordedAddresses`** returns `[]` even for a record carrying four addresses — probably a My Voters concept, unconfirmed.
 - **Merge leftovers**: whether identical addresses are deduped is not observable through the API, and which address wins the Voting slot when both people have one has not been characterized.
+- **The one-off 404 from `POST /people/create` with a body `vanId`.** In CI on 2026-08-08 (run 31282824344), `{"vanId": 100000001, "firstName": "Soren"}` answered 404 in two schemathesis phases minutes apart; fifteen minutes later the identical request — with and without a session cookie — answered the usual blind 302 echo on every attempt. Documented as a rare 404 response on the operation so a recurrence passes conformance, but what triggers it is unknown (the sandbox had served a bare 502 half an hour earlier, so it may be an infrastructure mode).
 - **`isBest` leftovers.** The phone ranking was pinned down through the API (see `PersonPhone.isBest`), but only for phones the API itself created: whether a VAN-UI or file-loaded phone ranks the same way, and whether editing an existing phone rather than appending a new one moves the flag, is unprobed — the API has no way to edit a phone in place. For addresses the flag is unobservable in the negative, since `$expand=addresses` returns only the best of each type.
 - Everything marked `unresearched` in the table above, which is most of the API.
 
@@ -98,7 +99,9 @@ The database is nearly empty, so observing a populated response usually means cr
 | `102720679`, `102720680`, `102720681` | Merr Alpha / Beta and Merge Test Org — kept unmerged as the contactMode-mismatch fixture. |
 | `102720708` | Targety Mergetest — holds the merged-in data and the note that moved with it. |
 
-Other probe people: contact-model and nullability probes `102714558`–`102716327`, merge and contact-method probes `102720504`–`102721908` (the secondaries among them are merged away and permanently unusable on either side of another merge), `isBest` probes `102721927`–`102721947` (all named "BestProbe", one per phone/address ranking case).
+Other probe people: contact-model and nullability probes `102714558`–`102716327`, merge and contact-method probes `102720504`–`102721908` (the secondaries among them are merged away and permanently unusable on either side of another merge), `isBest` probes `102721927`–`102721947` (all named "BestProbe", one per phone/address ranking case), and body-`vanId` boundary probes `102724282`–`102724293` (Ghost, ProbeLow/ProbeHigh/ProbeB*, Sentinel, FocProbe*, Matchable — created 2026-08-08 while mapping which body vanIds echo and which hide a create).
+
+One id worth protecting: `100777777` **must keep matching no person** — it is the in-range phantom sentinel in `create-echoes-a-plausible-vanid-blindly` and `findorcreate-ignores-an-unknown-vanid` (the behaviors guard this with a GET that expects 404). Nothing can create a person at a chosen id, so only a database reset could break it.
 
 ## Reading a `make fuzz` run
 

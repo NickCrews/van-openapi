@@ -1,0 +1,78 @@
+{
+  "id": "findorcreate-ignores-an-unknown-vanid",
+  "title": "findOrCreate drops a vanId that matches nothing",
+  "claim": "Where create echoes a plausible unknown vanId back as a phantom match, findOrCreate just drops it: the ordinary match runs on the rest of the payload — here finding the existing person by name and email — and would have created a person had it found nothing. The vanId only matters when it names a real person.",
+  "spec": [
+    "#/paths/~1people~1findOrCreate/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "The person is in the database, under some other vanId."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Ignesia",
+          "lastName": "Vanidless-{scope}",
+          "emails": [
+            {
+              "email": "ignesia.vanidless-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "findOrCreate naming a vanId that exists nowhere, plus their real name and email."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/findOrCreate",
+        "url": "/people/findOrCreate",
+        "body": {
+          "vanId": 100777777,
+          "firstName": "Ignesia",
+          "lastName": "Vanidless-{scope}",
+          "emails": [
+            {
+              "email": "ignesia.vanidless-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}

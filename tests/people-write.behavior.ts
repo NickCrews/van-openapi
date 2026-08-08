@@ -42,11 +42,10 @@ behavior(
 behavior(
   {
     id: "create-with-a-vanid-matches-instead",
-    title: "A vanId in the body is the one thing that stops a create",
+    title: "A vanId that exists matches instead of creating",
     claim:
       "When the body carries a vanId that exists, nothing is created: the answer is the same " +
-      "302 match stub findOrCreate gives, with a Location pointing at the existing person. " +
-      "This is the only way this endpoint declines to create a person record.",
+      "302 match stub findOrCreate gives, with a Location pointing at the existing person.",
     spec: ["#/paths/~1people~1create/post"],
   },
   async ({ van, scope, comment }) => {
@@ -59,6 +58,95 @@ behavior(
     expect(res.status).toBe(302);
     expect(res.body).toEqual({ vanId, status: "Matched" });
     expect(res.headers.get("location")).toContain(`/people/${vanId}`);
+  },
+);
+
+behavior(
+  {
+    id: "create-echoes-a-plausible-vanid-blindly",
+    title: "A plausible vanId is echoed back as matched, existent or not",
+    claim:
+      "The vanId in the body is never checked against the database: any id in the range this " +
+      "database has ever assigned answers 302 Matched with the id echoed straight back, even " +
+      "when it names no one — the Location it points at answers 404. Nothing is created.",
+    spec: ["#/paths/~1people~1create/post"],
+  },
+  async ({ van, comment }) => {
+    comment("An id in the assigned range that names no person.");
+    const before = await van.get("/people/{vanId}", { params: { vanId: 100_777_777 } });
+    expect(before.status).toBe(404);
+
+    comment("Create with that id: matched, apparently.");
+    const res = await van.post("/people/create", { vanId: 100_777_777, firstName: "Phantom" });
+
+    expect(res.status).toBe(302);
+    expect(res.body).toEqual({ vanId: 100_777_777, status: "Matched" });
+    expect(res.headers.get("location")).toContain("/people/100777777");
+
+    comment("But the person the Location points at still does not exist.");
+    const after = await van.get("/people/{vanId}", { params: { vanId: 100_777_777 } });
+    expect(after.status).toBe(404);
+  },
+);
+
+behavior(
+  {
+    id: "create-with-an-implausible-vanid-creates-anyway",
+    title: "An implausible vanId hides a create behind the 302",
+    claim:
+      "A vanId outside the range the database has ever assigned is ignored — but the request " +
+      "is not refused: the rest of the payload is stored as a new person record, and the " +
+      "answer is still the 302 Matched stub, pointing at the person just created. Only the " +
+      "unfamiliar vanId in the response betrays that something was written.",
+    spec: ["#/paths/~1people~1create/post"],
+  },
+  async ({ van, scope, comment }) => {
+    comment("An id no record has ever had, far beyond the assigned range.");
+    const res = await van.post("/people/create", {
+      vanId: 2_147_483_646,
+      firstName: "Implausia",
+      lastName: `Storedanyway-${scope}`,
+    });
+
+    expect(res.status).toBe(302);
+    expect(stub(res.body).status).toBe("Matched");
+    const created = van.volatile(stub(res.body).vanId);
+    expect(created).not.toBe(2_147_483_646);
+    expect(res.headers.get("location")).toContain(`/people/${created}`);
+
+    comment("The 'match' is a person that did not exist a moment ago.");
+    const person = await van.get("/people/{vanId}", { params: { vanId: created } });
+    expect(person.status).toBe(200);
+    expect((person.body as { firstName: string }).firstName).toBe("Implausia");
+  },
+);
+
+behavior(
+  {
+    id: "findorcreate-ignores-an-unknown-vanid",
+    title: "findOrCreate drops a vanId that matches nothing",
+    claim:
+      "Where create echoes a plausible unknown vanId back as a phantom match, findOrCreate " +
+      "just drops it: the ordinary match runs on the rest of the payload — here finding the " +
+      "existing person by name and email — and would have created a person had it found " +
+      "nothing. The vanId only matters when it names a real person.",
+    spec: ["#/paths/~1people~1findOrCreate/post"],
+  },
+  async ({ van, scope, comment }) => {
+    const payload = {
+      firstName: "Ignesia",
+      lastName: `Vanidless-${scope}`,
+      emails: [{ email: `ignesia.vanidless-${scope}@example.com` }],
+    };
+    comment("The person is in the database, under some other vanId.");
+    const existing = await van.create(payload);
+
+    comment("findOrCreate naming a vanId that exists nowhere, plus their real name and email.");
+    const res = await van.post("/people/findOrCreate", { vanId: 100_777_777, ...payload });
+
+    expect(res.status).toBe(302);
+    expect(res.body).toEqual({ vanId: existing, status: "Matched" });
+    expect(res.headers.get("location")).toContain(`/people/${existing}`);
   },
 );
 

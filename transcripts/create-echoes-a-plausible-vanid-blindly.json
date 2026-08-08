@@ -1,0 +1,93 @@
+{
+  "id": "create-echoes-a-plausible-vanid-blindly",
+  "title": "A plausible vanId is echoed back as matched, existent or not",
+  "claim": "The vanId in the body is never checked against the database: any id in the range this database has ever assigned answers 302 Matched with the id echoed straight back, even when it names no one — the Location it points at answers 404. Nothing is created.",
+  "spec": [
+    "#/paths/~1people~1create/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "An id in the assigned range that names no person."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100777777"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "NOT_FOUND",
+              "text": "The specified resource cannot be found."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Create with that id: matched, apparently."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "vanId": 100777777,
+          "firstName": "Phantom"
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100777777"
+        },
+        "body": {
+          "vanId": 100777777,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "But the person the Location points at still does not exist."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100777777"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "NOT_FOUND",
+              "text": "The specified resource cannot be found."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

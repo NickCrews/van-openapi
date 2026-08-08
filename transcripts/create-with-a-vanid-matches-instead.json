@@ -1,7 +1,7 @@
 {
   "id": "create-with-a-vanid-matches-instead",
-  "title": "A vanId in the body is the one thing that stops a create",
-  "claim": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+  "title": "A vanId that exists matches instead of creating",
+  "claim": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person.",
   "spec": [
     "#/paths/~1people~1create/post"
   ],

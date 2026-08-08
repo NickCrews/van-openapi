@@ -1996,7 +1996,7 @@
       "post": {
         "operationId": "findOrCreatePerson",
         "summary": "Find a person, or create one if nothing matches",
-        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new person record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that person is returned as **302 Found**, and nothing is created.\n- **One person record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new person record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new person record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank person record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second person record.** Posting `{\"firstName\": \"Harriet\", \"lastName\": \"Kowalski\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two person records now both exist. This is the main way duplicate person records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new person record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that person is returned as **302 Found**, and nothing is created.\n- **The body supplies a `vanId` that matches nothing** — no error, and none of POST /people/create's blind echo: the id is ignored and the ordinary match runs on the rest of the payload — 302 when that matches, 201 UnmatchedStored when it does not.\n- **One person record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new person record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new person record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank person record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second person record.** Posting `{\"firstName\": \"Harriet\", \"lastName\": \"Kowalski\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two person records now both exist. This is the main way duplicate person records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03). Threshold behavior confirmed 2026-08-04: firstName+lastName for existing vanId 102719047 created duplicate 102719048 (201 UnmatchedStored); the same name plus the person's email returned 302 Matched."
@@ -2066,6 +2066,21 @@
                   "value": {
                     "firstName": "Harriet",
                     "lastName": "Duplicata"
+                  }
+                },
+                "findorcreate-ignores-an-unknown-vanid": {
+                  "summary": "findOrCreate drops a vanId that matches nothing",
+                  "description": "Where create echoes a plausible unknown vanId back as a phantom match, findOrCreate just drops it: the ordinary match runs on the rest of the payload — here finding the existing person by name and email — and would have created a person had it found nothing. The vanId only matters when it names a real person.",
+                  "x-transcript": "findorcreate-ignores-an-unknown-vanid",
+                  "value": {
+                    "vanId": 100777777,
+                    "firstName": "Ignesia",
+                    "lastName": "Vanidless",
+                    "emails": [
+                      {
+                        "email": "ignesia.vanidless@example.com"
+                      }
+                    ]
                   }
                 },
                 "findorcreate-returns-the-existing-match": {
@@ -2153,6 +2168,15 @@
                   "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
+                  "findorcreate-ignores-an-unknown-vanid": {
+                    "summary": "findOrCreate drops a vanId that matches nothing",
+                    "description": "Where create echoes a plausible unknown vanId back as a phantom match, findOrCreate just drops it: the ordinary match runs on the rest of the payload — here finding the existing person by name and email — and would have created a person had it found nothing. The vanId only matters when it names a real person.",
+                    "x-transcript": "findorcreate-ignores-an-unknown-vanid",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
                   "findorcreate-returns-the-existing-match": {
                     "summary": "Above the match threshold, findOrCreate returns the existing person",
                     "description": "Name plus email clears the minimum match combination, so the existing person comes back as a 302 match stub with a Location header, and nothing is written.",
@@ -2203,6 +2227,12 @@
           },
           {
             "lang": "Shell",
+            "label": "findOrCreate drops a vanId that matches nothing",
+            "source": "# Where create echoes a plausible unknown vanId back as a phantom match,\n# findOrCreate just drops it: the ordinary match runs on the rest of the\n# payload — here finding the existing person by name and email — and would\n# have created a person had it found nothing. The vanId only matters when it\n# names a real person.\n\n# The person is in the database, under some other vanId.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Ignesia\",\n    \"lastName\": \"Vanidless\",\n    \"emails\": [\n      {\n        \"email\": \"ignesia.vanidless@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate naming a vanId that exists nowhere, plus their real name and\n# email.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100777777,\n    \"firstName\": \"Ignesia\",\n    \"lastName\": \"Vanidless\",\n    \"emails\": [\n      {\n        \"email\": \"ignesia.vanidless@example.com\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "findorcreate-ignores-an-unknown-vanid"
+          },
+          {
+            "lang": "Shell",
             "label": "Above the match threshold, findOrCreate returns the existing person",
             "source": "# Name plus email clears the minimum match combination, so the existing\n# person comes back as a 302 match stub with a Location header, and nothing\n# is written.\n\nCREATE_BODY='{\n  \"firstName\": \"Marisol\",\n  \"lastName\": \"Vega\",\n  \"emails\": [\n    {\n      \"email\": \"marisol.vega@example.com\"\n    }\n  ]\n}'\n\n# The person is already in the database.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate with the same name and email: found, not created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
             "x-transcript": "findorcreate-returns-the-existing-match"
@@ -2214,7 +2244,7 @@
       "post": {
         "operationId": "createPerson",
         "summary": "Create a person without matching",
-        "description": "Stores the payload as a new person record. **No de-duplication happens**: posting a name and email identical to an existing person's creates a second person record. Use POST /people/findOrCreate when you want matching — bearing in mind that it too creates a second person record unless your payload reaches the minimum match combination documented there (name alone never does).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — nothing is created and that person is returned as **302 Found**, exactly as findOrCreate would answer. This is the only way this endpoint declines to create a person record.\n- **Anything else** — **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. A payload identical to an existing person is not a special case: it creates a duplicate.\n- **The body is empty (`{}`)** — every field is optional, so this too returns **201**, creating a blank person record with no name.",
+        "description": "Stores the payload as a new person record. **No de-duplication happens**: posting a name and email identical to an existing person's creates a second person record. Use POST /people/findOrCreate when you want matching — bearing in mind that it too creates a second person record unless your payload reaches the minimum match combination documented there (name alone never does).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — nothing is created and that person is returned as **302 Found**, exactly as findOrCreate would answer.\n- **The body supplies a plausible `vanId` that matches nothing** — still **302 Found**, echoing the id straight back. The id is never checked against the database: anything from 100000000 (where this database's ids start) up through the newest id ever assigned answers `{\"vanId\": <as sent>, \"status\": \"Matched\"}`, with a `Location` that then answers 404. Nothing is created. This case has also been seen to answer **404** directly instead — rarely; see that response below.\n- **The body supplies an implausible `vanId`** (below 100000000, negative, or beyond the newest assigned id) — the id is ignored, but the request is not refused: the rest of the payload **is stored as a new person record**, and the answer is still **302 Found** with `\"status\": \"Matched\"` and a `Location` pointing at the person just created — not a 201. The status code cannot tell you whether a create happened; a `vanId` in the response you never sent can.\n- **The body supplies `\"vanId\": 0`** — the id is ignored entirely and the ordinary create runs: **201 Created**, as if the field were absent.\n- **Anything else** — **201 Created** with `{\"vanId\": …, \"status\": \"Stored\"}`. A payload identical to an existing person is not a special case: it creates a duplicate.\n- **The body is empty (`{}`)** — every field is optional, so this too returns **201**, creating a blank person record with no name.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts create), which requires firstName and lastName client-side. The API requires neither. Duplicate behaviour confirmed by posting an exact copy of an existing person's name and email and receiving a new vanId (observed 2026-08-03)."
@@ -2257,6 +2287,15 @@
                     ]
                   }
                 },
+                "create-echoes-a-plausible-vanid-blindly": {
+                  "summary": "A plausible vanId is echoed back as matched, existent or not",
+                  "description": "The vanId in the body is never checked against the database: any id in the range this database has ever assigned answers 302 Matched with the id echoed straight back, even when it names no one — the Location it points at answers 404. Nothing is created.",
+                  "x-transcript": "create-echoes-a-plausible-vanid-blindly",
+                  "value": {
+                    "vanId": 100777777,
+                    "firstName": "Phantom"
+                  }
+                },
                 "create-never-deduplicates/1": {
                   "summary": "Create a person.",
                   "description": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
@@ -2286,12 +2325,22 @@
                   }
                 },
                 "create-with-a-vanid-matches-instead": {
-                  "summary": "A vanId in the body is the one thing that stops a create",
-                  "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+                  "summary": "A vanId that exists matches instead of creating",
+                  "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person.",
                   "x-transcript": "create-with-a-vanid-matches-instead",
                   "value": {
                     "vanId": 100000001,
                     "firstName": "Soren"
+                  }
+                },
+                "create-with-an-implausible-vanid-creates-anyway": {
+                  "summary": "An implausible vanId hides a create behind the 302",
+                  "description": "A vanId outside the range the database has ever assigned is ignored — but the request is not refused: the rest of the payload is stored as a new person record, and the answer is still the 302 Matched stub, pointing at the person just created. Only the unfamiliar vanId in the response betrays that something was written.",
+                  "x-transcript": "create-with-an-implausible-vanid-creates-anyway",
+                  "value": {
+                    "vanId": 2147483646,
+                    "firstName": "Implausia",
+                    "lastName": "Storedanyway"
                   }
                 },
                 "empty-bodies-create-blank-people": {
@@ -2306,7 +2355,7 @@
         },
         "responses": {
           "200": {
-            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on the vanId path your code sees this 200 and a full `Person` — and, critically, a response that looks nothing like the 201 you get when a person record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
+            "description": "Never sent by this endpoint. This is where a redirect-following client *lands* when the body carried a `vanId` that already exists:\n\n```\nPOST /people/create            {\"vanId\": 102714558, …}\n  ← 302 Found\n    Location: https://api.securevan.com/v4/people/102714558\n    {\"vanId\": 102714558, \"status\": \"Matched\"}\n\nGET /people/102714558          ← client re-issues the request at Location\n  ← 200 OK\n    { full person record — the body documented here }\n```\n\nSo on the vanId path your code sees this 200 and a full `Person` — and, critically, a response that looks nothing like the 201 you get when a person record really was created. Check `resp.history` / `resp.redirected`, or just don't send a `vanId` to a create endpoint. And when the echoed `vanId` names no person — see the outcomes above — the redirect-following client lands on a **404** here instead of this 200. See POST /people/find for the full redirect-following notes, including the `curl -X POST -L` gotcha.",
             "x-provenance": {
               "lastProbed": "2026-08-04",
               "note": "Chain observed end to end with httpx (302 → GET → 200 Person) by posting an existing vanId; identical to the POST /people/findOrCreate and POST /people/find redirects."
@@ -2394,7 +2443,7 @@
             }
           },
           "302": {
-            "description": "The body carried a vanId that already exists, so nothing was created.",
+            "description": "The body carried a `vanId`, and nothing else in the payload was considered. Sent whether or not that id exists — a plausible id is a genuine match or a blind echo whose `Location` answers 404, and an implausible one quietly hides a create, with the new person's id (not the one sent) in the body. See the outcomes above.",
             "headers": {
               "Location": {
                 "$ref": "#/components/headers/MatchedPersonLocation"
@@ -2406,10 +2455,28 @@
                   "$ref": "#/components/schemas/PersonMatched"
                 },
                 "examples": {
+                  "create-echoes-a-plausible-vanid-blindly": {
+                    "summary": "A plausible vanId is echoed back as matched, existent or not",
+                    "description": "The vanId in the body is never checked against the database: any id in the range this database has ever assigned answers 302 Matched with the id echoed straight back, even when it names no one — the Location it points at answers 404. Nothing is created.",
+                    "x-transcript": "create-echoes-a-plausible-vanid-blindly",
+                    "value": {
+                      "vanId": 100777777,
+                      "status": "Matched"
+                    }
+                  },
                   "create-with-a-vanid-matches-instead": {
-                    "summary": "A vanId in the body is the one thing that stops a create",
-                    "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+                    "summary": "A vanId that exists matches instead of creating",
+                    "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person.",
                     "x-transcript": "create-with-a-vanid-matches-instead",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "create-with-an-implausible-vanid-creates-anyway": {
+                    "summary": "An implausible vanId hides a create behind the 302",
+                    "description": "A vanId outside the range the database has ever assigned is ignored — but the request is not refused: the rest of the payload is stored as a new person record, and the answer is still the 302 Matched stub, pointing at the person just created. Only the unfamiliar vanId in the response betrays that something was written.",
+                    "x-transcript": "create-with-an-implausible-vanid-creates-anyway",
                     "value": {
                       "vanId": 100000001,
                       "status": "Matched"
@@ -2434,6 +2501,33 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "404": {
+            "description": "A body `vanId` that matches no person has been seen to answer this way — the standard error envelope, nothing created — in place of the blind 302 echo the identical request normally gets. Rare and not reproducible on demand; code that sends a `vanId` here should treat a 404 as possible.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "notFound": {
+                    "summary": "Unknown body vanId, refused instead of echoed",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "NOT_FOUND",
+                          "text": "The specified resource cannot be found."
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "x-provenance": {
+              "lastProbed": "2026-08-08",
+              "note": "Observed only in CI (schemathesis, run 31282824344, 2026-08-08 22:56-23:02 UTC), where {\"vanId\": 100000001, \"firstName\": \"Soren\"} answered 404 in both the Examples and Coverage phases. Fifteen minutes later the identical request — with and without a session cookie — answered 302 in every attempt, as did every other unknown in-range id probed (100000000-102500000 at several points, and the boundary cases). The sandbox had served a bare 502 half an hour earlier, so this may be an infrastructure mode rather than API logic; documented so a recurrence does not fail conformance."
+            }
+          },
           "429": {
             "$ref": "#/components/responses/TooManyRequests"
           },
@@ -2444,15 +2538,27 @@
         "x-codeSamples": [
           {
             "lang": "Shell",
+            "label": "A plausible vanId is echoed back as matched, existent or not",
+            "source": "# The vanId in the body is never checked against the database: any id in the\n# range this database has ever assigned answers 302 Matched with the id\n# echoed straight back, even when it names no one — the Location it points\n# at answers 404. Nothing is created.\n\n# An id in the assigned range that names no person.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100777777' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }\n\n# Create with that id: matched, apparently.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100777777,\n    \"firstName\": \"Phantom\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100777777\n# {\n#   \"vanId\": 100777777,\n#   \"status\": \"Matched\"\n# }\n\n# But the person the Location points at still does not exist.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100777777' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "create-echoes-a-plausible-vanid-blindly"
+          },
+          {
+            "lang": "Shell",
             "label": "An identical payload creates a second person record",
             "source": "# No de-duplication happens: posting a payload identical to an existing\n# person's — same name, same email — returns 201 with a fresh vanId, and\n# both person records now exist.\n\nCREATE_BODY='{\n  \"firstName\": \"Beatrix\",\n  \"lastName\": \"Falkner\",\n  \"emails\": [\n    {\n      \"email\": \"beatrix.falkner@example.com\"\n    }\n  ]\n}'\n\n# Create a person.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Create them again, byte for byte. Nothing objects: a duplicate is born.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }",
             "x-transcript": "create-never-deduplicates"
           },
           {
             "lang": "Shell",
-            "label": "A vanId in the body is the one thing that stops a create",
-            "source": "# When the body carries a vanId that exists, nothing is created: the answer\n# is the same 302 match stub findOrCreate gives, with a Location pointing at\n# the existing person. This is the only way this endpoint declines to create\n# a person record.\n\n# An existing person to name in the body.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Soren\",\n    \"lastName\": \"Lindqvist\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# A create request that names them. No record is created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001,\n    \"firstName\": \"Soren\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "label": "A vanId that exists matches instead of creating",
+            "source": "# When the body carries a vanId that exists, nothing is created: the answer\n# is the same 302 match stub findOrCreate gives, with a Location pointing at\n# the existing person.\n\n# An existing person to name in the body.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Soren\",\n    \"lastName\": \"Lindqvist\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# A create request that names them. No record is created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001,\n    \"firstName\": \"Soren\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
             "x-transcript": "create-with-a-vanid-matches-instead"
+          },
+          {
+            "lang": "Shell",
+            "label": "An implausible vanId hides a create behind the 302",
+            "source": "# A vanId outside the range the database has ever assigned is ignored — but\n# the request is not refused: the rest of the payload is stored as a new\n# person record, and the answer is still the 302 Matched stub, pointing at\n# the person just created. Only the unfamiliar vanId in the response betrays\n# that something was written.\n\n# An id no record has ever had, far beyond the assigned range.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 2147483646,\n    \"firstName\": \"Implausia\",\n    \"lastName\": \"Storedanyway\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# The 'match' is a person that did not exist a moment ago.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Implausia\",\n#   \"lastName\": \"Storedanyway\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Implausia\",\n#   \"formalSalutation\": \"Implausia Storedanyway\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Implausia Storedanyway\",\n#   \"formalEnvelopeName\": \"Implausia Storedanyway\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "create-with-an-implausible-vanid-creates-anyway"
           },
           {
             "lang": "Shell",
@@ -5731,9 +5837,9 @@
               "integer",
               "null"
             ],
-            "description": "Id of an existing person record. When it matches, all other criteria are ignored and the endpoint returns 302 Matched instead of creating anything — this is the only way POST /people/create will decline to create a person record. A vanId of 0, or one matching nothing, is silently ignored and a new person record is created.",
+            "description": "Id of an existing person record. When present (and not 0), everything else in the payload stops mattering to the match. The two endpoints treat an id that matches nothing differently: POST /people/create answers 302 Matched for any plausible id without ever checking it exists, and for an implausible id quietly creates from the other fields while still answering 302 Matched; POST /people/findOrCreate ignores an unknown id and runs its ordinary match on the rest of the payload. A vanId of 0 is ignored by both. See each operation's outcomes for the full picture.",
             "x-provenance": {
-              "note": "Unlike POST /people/find, which returns 500 for vanId 0, the write endpoints tolerate it (observed 2026-08-03), so no minimum is imposed here."
+              "note": "Unlike POST /people/find, which returns 500 for vanId 0, the write endpoints tolerate it (observed 2026-08-03; on 2026-08-08 create answered 201 Stored for vanId 0 and 302-with-a-hidden-create for negative ids), so no minimum is imposed here."
             }
           },
           "firstName": {
