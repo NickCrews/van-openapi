@@ -1,0 +1,177 @@
+{
+  "id": "find-returns-first-created-duplicate",
+  "title": "With duplicates, name-based criteria return the first-created record",
+  "claim": "When several records match, exactly one vanId comes back and nothing in the response says the match was ambiguous. Criteria including a name resolve to the oldest record.",
+  "spec": [
+    "#/paths/~1people~1find/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Create three records that are identical in every field."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000003"
+        },
+        "body": {
+          "vanId": 100000003,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "All three match these criteria equally well. Exactly one vanId comes back, with nothing to say the other two exist — and it is the first one created."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}

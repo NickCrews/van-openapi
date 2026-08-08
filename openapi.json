@@ -520,7 +520,10 @@
             "description": "Filters the results to Person or Organization contacts. Does not count toward the at-least-one-search-parameter requirement, and any other value is ignored rather than rejected.",
             "schema": {
               "type": "string",
-              "enum": ["Person", "Organization"]
+              "enum": [
+                "Person",
+                "Organization"
+              ]
             },
             "example": "Person"
           },
@@ -638,7 +641,7 @@
                   "$ref": "#/components/schemas/PersonList"
                 },
                 "examples": {
-                                    "First of Many Pages (with $expand)": {
+                  "First of Many Pages (with $expand)": {
                     "description": "lastName=Testperson&$top=1&$orderby=Name desc&$expand=emails,phones,addresses,districts (item abridged: null-only fields, sandbox fuzz noise, and the duplicate Mailing copy of the address omitted — see GET /people/{vanId} for that quirk)",
                     "value": {
                       "items": [
@@ -815,7 +818,9 @@
                         {
                           "code": "INVALID_PARAMETER",
                           "text": "This endpoint requires at least one search parameter to be set.",
-                          "properties": ["All Arguments"]
+                          "properties": [
+                            "All Arguments"
+                          ]
                         }
                       ]
                     }
@@ -827,7 +832,9 @@
                         {
                           "code": "INVALID_PARAMETER",
                           "text": "'phoneNumber' (555) is not a valid phone number for NorthAmerica",
-                          "properties": ["phoneNumber"],
+                          "properties": [
+                            "phoneNumber"
+                          ],
                           "hint": "After non-numeric characters are removed, value must match the regular expression: ^1?[2-9][0-8]\\d[2-9]\\d{6,6}$"
                         }
                       ]
@@ -840,7 +847,9 @@
                         {
                           "code": "INVALID_PARAMETER",
                           "text": "'lastName' is not a valid argument for the '$orderby' parameter",
-                          "properties": ["$orderby"],
+                          "properties": [
+                            "$orderby"
+                          ],
                           "hint": "The only valid orderby property is: 'Name'"
                         }
                       ]
@@ -853,7 +862,9 @@
                         {
                           "code": "INVALID_PARAMETER",
                           "text": "'scores' is not a valid argument for the '$expand' parameter",
-                          "properties": ["$expand"],
+                          "properties": [
+                            "$expand"
+                          ],
                           "hint": "The only valid expand sections are: 'Addresses', 'Emails', 'Phones', 'Districts', 'PollingLocation'"
                         }
                       ]
@@ -893,7 +904,7 @@
       "post": {
         "operationId": "findPerson",
         "summary": "Find a person matching the given criteria",
-        "description": "Attempts to match a person in the database. Read-only: never creates person records (use POST /people/findOrCreate for that).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — that person is returned as a **302** and every other criterion is ignored, no threshold involved.\n- **One person record matches** — **302 Found**, with a `Location` header pointing at `/people/{vanId}` and a small match-stub body, `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, and nothing in the response says the match was ambiguous. Which one you get depends on the shape of the criteria; see **When more than one person record matches** below.\n- **Nothing matches** — **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}` (a match stub, not the standard error envelope).\n- **The criteria fall short of the minimum combination** — **404 Unmatched** as well, not a 400, and indistinguishable from a genuine no-match. This is the common case to guard against; see **The criteria must reach a minimum combination** below.\n\n## The criteria must reach a minimum combination\n\nThis endpoint is deliberately conservative — it would rather return nothing than return the wrong person. It does not attempt a match at all until the criteria reach one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own matches too, though the docs list only email)\n\nAnything short of that — a name on its own, name + date of birth, name + zip — comes back **404 Unmatched** regardless of who is in the database.\n\n**A 404 here does not mean the person does not exist.** It usually means you did not supply enough to identify them. Do not treat Unmatched as \"not in the database\", and in particular do not follow it with a create — see POST /people/findOrCreate, which silently creates a duplicate for exactly this reason.\n\n**If all you have is a name, use GET /people instead.** That endpoint is a loose prefix search with no threshold: `GET /people?firstName=Match&lastName=Threshold` returns full person records for every candidate, and you decide which one (if any) is your person by inspecting them. Use /people/find only once you hold a strong identifier.\n\n## How the criteria are compared\n\n- Everything you send must agree with the person record. Adding a **wrong** first name to a correct email turns a match into Unmatched — extra criteria narrow, they never widen.\n- Comparison is case- and format-insensitive: `MATCH.THRESHOLD@EXAMPLE.COM` matches the stored lowercase address, `907-555-4242` matches the stored `9075554242`, and per the docs it is accent-insensitive too (\"Pérez\" matches \"Perez\"). Names may match on nicknames and variants unless the context has \"Disable Partial Matching\" turned on.\n- The address combination needs the street **number**: `742 Evergreen Terrace` + zip matched; `Evergreen Terrace` + the same zip did not. A wrong zip with a right street also fails.\n\n## When more than one person record matches\n\nDuplicates are common in VAN databases, and this endpoint does not warn you about them: **it returns exactly one vanId with no indication that others also matched.** A 302 is not proof that the match was unique.\n\nThe pick is deterministic, but the tiebreak depends on the shape of the criteria — with three identical person records (102719047 < 102719048 < 102720144, same name, email and phone):\n\n- criteria **including a name** (name+email, name+phone, name+dob+zip) → always the **lowest vanId**, i.e. the oldest person record\n- criteria **without a name** (email alone, phone alone) → always the **highest vanId**, i.e. the newest person record\n\nIt is not the best-matching person record and not the most recently updated one: enriching the newer duplicate so it matched the criteria at least as fully did not move a name-based match off the oldest person record, and touching either duplicate changed nothing.\n\nThe consequence to plan for: at the threshold you may be handed a stale or partial duplicate, and a follow-up write through POST /people/{vanId} then lands on whichever duplicate won the tiebreak while the other keeps drifting. When it matters that you have *the* person record rather than *a* person record, list the candidates with GET /people and reconcile them yourself.",
+        "description": "Attempts to match a person in the database. Read-only: never creates person records (use POST /people/findOrCreate for that).\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — that person is returned as a **302** and every other criterion is ignored, no threshold involved.\n- **One person record matches** — **302 Found**, with a `Location` header pointing at `/people/{vanId}` and a small match-stub body, `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, and nothing in the response says the match was ambiguous. Which one you get depends on the shape of the criteria; see **When more than one person record matches** below.\n- **Nothing matches** — **404** with `{\"vanId\": null, \"status\": \"Unmatched\"}` (a match stub, not the standard error envelope).\n- **The criteria fall short of the minimum combination** — **404 Unmatched** as well, not a 400, and indistinguishable from a genuine no-match. This is the common case to guard against; see **The criteria must reach a minimum combination** below.\n\n## The criteria must reach a minimum combination\n\nThis endpoint is deliberately conservative — it would rather return nothing than return the wrong person. It does not attempt a match at all until the criteria reach one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own matches too, though the docs list only email)\n\nAnything short of that — a name on its own, name + date of birth, name + zip — comes back **404 Unmatched** regardless of who is in the database.\n\n**A 404 here does not mean the person does not exist.** It usually means you did not supply enough to identify them. Do not treat Unmatched as \"not in the database\", and in particular do not follow it with a create — see POST /people/findOrCreate, which silently creates a duplicate for exactly this reason.\n\n**If all you have is a name, use GET /people instead.** That endpoint is a loose prefix search with no threshold: `GET /people?firstName=Harriet&lastName=Kowalski` returns full person records for every candidate, and you decide which one (if any) is your person by inspecting them. Use /people/find only once you hold a strong identifier.\n\n## How the criteria are compared\n\n- Everything you send must agree with the person record. Adding a **wrong** first name to a correct email turns a match into Unmatched — extra criteria narrow, they never widen.\n- Comparison is case- and format-insensitive: `HARRIET.KOWALSKI@EXAMPLE.COM` matches the stored lowercase address, `907-555-4242` matches the stored `9075554242`, and per the docs it is accent-insensitive too (\"Pérez\" matches \"Perez\"). Names may match on nicknames and variants unless the context has \"Disable Partial Matching\" turned on.\n- The address combination needs the street **number**: `742 Evergreen Terrace` + zip matched; `Evergreen Terrace` + the same zip did not. A wrong zip with a right street also fails.\n\n## When more than one person record matches\n\nDuplicates are common in VAN databases, and this endpoint does not warn you about them: **it returns exactly one vanId with no indication that others also matched.** A 302 is not proof that the match was unique.\n\nThe pick is deterministic, but the tiebreak depends on the shape of the criteria — with three identical person records (102719047 < 102719048 < 102720144, same name, email and phone):\n\n- criteria **including a name** (name+email, name+phone, name+dob+zip) → always the **lowest vanId**, i.e. the oldest person record\n- criteria **without a name** (email alone, phone alone) → always the **highest vanId**, i.e. the newest person record\n\nIt is not the best-matching person record and not the most recently updated one: enriching the newer duplicate so it matched the criteria at least as fully did not move a name-based match off the oldest person record, and touching either duplicate changed nothing.\n\nThe consequence to plan for: at the threshold you may be handed a stale or partial duplicate, and a follow-up write through POST /people/{vanId} then lands on whichever duplicate won the tiebreak while the other keeps drifting. When it matters that you have *the* person record rather than *a* person record, list the candidates with GET /people and reconcile them yourself.",
         "x-docs-discrepancy": "Official docs imply a 200 with a person object on match. Sandbox probing (2026-08-03) shows 302 + Location on match and 404 with a match stub on no match; no 400 was observed even for sparse criteria like firstName-only. Criteria below the documented minimum combinations are also answered 404 Unmatched rather than rejected, so under-specified requests are indistinguishable from genuine no-matches. The docs are also silent on ambiguous matches: when several person records satisfy the criteria the API returns one of them with no indication that others matched.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
@@ -910,49 +921,149 @@
                 "$ref": "#/components/schemas/PersonMatchCriteria"
               },
               "examples": {
-                "nameAndEmail": {
-                  "summary": "Match on name + email",
+                "find-below-threshold-is-unmatched": {
+                  "summary": "A name alone returns 404 Unmatched even when the person exists",
+                  "description": "A 404 Unmatched does not mean the person is absent. Criteria that fall short of the minimum combination are never matched at all, and the answer is indistinguishable from a genuine no-match.",
+                  "x-transcript": "find-below-threshold-is-unmatched",
                   "value": {
-                    "firstName": "Ada",
-                    "lastName": "Testperson",
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski"
+                  }
+                },
+                "find-by-vanid-overrides-criteria": {
+                  "summary": "A vanId in the body wins over every other criterion",
+                  "description": "When the body carries a vanId, the rest of the criteria are not used to search — they are not even checked for agreement. A name that belongs to nobody still matches, so a caller who sends a stale vanId alongside fresh details gets the stale record back.",
+                  "x-transcript": "find-by-vanid-overrides-criteria",
+                  "value": {
+                    "vanId": 100000001,
+                    "firstName": "Desmond",
+                    "lastName": "Pemberton"
+                  }
+                },
+                "find-followed-redirect-returns-the-person": {
+                  "summary": "Following the 302 returns the whole person, not the match stub",
+                  "description": "A client that follows the redirect never sees the `{vanId, status}` stub — it ends up on GET /people/{vanId} and receives the full record with 200. This only works if the client converts to GET, as fetch and browsers do; `curl -X POST -L` keeps the method and gets 411.",
+                  "x-transcript": "find-followed-redirect-returns-the-person",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
                     "emails": [
                       {
-                        "email": "ada.testperson@example.com"
+                        "email": "harriet.kowalski@example.com"
                       }
                     ]
                   }
                 },
-                "nameAndPhone": {
-                  "summary": "Match on name + phone",
+                "find-minimum-match-combinations/1": {
+                  "summary": "name + email → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
                   "value": {
-                    "firstName": "Ada",
-                    "lastName": "Testperson",
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
+                    "emails": [
+                      {
+                        "email": "harriet.kowalski@example.com"
+                      }
+                    ]
+                  }
+                },
+                "find-minimum-match-combinations/2": {
+                  "summary": "name + phone → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
                     "phones": [
                       {
-                        "phoneNumber": "9075551234"
+                        "phoneNumber": "9075554242"
                       }
                     ]
                   }
                 },
-                "nameAndAddress": {
-                  "summary": "Match on name + street number, street name and zip5",
+                "find-minimum-match-combinations/3": {
+                  "summary": "name + zip + dateOfBirth → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
                   "value": {
-                    "firstName": "Match",
-                    "lastName": "Threshold",
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
+                    "dateOfBirth": "1975-03-14",
+                    "addresses": [
+                      {
+                        "zipOrPostalCode": "99501"
+                      }
+                    ]
+                  }
+                },
+                "find-minimum-match-combinations/4": {
+                  "summary": "name + street + zip → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
                     "addresses": [
                       {
                         "addressLine1": "742 Evergreen Terrace",
+                        "city": "Springfield",
+                        "stateOrProvince": "AK",
                         "zipOrPostalCode": "99501"
                       }
                     ]
                   }
                 },
-                "nameAndDobAndZip": {
-                  "summary": "Match on name + date of birth + zip5",
+                "find-minimum-match-combinations/5": {
+                  "summary": "email alone → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
                   "value": {
-                    "firstName": "Match",
-                    "lastName": "Threshold",
-                    "dateOfBirth": "1980-04-15",
+                    "emails": [
+                      {
+                        "email": "harriet.kowalski@example.com"
+                      }
+                    ]
+                  }
+                },
+                "find-minimum-match-combinations/6": {
+                  "summary": "phone alone → matched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "phones": [
+                      {
+                        "phoneNumber": "9075554242"
+                      }
+                    ]
+                  }
+                },
+                "find-minimum-match-combinations/7": {
+                  "summary": "name alone → unmatched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski"
+                  }
+                },
+                "find-minimum-match-combinations/8": {
+                  "summary": "name + dateOfBirth → unmatched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
+                    "dateOfBirth": "1975-03-14"
+                  }
+                },
+                "find-minimum-match-combinations/9": {
+                  "summary": "name + zip → unmatched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
                     "addresses": [
                       {
                         "zipOrPostalCode": "99501"
@@ -960,28 +1071,47 @@
                     ]
                   }
                 },
-                "emailOnly": {
-                  "summary": "Match on an email address alone — no name needed",
+                "find-minimum-match-combinations/10": {
+                  "summary": "street + zip, no name → unmatched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
                   "value": {
-                    "emails": [
+                    "addresses": [
                       {
-                        "email": "match.threshold@example.com"
+                        "addressLine1": "742 Evergreen Terrace",
+                        "city": "Springfield",
+                        "stateOrProvince": "AK",
+                        "zipOrPostalCode": "99501"
                       }
                     ]
                   }
                 },
-                "belowThreshold": {
-                  "summary": "Below the minimum combination — always 404 Unmatched, even for a person who exists",
-                  "description": "Name-only criteria never reach the matching threshold. Search with GET /people instead and inspect the candidates yourself.",
+                "find-minimum-match-combinations/11": {
+                  "summary": "wrong name + right email → unmatched",
+                  "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                  "x-transcript": "find-minimum-match-combinations",
                   "value": {
-                    "firstName": "Match",
-                    "lastName": "Threshold"
+                    "firstName": "Gregory",
+                    "lastName": "Kowalski",
+                    "emails": [
+                      {
+                        "email": "harriet.kowalski@example.com"
+                      }
+                    ]
                   }
                 },
-                "byVanId": {
-                  "summary": "Look up by vanId (overrides all other criteria)",
+                "find-returns-first-created-duplicate": {
+                  "summary": "With duplicates, name-based criteria return the first-created record",
+                  "description": "When several records match, exactly one vanId comes back and nothing in the response says the match was ambiguous. Criteria including a name resolve to the oldest record.",
+                  "x-transcript": "find-returns-first-created-duplicate",
                   "value": {
-                    "vanId": 102714507
+                    "firstName": "Harriet",
+                    "lastName": "Kowalski",
+                    "emails": [
+                      {
+                        "email": "harriet.kowalski@example.com"
+                      }
+                    ]
                   }
                 }
               }
@@ -1001,26 +1131,92 @@
                   "$ref": "#/components/schemas/Person"
                 },
                 "examples": {
-                  "matched": {
-                    "summary": "Sandbox test person (abridged: null-only fields omitted)",
+                  "find-followed-redirect-returns-the-person": {
+                    "summary": "Following the 302 returns the whole person, not the match stub",
+                    "description": "A client that follows the redirect never sees the `{vanId, status}` stub — it ends up on GET /people/{vanId} and receives the full record with 200. This only works if the client converts to GET, as fetch and browsers do; `curl -X POST -L` keeps the method and gets 411.",
+                    "x-transcript": "find-followed-redirect-returns-the-person",
                     "value": {
-                      "vanId": 102714507,
-                      "firstName": "Ada",
-                      "lastName": "Testperson",
+                      "vanId": 100000001,
+                      "firstName": "Harriet",
+                      "lastName": "Kowalski",
                       "middleName": null,
+                      "suffix": null,
+                      "title": null,
+                      "sourceFileTitle": null,
+                      "sourceFileFirstName": null,
+                      "sourceFileMiddleName": null,
+                      "sourceFileLastName": null,
+                      "sourceFileSuffix": null,
                       "contactSource": "API",
                       "contactMode": "Person",
-                      "salutation": "Ada",
-                      "formalSalutation": "Ada Testperson",
-                      "envelopeName": "Ada Testperson",
-                      "isDeceased": false,
-                      "dateCreated": "2026-08-03T12:58:00Z",
-                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "organizationContactCommonName": null,
+                      "organizationContactOfficialName": null,
+                      "salutation": "Harriet",
+                      "formalSalutation": "Harriet Kowalski",
+                      "additionalSalutation": null,
+                      "preferredPronoun": null,
+                      "pronouns": null,
+                      "namePronunciation": null,
+                      "envelopeName": "Harriet Kowalski",
+                      "formalEnvelopeName": "Harriet Kowalski",
+                      "additionalEnvelopeName": null,
+                      "contactMethodPreferenceCode": null,
+                      "contactMethodPreferenceId": null,
+                      "contactMethodPreferenceName": null,
+                      "assistantName": null,
+                      "nickname": null,
+                      "website": null,
+                      "professionalSuffix": null,
                       "party": null,
-                      "dateOfBirth": null,
+                      "employer": null,
+                      "occupation": null,
+                      "jobTitle": null,
+                      "sex": null,
+                      "dateOfBirth": "1975-03-14T00:00:00Z",
+                      "isDeceased": false,
+                      "partialDateOfBirth": {
+                        "month": 3,
+                        "day": 14,
+                        "year": 1975
+                      },
+                      "dateCreated": "2026-01-01T00:00:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "selfReportedRace": null,
+                      "selfReportedEthnicity": null,
+                      "selfReportedRaces": null,
+                      "selfReportedEthnicities": null,
+                      "selfReportedGenders": null,
+                      "selfReportedSexualOrientations": null,
+                      "selfReportedLanguagePreference": null,
+                      "selfReportedLanguagePreferences": null,
                       "emails": null,
                       "phones": null,
-                      "addresses": null
+                      "addresses": null,
+                      "recordedAddresses": null,
+                      "pollingLocation": null,
+                      "earlyVoteLocation": null,
+                      "identifiers": null,
+                      "codes": null,
+                      "customFields": null,
+                      "primaryCustomField": null,
+                      "contributionSummary": null,
+                      "suppressions": null,
+                      "caseworkCases": null,
+                      "caseworkIssues": null,
+                      "caseworkStories": null,
+                      "notes": null,
+                      "scores": null,
+                      "customProperties": null,
+                      "electionRecords": null,
+                      "membershipStatus": null,
+                      "organizationRoles": null,
+                      "districts": null,
+                      "surveyQuestionResponses": null,
+                      "finderNumber": null,
+                      "biographyImageUrl": null,
+                      "biographyText": null,
+                      "biographyHtml": null,
+                      "primaryContact": null
                     }
                   }
                 }
@@ -1047,6 +1243,80 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
+                },
+                "examples": {
+                  "find-by-vanid-overrides-criteria": {
+                    "summary": "A vanId in the body wins over every other criterion",
+                    "description": "When the body carries a vanId, the rest of the criteria are not used to search — they are not even checked for agreement. A name that belongs to nobody still matches, so a caller who sends a stale vanId alongside fresh details gets the stale record back.",
+                    "x-transcript": "find-by-vanid-overrides-criteria",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/1": {
+                    "summary": "name + email → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/2": {
+                    "summary": "name + phone → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/3": {
+                    "summary": "name + zip + dateOfBirth → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/4": {
+                    "summary": "name + street + zip → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/5": {
+                    "summary": "email alone → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-minimum-match-combinations/6": {
+                    "summary": "phone alone → matched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "find-returns-first-created-duplicate": {
+                    "summary": "With duplicates, name-based criteria return the first-created record",
+                    "description": "When several records match, exactly one vanId comes back and nothing in the response says the match was ambiguous. Criteria including a name resolve to the oldest record.",
+                    "x-transcript": "find-returns-first-created-duplicate",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  }
                 }
               }
             },
@@ -1067,15 +1337,62 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "No person matched the criteria. Body is a match stub with status \"Unmatched\" (NOT the standard error envelope).\n\nThis is also the answer when the criteria never reached the minimum combination needed to attempt a match at all — there is no 400 and nothing in the body distinguishes the two cases. **Read it as \"not identified\", not \"not in the database\":** a person you can see through GET /people will still come back Unmatched here if all you sent was their name. See the operation description for the combinations that do trigger a match.",
+            "description": "No person matched the criteria.\n\nThis is also the answer when the criteria never reached the minimum combination needed to attempt a match at all — there is no 400 and nothing in the body distinguishes the two cases. **Read it as \"not identified\", not \"not in the database\":** a person you can see through GET /people will still come back Unmatched here if all you sent was their name. See the operation description for the combinations that do trigger a match.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonUnmatched"
                 },
                 "examples": {
-                  "unmatched": {
-                    "summary": "No match",
+                  "find-below-threshold-is-unmatched": {
+                    "summary": "A name alone returns 404 Unmatched even when the person exists",
+                    "description": "A 404 Unmatched does not mean the person is absent. Criteria that fall short of the minimum combination are never matched at all, and the answer is indistinguishable from a genuine no-match.",
+                    "x-transcript": "find-below-threshold-is-unmatched",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  },
+                  "find-minimum-match-combinations/7": {
+                    "summary": "name alone → unmatched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  },
+                  "find-minimum-match-combinations/8": {
+                    "summary": "name + dateOfBirth → unmatched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  },
+                  "find-minimum-match-combinations/9": {
+                    "summary": "name + zip → unmatched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  },
+                  "find-minimum-match-combinations/10": {
+                    "summary": "street + zip, no name → unmatched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
+                    "value": {
+                      "vanId": null,
+                      "status": "Unmatched"
+                    }
+                  },
+                  "find-minimum-match-combinations/11": {
+                    "summary": "wrong name + right email → unmatched",
+                    "description": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+                    "x-transcript": "find-minimum-match-combinations",
                     "value": {
                       "vanId": null,
                       "status": "Unmatched"
@@ -1091,14 +1408,46 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "A name alone returns 404 Unmatched even when the person exists",
+            "source": "# A 404 Unmatched does not mean the person is absent. Criteria that fall\n# short of the minimum combination are never matched at all, and the answer\n# is indistinguishable from a genuine no-match.\n\n# Put a person in the database, carrying every identifier the match can ask\n# for.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ],\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ],\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Now look for them by name alone. The person is unambiguously there — we\n# just created them — but name alone is below the minimum combination, so no\n# match is attempted at all.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\"\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }",
+            "x-transcript": "find-below-threshold-is-unmatched"
+          },
+          {
+            "lang": "Shell",
+            "label": "A vanId in the body wins over every other criterion",
+            "source": "# When the body carries a vanId, the rest of the criteria are not used to\n# search — they are not even checked for agreement. A name that belongs to\n# nobody still matches, so a caller who sends a stale vanId alongside fresh\n# details gets the stale record back.\n\n# One person to aim at.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ],\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ],\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Ask for that vanId while giving a name that matches no record at all. The\n# contradiction is ignored: the vanId decides the answer by itself.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001,\n    \"firstName\": \"Desmond\",\n    \"lastName\": \"Pemberton\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "find-by-vanid-overrides-criteria"
+          },
+          {
+            "lang": "Shell",
+            "label": "Following the 302 returns the whole person, not the match stub",
+            "source": "# A client that follows the redirect never sees the `{vanId, status}` stub —\n# it ends up on GET /people/{vanId} and receives the full record with 200.\n# This only works if the client converts to GET, as fetch and browsers do;\n# `curl -X POST -L` keeps the method and gets 411.\n\n# A person to match, carrying enough identifiers to clear the threshold.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ],\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ],\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Same find as ever, but this client follows the redirect. The 200 below\n# came from GET /people/{vanId} at the end of the chain, which is why it is\n# a whole person.\n\ncurl -sS -L 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ]\n  }'\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Harriet\",\n#   \"lastName\": \"Kowalski\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Harriet\",\n#   \"formalSalutation\": \"Harriet Kowalski\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Harriet Kowalski\",\n#   \"formalEnvelopeName\": \"Harriet Kowalski\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": \"1975-03-14T00:00:00Z\",\n#   \"isDeceased\": false,\n#   \"partialDateOfBirth\": {\n#     \"month\": 3,\n#     \"day\": 14,\n#     \"year\": 1975\n#   },\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "find-followed-redirect-returns-the-person"
+          },
+          {
+            "lang": "Shell",
+            "label": "Only certain criteria combinations are matched at all",
+            "source": "# The endpoint does not attempt a match until the criteria reach one of a\n# fixed set of combinations. Below that it answers 404 Unmatched rather than\n# 400, so an under-specified query is silently indistinguishable from a\n# person who is not there.\n\n# One person, holding every identifier, so only the criteria vary below.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ],\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ],\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# name + email → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# name + phone → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# name + zip + dateOfBirth → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\",\n    \"addresses\": [\n      {\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# name + street + zip → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# email alone → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# phone alone → matched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075554242\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# name alone → unmatched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\"\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }\n\n# name + dateOfBirth → unmatched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"dateOfBirth\": \"1975-03-14\"\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }\n\n# name + zip → unmatched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"addresses\": [\n      {\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }\n\n# street + zip, no name → unmatched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"addresses\": [\n      {\n        \"addressLine1\": \"742 Evergreen Terrace\",\n        \"city\": \"Springfield\",\n        \"stateOrProvince\": \"AK\",\n        \"zipOrPostalCode\": \"99501\"\n      }\n    ]\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }\n\n# wrong name + right email → unmatched\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Gregory\",\n    \"lastName\": \"Kowalski\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ]\n  }'\n# → 404\n# {\n#   \"vanId\": null,\n#   \"status\": \"Unmatched\"\n# }",
+            "x-transcript": "find-minimum-match-combinations"
+          },
+          {
+            "lang": "Shell",
+            "label": "With duplicates, name-based criteria return the first-created record",
+            "source": "# When several records match, exactly one vanId comes back and nothing in\n# the response says the match was ambiguous. Criteria including a name\n# resolve to the oldest record.\n\nCREATE_BODY='{\n  \"firstName\": \"Harriet\",\n  \"lastName\": \"Kowalski\",\n  \"dateOfBirth\": \"1975-03-14\",\n  \"emails\": [\n    {\n      \"email\": \"harriet.kowalski@example.com\"\n    }\n  ],\n  \"phones\": [\n    {\n      \"phoneNumber\": \"9075554242\"\n    }\n  ],\n  \"addresses\": [\n    {\n      \"addressLine1\": \"742 Evergreen Terrace\",\n      \"city\": \"Springfield\",\n      \"stateOrProvince\": \"AK\",\n      \"zipOrPostalCode\": \"99501\"\n    }\n  ]\n}'\n\n# Create three records that are identical in every field.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000003\n# {\n#   \"vanId\": 100000003,\n#   \"status\": \"Stored\"\n# }\n\n# All three match these criteria equally well. Exactly one vanId comes back,\n# with nothing to say the other two exist — and it is the first one created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Kowalski\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.kowalski@example.com\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "find-returns-first-created-duplicate"
+          }
+        ]
       }
     },
     "/people/findOrCreate": {
       "post": {
         "operationId": "findOrCreatePerson",
         "summary": "Find a person, or create one if nothing matches",
-        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new person record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that person is returned as **302 Found**, and nothing is created.\n- **One person record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new person record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new person record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank person record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second person record.** Posting `{\"firstName\": \"Match\", \"lastName\": \"Threshold\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two person records now both exist. This is the main way duplicate person records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
+        "description": "Runs the same match as POST /people/find and, when nothing matches, stores the payload as a new person record.\n\nOutcomes:\n\n- **The body supplies a `vanId` that exists** — the match is short-circuited, that person is returned as **302 Found**, and nothing is created.\n- **One person record matches** — **302 Found**, with a `Location` header and `{\"vanId\": …, \"status\": \"Matched\"}`.\n- **Several person records match** — still a **302** for exactly one of them, with nothing in the response to say the match was ambiguous. See POST /people/find for which one you get.\n- **Nothing matches** — **201 Created** with `{\"vanId\": …, \"status\": \"UnmatchedStored\"}`, and the payload is stored as a new person record. Unlike find, this never returns 404 — the no-match case is the create case.\n- **The criteria fall short of the minimum combination** — **201 Created** as well: a brand-new person record, even when the person is already in the database. This is the duplicate trap; see **The match half has a minimum threshold** below.\n- **The body is empty (`{}`)** — every field is optional, including the name, so this is a no-match: **201** and a blank person record is created.\n\n## The match half has a minimum threshold — below it, you create duplicates\n\nThe match runs under the same rules as POST /people/find: nothing is searched until the payload reaches one of these combinations:\n\n- first name + last name + **email address**\n- first name + last name + **phone**\n- first name + last name + **zip5** + **date of birth**\n- first name + last name + **street number + street name + zip5**\n- **email address** on its own (a **phone** on its own works too)\n\n**Below the threshold there is no \"unmatched\" to inspect — the API just creates a second person record.** Posting `{\"firstName\": \"Harriet\", \"lastName\": \"Kowalski\"}` for a person who is already in the database returns 201 with a fresh vanId, and the two person records now both exist. This is the main way duplicate person records get into a VAN database through the API.\n\nSo: only send a payload here that carries a strong identifier. If all you have is a name, search with GET /people first, decide for yourself whether a candidate is your person, and update it by id through POST /people/{vanId} instead.",
         "x-provenance": {
           "lastProbed": "2026-08-04",
           "note": "Not in the official docs' page index; the path comes from van-cli (people.ts findOrCreate), which requires firstName and lastName client-side. The API itself requires neither — an empty body was accepted (observed 2026-08-03). Threshold behavior confirmed 2026-08-04: firstName+lastName for existing vanId 102719047 created duplicate 102719048 (201 UnmatchedStored); the same name plus the person's email returned 302 Matched."
@@ -1220,9 +1569,15 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "429": { "$ref": "#/components/responses/TooManyRequests" },
-          "500": { "$ref": "#/components/responses/ServerError" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
         }
       }
     },
@@ -1427,10 +1782,64 @@
                 "$ref": "#/components/schemas/PersonMergeInput"
               },
               "examples": {
-                "primary": {
-                  "summary": "The person that survives the merge",
+                "merge-empty-whatif-is-rejected": {
+                  "summary": "An empty whatIf is rejected outright",
+                  "description": "`?whatIf=` is the one value that neither simulates nor merges: it is refused with a bare BAD_REQUEST. Every other non-empty value performs the merge, so the empty string is the only typo here that is safe.",
+                  "x-transcript": "merge-empty-whatif-is-rejected",
                   "value": {
-                    "vanId": 102720504
+                    "vanId": 100000001
+                  }
+                },
+                "merge-refuses-mismatched-contact-modes": {
+                  "summary": "A person and an organization cannot be merged",
+                  "description": "Both records must be the same kind of contact. The refusal names both vanIds and tells the caller to change the contactMode in the UI first, so it is the only 400 here that identifies which records were at fault.",
+                  "x-transcript": "merge-refuses-mismatched-contact-modes",
+                  "value": {
+                    "vanId": 100000001
+                  }
+                },
+                "merge-refuses-unusable-bodies/1": {
+                  "summary": "A JSON object that parses fine but names no counterpart.",
+                  "description": "A well-formed object that simply has no vanId is refused differently from a body that is not an object at all, so the message distinguishes 'you forgot the id' from 'I could not read this'.",
+                  "x-transcript": "merge-refuses-unusable-bodies",
+                  "value": {}
+                },
+                "merge-refuses-unusable-bodies/2": {
+                  "summary": "A body that is valid JSON but not an object at all.",
+                  "description": "A well-formed object that simply has no vanId is refused differently from a body that is not an object at all, so the message distinguishes 'you forgot the id' from 'I could not read this'.",
+                  "x-transcript": "merge-refuses-unusable-bodies",
+                  "value": "nope"
+                },
+                "merge-remembers-merged-away-ids/1": {
+                  "summary": "Reuse that merged-away id in a fresh merge. It is remembered, permanently.",
+                  "description": "A vanId that has been merged away is refused on either side of any later merge with a different message from the one an id that never existed gets. Since GET /people/{vanId} answers 404 for both, this endpoint is the only way to tell them apart.",
+                  "x-transcript": "merge-remembers-merged-away-ids",
+                  "value": {
+                    "vanId": 100000003
+                  }
+                },
+                "merge-remembers-merged-away-ids/2": {
+                  "summary": "An id that never existed is refused too, but with different text. That difference is the only way to tell the two apart — GET /people/{vanId} answers 404 for both.",
+                  "description": "A vanId that has been merged away is refused on either side of any later merge with a different message from the one an id that never existed gets. Since GET /people/{vanId} answers 404 for both, this endpoint is the only way to tell them apart.",
+                  "x-transcript": "merge-remembers-merged-away-ids",
+                  "value": {
+                    "vanId": 100000003
+                  }
+                },
+                "merge-whatif-requires-literal-true": {
+                  "summary": "whatIf only simulates for the literal string 'true'",
+                  "description": "Only the exact value `true` simulates. Every other non-empty value — including `1` and `yes` — is read as false and performs the merge for real, and the response is identical either way, so nothing in it reveals which one happened.",
+                  "x-transcript": "merge-whatif-requires-literal-true",
+                  "value": {
+                    "vanId": 100000001
+                  }
+                },
+                "merge-whatif-true-simulates-without-writing": {
+                  "summary": "whatIf=true returns the completed-merge response without merging",
+                  "description": "A simulation answers exactly as a real merge does — same 200, same body, same Location pointing at the primary — while both records survive. The response is therefore no evidence that a merge happened.",
+                  "x-transcript": "merge-whatif-true-simulates-without-writing",
+                  "value": {
+                    "vanId": 100000001
                   }
                 }
               }
@@ -1457,10 +1866,20 @@
                   "$ref": "#/components/schemas/PersonMergeResult"
                 },
                 "examples": {
-                  "merged": {
-                    "summary": "Primary vanId",
+                  "merge-whatif-requires-literal-true": {
+                    "summary": "whatIf only simulates for the literal string 'true'",
+                    "description": "Only the exact value `true` simulates. Every other non-empty value — including `1` and `yes` — is read as false and performs the merge for real, and the response is identical either way, so nothing in it reveals which one happened.",
+                    "x-transcript": "merge-whatif-requires-literal-true",
                     "value": {
-                      "vanId": 102720708
+                      "vanId": 100000001
+                    }
+                  },
+                  "merge-whatif-true-simulates-without-writing": {
+                    "summary": "whatIf=true returns the completed-merge response without merging",
+                    "description": "A simulation answers exactly as a real merge does — same 200, same body, same Location pointing at the primary — while both records survive. The response is therefore no evidence that a merge happened.",
+                    "x-transcript": "merge-whatif-true-simulates-without-writing",
+                    "value": {
+                      "vanId": 100000001
                     }
                   }
                 }
@@ -1487,30 +1906,36 @@
                   "$ref": "#/components/schemas/ErrorResponse"
                 },
                 "examples": {
-                  "noAccess": {
-                    "summary": "One of the ids does not exist",
+                  "merge-empty-whatif-is-rejected": {
+                    "summary": "An empty whatIf is rejected outright",
+                    "description": "`?whatIf=` is the one value that neither simulates nor merges: it is refused with a bare BAD_REQUEST. Every other non-empty value performs the merge, so the empty string is the only typo here that is safe.",
+                    "x-transcript": "merge-empty-whatif-is-rejected",
                     "value": {
                       "errors": [
                         {
-                          "code": "INVALID_PARAMETER",
-                          "text": "You must have access to both contacts to merge them."
+                          "code": "BAD_REQUEST",
+                          "text": "The request is invalid."
                         }
                       ]
                     }
                   },
-                  "alreadyMerged": {
-                    "summary": "An id that was merged away by an earlier call",
+                  "merge-refuses-mismatched-contact-modes": {
+                    "summary": "A person and an organization cannot be merged",
+                    "description": "Both records must be the same kind of contact. The refusal names both vanIds and tells the caller to change the contactMode in the UI first, so it is the only 400 here that identifies which records were at fault.",
+                    "x-transcript": "merge-refuses-mismatched-contact-modes",
                     "value": {
                       "errors": [
                         {
                           "code": "INVALID_PARAMETER",
-                          "text": "One or more of these contacts has already been merged."
+                          "text": "VANID 100000002 and VANID 100000001 cannot be be merged as they are not the same type of Contact. In order to merge contacts, both records must either be people or organizations. To enable the merge, navigate to the incorrectly typed record and change its type."
                         }
                       ]
                     }
                   },
-                  "missingVanId": {
-                    "summary": "Body without a usable vanId",
+                  "merge-refuses-unusable-bodies/1": {
+                    "summary": "A JSON object that parses fine but names no counterpart.",
+                    "description": "A well-formed object that simply has no vanId is refused differently from a body that is not an object at all, so the message distinguishes 'you forgot the id' from 'I could not read this'.",
+                    "x-transcript": "merge-refuses-unusable-bodies",
                     "value": {
                       "errors": [
                         {
@@ -1520,8 +1945,10 @@
                       ]
                     }
                   },
-                  "unparseableBody": {
-                    "summary": "No body, or a body that is not a JSON object",
+                  "merge-refuses-unusable-bodies/2": {
+                    "summary": "A body that is valid JSON but not an object at all.",
+                    "description": "A well-formed object that simply has no vanId is refused differently from a body that is not an object at all, so the message distinguishes 'you forgot the id' from 'I could not read this'.",
+                    "x-transcript": "merge-refuses-unusable-bodies",
                     "value": {
                       "errors": [
                         {
@@ -1531,24 +1958,28 @@
                       ]
                     }
                   },
-                  "contactModeMismatch": {
-                    "summary": "A person and an organization",
+                  "merge-remembers-merged-away-ids/1": {
+                    "summary": "Reuse that merged-away id in a fresh merge. It is remembered, permanently.",
+                    "description": "A vanId that has been merged away is refused on either side of any later merge with a different message from the one an id that never existed gets. Since GET /people/{vanId} answers 404 for both, this endpoint is the only way to tell them apart.",
+                    "x-transcript": "merge-remembers-merged-away-ids",
                     "value": {
                       "errors": [
                         {
                           "code": "INVALID_PARAMETER",
-                          "text": "VANID 102720679 and VANID 102720681 cannot be be merged as they are not the same type of Contact. In order to merge contacts, both records must either be people or organizations. To enable the merge, navigate to the incorrectly typed record and change its type."
+                          "text": "One or more of these contacts has already been merged."
                         }
                       ]
                     }
                   },
-                  "emptyWhatIf": {
-                    "summary": "?whatIf= with no value",
+                  "merge-remembers-merged-away-ids/2": {
+                    "summary": "An id that never existed is refused too, but with different text. That difference is the only way to tell the two apart — GET /people/{vanId} answers 404 for both.",
+                    "description": "A vanId that has been merged away is refused on either side of any later merge with a different message from the one an id that never existed gets. Since GET /people/{vanId} answers 404 for both, this endpoint is the only way to tell them apart.",
+                    "x-transcript": "merge-remembers-merged-away-ids",
                     "value": {
                       "errors": [
                         {
-                          "code": "BAD_REQUEST",
-                          "text": "The request is invalid."
+                          "code": "INVALID_PARAMETER",
+                          "text": "You must have access to both contacts to merge them."
                         }
                       ]
                     }
@@ -1589,7 +2020,45 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "An empty whatIf is rejected outright",
+            "source": "# `?whatIf=` is the one value that neither simulates nor merges: it is\n# refused with a bare BAD_REQUEST. Every other non-empty value performs the\n# merge, so the empty string is the only typo here that is safe.\n\nCREATE_BODY='{\n  \"firstName\": \"Dana\",\n  \"lastName\": \"Whitfield\"\n}'\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# Send the parameter with no value. Nothing is merged and nothing is\n# simulated.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto?whatIf=' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"BAD_REQUEST\",\n#       \"text\": \"The request is invalid.\"\n#     }\n#   ]\n# }\n\n# Both records survive, confirming the request was refused before anything\n# was written.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000002' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000002,\n#   \"firstName\": \"Dana\",\n#   \"lastName\": \"Whitfield\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Dana\",\n#   \"formalSalutation\": \"Dana Whitfield\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Dana Whitfield\",\n#   \"formalEnvelopeName\": \"Dana Whitfield\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "merge-empty-whatif-is-rejected"
+          },
+          {
+            "lang": "Shell",
+            "label": "A person and an organization cannot be merged",
+            "source": "# Both records must be the same kind of contact. The refusal names both\n# vanIds and tells the caller to change the contactMode in the UI first, so\n# it is the only 400 here that identifies which records were at fault.\n\n# One person and one organization — the same database, two kinds of contact.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"contactMode\": \"Organization\",\n    \"lastName\": \"Harborview Tenants Union\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Theo\",\n    \"lastName\": \"Marsh\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# Simulate the merge, so the refusal is the only thing this behavior can\n# possibly do. The kinds are checked before anything else about the pair.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto?whatIf=true' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"VANID 100000002 and VANID 100000001 cannot be be merged as they are not the same type of Contact. In order to merge contacts, both records must either be people or organizations. To enable the merge, navigate to the incorrectly typed record and change its type.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "merge-refuses-mismatched-contact-modes"
+          },
+          {
+            "lang": "Shell",
+            "label": "A body without a usable vanId is refused, with two different messages",
+            "source": "# A well-formed object that simply has no vanId is refused differently from\n# a body that is not an object at all, so the message distinguishes 'you\n# forgot the id' from 'I could not read this'.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Priya\",\n    \"lastName\": \"Raman\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# A JSON object that parses fine but names no counterpart.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000001/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{}\n  {}'\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"Must specify VanIDs for merging\"\n#     }\n#   ]\n# }\n\n# A body that is valid JSON but not an object at all.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000001/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '\"nope\"\n  \"nope\"'\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"The body of the request is null or cannot be parsed.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "merge-refuses-unusable-bodies"
+          },
+          {
+            "lang": "Shell",
+            "label": "A merged-away vanId is refused forever, with its own message",
+            "source": "# A vanId that has been merged away is refused on either side of any later\n# merge with a different message from the one an id that never existed gets.\n# Since GET /people/{vanId} answers 404 for both, this endpoint is the only\n# way to tell them apart.\n\nCREATE_BODY='{\n  \"firstName\": \"Ivy\",\n  \"lastName\": \"Calloway\"\n}'\n\nMERGEINTO_BODY='{\n  \"vanId\": 100000003\n}'\n\n# Three records: two to merge now, one to attempt a second merge against\n# later.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Omar\",\n    \"lastName\": \"Haddad\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000003\n# {\n#   \"vanId\": 100000003,\n#   \"status\": \"Stored\"\n# }\n\n# Merge the secondary away. Its vanId now 404s on GET /people/{vanId}.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# Reuse that merged-away id in a fresh merge. It is remembered, permanently.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$MERGEINTO_BODY\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"One or more of these contacts has already been merged.\"\n#     }\n#   ]\n# }\n\n# An id that never existed is refused too, but with different text. That\n# difference is the only way to tell the two apart — GET /people/{vanId}\n# answers 404 for both.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/2147483646/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$MERGEINTO_BODY\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"You must have access to both contacts to merge them.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "merge-remembers-merged-away-ids"
+          },
+          {
+            "lang": "Shell",
+            "label": "whatIf only simulates for the literal string 'true'",
+            "source": "# Only the exact value `true` simulates. Every other non-empty value —\n# including `1` and `yes` — is read as false and performs the merge for\n# real, and the response is identical either way, so nothing in it reveals\n# which one happened.\n\n# Two records to merge: the primary survives, the secondary is consumed.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Rosa\",\n    \"lastName\": \"Delgado\",\n    \"emails\": [\n      {\n        \"email\": \"rosa.delgado@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Rosa\",\n    \"lastName\": \"Delgado\",\n    \"emails\": [\n      {\n        \"email\": \"rdelgado@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# Ask for a simulation with whatIf=yes — truthy in every language a caller\n# might write this in. The 200 below is exactly what a real simulation\n# returns.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto?whatIf=yes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# But nothing was simulated. The secondary is gone for good — only the\n# literal string `true` suppresses the write.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000002' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "merge-whatif-requires-literal-true"
+          },
+          {
+            "lang": "Shell",
+            "label": "whatIf=true returns the completed-merge response without merging",
+            "source": "# A simulation answers exactly as a real merge does — same 200, same body,\n# same Location pointing at the primary — while both records survive. The\n# response is therefore no evidence that a merge happened.\n\nCREATE_BODY='{\n  \"firstName\": \"Miles\",\n  \"lastName\": \"Okafor\"\n}'\n\n# Two records to merge: the primary would survive, the secondary would be\n# consumed.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# Simulate with the literal string `true` — the only value that suppresses\n# the write.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto?whatIf=true' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# Nothing was written: the secondary is still there, unlike after a real\n# merge.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000002' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000002,\n#   \"firstName\": \"Miles\",\n#   \"lastName\": \"Okafor\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Miles\",\n#   \"formalSalutation\": \"Miles Okafor\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Miles Okafor\",\n#   \"formalEnvelopeName\": \"Miles Okafor\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "merge-whatif-true-simulates-without-writing"
+          }
+        ]
       }
     },
     "/people/{vanId}/notes": {
@@ -2997,7 +3466,7 @@
       },
       "PersonUnmatched": {
         "type": "object",
-        "description": "Nothing matched and nothing was written — the 404 body from find. The one match-stub shape with a null vanId.",
+        "description": "No person matched and nothing was written — the 404 body from find.",
         "required": [
           "vanId",
           "status"
@@ -3198,7 +3667,10 @@
               "$ref": "#/components/schemas/NoteCategoryType"
             },
             "description": "The note category types this category can be applied to — the entities a note in it can hang off. Values are drawn from `GET /notes/categoryTypes`, which in almost all contexts is `Event`, `Location`, `Person` and `Organization`.\n\nA category can only be used on a person note if this array contains `Person`; sending the id of any other category to `POST /people/{vanId}/notes` returns 400.",
-            "example": ["Event", "Organization"]
+            "example": [
+              "Event",
+              "Organization"
+            ]
           }
         }
       },
@@ -3696,32 +4168,48 @@
             "title": "Verified Cell",
             "type": "object",
             "properties": {
-              "statusId": { "const": 1 },
-              "statusName": { "const": "Verified Cell" }
+              "statusId": {
+                "const": 1
+              },
+              "statusName": {
+                "const": "Verified Cell"
+              }
             }
           },
           {
             "title": "Likely Cell",
             "type": "object",
             "properties": {
-              "statusId": { "const": 2 },
-              "statusName": { "const": "Likely Cell" }
+              "statusId": {
+                "const": 2
+              },
+              "statusName": {
+                "const": "Likely Cell"
+              }
             }
           },
           {
             "title": "Likely Not a Cell",
             "type": "object",
             "properties": {
-              "statusId": { "const": 3 },
-              "statusName": { "const": "Likely Not a Cell" }
+              "statusId": {
+                "const": 3
+              },
+              "statusName": {
+                "const": "Likely Not a Cell"
+              }
             }
           },
           {
             "title": "Not a Cell",
             "type": "object",
             "properties": {
-              "statusId": { "const": 4 },
-              "statusName": { "const": "Not a Cell" }
+              "statusId": {
+                "const": 4
+              },
+              "statusName": {
+                "const": "Not a Cell"
+              }
             }
           }
         ]
@@ -3921,7 +4409,11 @@
           "phoneNumber": {
             "type": "string",
             "description": "Non-numeric characters are stripped, then the remaining digits are validated for the country implied by `countryCode`/`dialingPrefix`, defaulting to the context's country. A number that fails validation returns 400 INVALID_PARAMETER \"Phone number is not valid. If entering UK number, please include leading 0.\".",
-            "examples": ["907-111-2222", "(907) 111-2222", "9071112222"]
+            "examples": [
+              "907-111-2222",
+              "(907) 111-2222",
+              "9071112222"
+            ]
           },
           "phoneType": {
             "type": [
@@ -4311,7 +4803,9 @@
               "null"
             ],
             "format": "date",
-            "examples": ["2001-11-23"],
+            "examples": [
+              "2001-11-23"
+            ],
             "description": "ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 \"'dateOfBirth' must be in the 20th or 21st century.\". A value that is not a parseable date is not an error: it is silently dropped and the person record stores null.",
             "x-provenance": {
               "note": "\"not-a-date\" returned 201 with dateOfBirth null (observed 2026-08-03)."
@@ -4351,7 +4845,9 @@
             ],
             "minLength": 4,
             "maxLength": 4,
-            "examples": ["2024"],
+            "examples": [
+              "2024"
+            ],
             "description": "Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 \"'cycle' must be 4 characters in length\"."
           },
           "emails": {
@@ -4424,48 +4920,52 @@
               "string",
               "null"
             ],
-            "enum": ["Person", "Organization", null],
+            "enum": [
+              "Person",
+              "Organization",
+              null
+            ],
             "description": "Only applies to My Campaign databases with organizations-as-contacts enabled.",
             "x-docs-discrepancy": "Official docs say the value must be Person or Organization; it is not validated. Writing \"Q\" returns 201 and the person reads back with contactMode \"Person\" (observed 2026-08-03)."
           }
         }
       },
       "PersonMergeInput": {
-      "type": "object",
-      "description": "Names the **primary** of a merge — the person that survives. The secondary is the vanId in the path.",
-      "required": [
-        "vanId"
-      ],
-      "properties": {
-        "vanId": {
-          "type": "integer",
-          "format": "int32",
-          "minimum": 1,
-          "description": "VAN id of the primary person, which survives the merge and keeps this id.\n\nAbsent, null, `0` and values too large for `int32` are all rejected with 400 `Must specify VanIDs for merging`. A negative id returns 500, so this schema requires a positive one. A numeric string is accepted and coerced, and a non-integer number is truncated — neither is worth relying on.",
-          "example": 102720504
+        "type": "object",
+        "description": "Names the **primary** of a merge — the person that survives. The secondary is the vanId in the path.",
+        "required": [
+          "vanId"
+        ],
+        "properties": {
+          "vanId": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "VAN id of the primary person, which survives the merge and keeps this id.\n\nAbsent, null, `0` and values too large for `int32` are all rejected with 400 `Must specify VanIDs for merging`. A negative id returns 500, so this schema requires a positive one. A numeric string is accepted and coerced, and a non-integer number is truncated — neither is worth relying on.",
+            "example": 102720504
+          }
+        },
+        "x-provenance": {
+          "source": "docs + sandbox probe",
+          "lastProbed": "2026-08-05",
+          "note": "Unknown fields alongside vanId are ignored (a body with a bogus extra key merged normally). minimum is 1 rather than 0 because a negative vanId 500s; 0 is a clean 400."
         }
       },
-      "x-provenance": {
-        "source": "docs + sandbox probe",
-        "lastProbed": "2026-08-05",
-        "note": "Unknown fields alongside vanId are ignored (a body with a bogus extra key merged normally). minimum is 1 rather than 0 because a negative vanId 500s; 0 is a clean 400."
-      }
-    },
-    "PersonMergeResult": {
-      "type": "object",
-      "description": "The outcome of a merge: the vanId of the person that survived, which is always the primary from the request body. The secondary's vanId is not echoed back, and is no longer resolvable.",
-      "required": [
-        "vanId"
-      ],
-      "properties": {
-        "vanId": {
-          "type": "integer",
-          "description": "VAN id of the surviving primary person.",
-          "example": 102720708
+      "PersonMergeResult": {
+        "type": "object",
+        "description": "The outcome of a merge: the vanId of the person that survived, which is always the primary from the request body. The secondary's vanId is not echoed back, and is no longer resolvable.",
+        "required": [
+          "vanId"
+        ],
+        "properties": {
+          "vanId": {
+            "type": "integer",
+            "description": "VAN id of the surviving primary person.",
+            "example": 102720708
+          }
         }
-      }
-    },
-    "PersonList": {
+      },
+      "PersonList": {
         "description": "A page of person records.",
         "allOf": [
           {
@@ -4537,7 +5037,10 @@
           },
           "contactMode": {
             "type": "string",
-            "enum": ["Person", "Organization"],
+            "enum": [
+              "Person",
+              "Organization"
+            ],
             "description": "Defaults to \"Person\" even on a blank person record; an unrecognized written value is stored as \"Person\"."
           },
           "salutation": {
@@ -4638,7 +5141,13 @@
                 "type": "integer"
               }
             },
-            "examples": [{"year": 2001, "month": 11, "day": 23}],
+            "examples": [
+              {
+                "year": 2001,
+                "month": 11,
+                "day": 23
+              }
+            ],
             "description": "The birth date broken into components; null when dateOfBirth is null. Returned by both GET /people and GET /people/{vanId}.",
             "x-provenance": {
               "lastProbed": "2026-08-04",

@@ -1,0 +1,93 @@
+{
+  "id": "merge-refuses-mismatched-contact-modes",
+  "title": "A person and an organization cannot be merged",
+  "claim": "Both records must be the same kind of contact. The refusal names both vanIds and tells the caller to change the contactMode in the UI first, so it is the only 400 here that identifies which records were at fault.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "One person and one organization — the same database, two kinds of contact."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "contactMode": "Organization",
+          "lastName": "Harborview Tenants Union-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Theo",
+          "lastName": "Marsh-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Simulate the merge, so the refusal is the only thing this behavior can possibly do. The kinds are checked before anything else about the pair."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto?whatIf=true",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "VANID 100000002 and VANID 100000001 cannot be be merged as they are not the same type of Contact. In order to merge contacts, both records must either be people or organizations. To enable the merge, navigate to the incorrectly typed record and change its type."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

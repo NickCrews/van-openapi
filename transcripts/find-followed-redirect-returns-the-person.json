@@ -1,0 +1,170 @@
+{
+  "id": "find-followed-redirect-returns-the-person",
+  "title": "Following the 302 returns the whole person, not the match stub",
+  "claim": "A client that follows the redirect never sees the `{vanId, status}` stub — it ends up on GET /people/{vanId} and receives the full record with 200. This only works if the client converts to GET, as fetch and browsers do; `curl -X POST -L` keeps the method and gets 411.",
+  "spec": [
+    "#/paths/~1people~1find/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "A person to match, carrying enough identifiers to clear the threshold."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Same find as ever, but this client follows the redirect. The 200 below came from GET /people/{vanId} at the end of the chain, which is why it is a whole person."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ]
+        },
+        "followRedirect": true
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Harriet",
+          "formalSalutation": "Harriet Kowalski-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Harriet Kowalski-{scope}",
+          "formalEnvelopeName": "Harriet Kowalski-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": "1975-03-14T00:00:00Z",
+          "isDeceased": false,
+          "partialDateOfBirth": {
+            "month": 3,
+            "day": 14,
+            "year": 1975
+          },
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    }
+  ]
+}

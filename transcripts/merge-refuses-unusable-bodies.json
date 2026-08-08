@@ -1,0 +1,91 @@
+{
+  "id": "merge-refuses-unusable-bodies",
+  "title": "A body without a usable vanId is refused, with two different messages",
+  "claim": "A well-formed object that simply has no vanId is refused differently from a body that is not an object at all, so the message distinguishes 'you forgot the id' from 'I could not read this'.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Priya",
+          "lastName": "Raman-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "A JSON object that parses fine but names no counterpart."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000001/mergeInto",
+        "body": {}
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "Must specify VanIDs for merging"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "A body that is valid JSON but not an object at all."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000001/mergeInto",
+        "body": "nope"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "The body of the request is null or cannot be parsed."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

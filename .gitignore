@@ -6,3 +6,6 @@ schemathesis-report/
 .schemathesis/
 .hypothesis/
 .ocli
+.oclinode_modules/
+# Generated from openapi.json by `make types`; not a source of truth.
+tests/harness/schema.d.ts

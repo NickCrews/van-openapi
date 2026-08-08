@@ -1,0 +1,408 @@
+{
+  "id": "find-minimum-match-combinations",
+  "title": "Only certain criteria combinations are matched at all",
+  "claim": "The endpoint does not attempt a match until the criteria reach one of a fixed set of combinations. Below that it answers 404 Unmatched rather than 400, so an under-specified query is silently indistinguishable from a person who is not there.",
+  "spec": [
+    "#/paths/~1people~1find/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "One person, holding every identifier, so only the criteria vary below."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + email → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + phone → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + zip + dateOfBirth → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "addresses": [
+            {
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + street + zip → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "email alone → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "phone alone → matched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name alone → unmatched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + dateOfBirth → unmatched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "name + zip → unmatched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "addresses": [
+            {
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "street + zip, no name → unmatched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "wrong name + right email → unmatched"
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Gregory",
+          "lastName": "Kowalski-{scope}",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    }
+  ]
+}

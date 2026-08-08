@@ -1,0 +1,85 @@
+{
+  "id": "find-below-threshold-is-unmatched",
+  "title": "A name alone returns 404 Unmatched even when the person exists",
+  "claim": "A 404 Unmatched does not mean the person is absent. Criteria that fall short of the minimum combination are never matched at all, and the answer is indistinguishable from a genuine no-match.",
+  "spec": [
+    "#/paths/~1people~1find/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Put a person in the database, carrying every identifier the match can ask for."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Now look for them by name alone. The person is unambiguously there — we just created them — but name alone is below the minimum combination, so no match is attempted at all."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": null,
+          "status": "Unmatched"
+        }
+      }
+    }
+  ]
+}

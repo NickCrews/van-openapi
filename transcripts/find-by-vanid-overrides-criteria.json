@@ -1,0 +1,87 @@
+{
+  "id": "find-by-vanid-overrides-criteria",
+  "title": "A vanId in the body wins over every other criterion",
+  "claim": "When the body carries a vanId, the rest of the criteria are not used to search — they are not even checked for agreement. A name that belongs to nobody still matches, so a caller who sends a stale vanId alongside fresh details gets the stale record back.",
+  "spec": [
+    "#/paths/~1people~1find/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "One person to aim at."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Kowalski-{scope}",
+          "dateOfBirth": "1975-03-14",
+          "emails": [
+            {
+              "email": "harriet.kowalski-{scope}@example.com"
+            }
+          ],
+          "phones": [
+            {
+              "phoneNumber": "9075554242"
+            }
+          ],
+          "addresses": [
+            {
+              "addressLine1": "742 Evergreen Terrace",
+              "city": "Springfield",
+              "stateOrProvince": "AK",
+              "zipOrPostalCode": "99501"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Ask for that vanId while giving a name that matches no record at all. The contradiction is ignored: the vanId decides the answer by itself."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Desmond",
+          "lastName": "Pemberton-{scope}"
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}

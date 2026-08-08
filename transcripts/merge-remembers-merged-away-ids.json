@@ -1,0 +1,173 @@
+{
+  "id": "merge-remembers-merged-away-ids",
+  "title": "A merged-away vanId is refused forever, with its own message",
+  "claim": "A vanId that has been merged away is refused on either side of any later merge with a different message from the one an id that never existed gets. Since GET /people/{vanId} answers 404 for both, this endpoint is the only way to tell them apart.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Three records: two to merge now, one to attempt a second merge against later."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Ivy",
+          "lastName": "Calloway-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Ivy",
+          "lastName": "Calloway-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Omar",
+          "lastName": "Haddad-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000003"
+        },
+        "body": {
+          "vanId": 100000003,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Merge the secondary away. Its vanId now 404s on GET /people/{vanId}."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Reuse that merged-away id in a fresh merge. It is remembered, permanently."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto",
+        "body": {
+          "vanId": 100000003
+        }
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "One or more of these contacts has already been merged."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "An id that never existed is refused too, but with different text. That difference is the only way to tell the two apart — GET /people/{vanId} answers 404 for both."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/2147483646/mergeInto",
+        "body": {
+          "vanId": 100000003
+        }
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "You must have access to both contacts to merge them."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

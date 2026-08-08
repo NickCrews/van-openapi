@@ -14,7 +14,7 @@ AUTH     := default_user:$(NGP_API_KEY_SANDBOX)|1
 # - negative_data_rejection is off: the API tolerantly ignores unknown fields.
 CHECKS := status_code_conformance,content_type_conformance,response_schema_conformance
 
-.PHONY: validate fuzz discrepancies serve clean
+.PHONY: validate fuzz discrepancies serve clean types behaviors behaviors-all inject inject-check
 
 ## Lint the spec structurally
 validate:
@@ -38,6 +38,26 @@ discrepancies:
 serve:
 	@echo "http://localhost:8931"
 	python3 -m http.server 8931 -d docs
+
+## Regenerate the typed client from the spec (tests then typecheck against it)
+types:
+	npx openapi-typescript $(SPEC) -o tests/harness/schema.d.ts
+
+## Run the behavior suite live against the sandbox (skips slow behaviors)
+behaviors: types
+	npx vitest run
+
+## Everything, including the slow behaviors
+behaviors-all: types
+	VAN_SLOW=1 npx vitest run
+
+## Fold recorded transcripts into the spec as examples and code samples
+inject:
+	npx tsx scripts/inject-examples.ts
+
+## CI gate: fail if the spec is stale with respect to transcripts/
+inject-check:
+	npx tsx scripts/inject-examples.ts --check
 
 clean:
 	rm -rf schemathesis-report/

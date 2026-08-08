@@ -1,0 +1,186 @@
+{
+  "id": "merge-whatif-true-simulates-without-writing",
+  "title": "whatIf=true returns the completed-merge response without merging",
+  "claim": "A simulation answers exactly as a real merge does — same 200, same body, same Location pointing at the primary — while both records survive. The response is therefore no evidence that a merge happened.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Two records to merge: the primary would survive, the secondary would be consumed."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Miles",
+          "lastName": "Okafor-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Miles",
+          "lastName": "Okafor-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Simulate with the literal string `true` — the only value that suppresses the write."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto?whatIf=true",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Nothing was written: the secondary is still there, unlike after a real merge."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000002"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000002,
+          "firstName": "Miles",
+          "lastName": "Okafor-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Miles",
+          "formalSalutation": "Miles Okafor-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Miles Okafor-{scope}",
+          "formalEnvelopeName": "Miles Okafor-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    }
+  ]
+}

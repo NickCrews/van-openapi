@@ -1,0 +1,186 @@
+{
+  "id": "merge-empty-whatif-is-rejected",
+  "title": "An empty whatIf is rejected outright",
+  "claim": "`?whatIf=` is the one value that neither simulates nor merges: it is refused with a bare BAD_REQUEST. Every other non-empty value performs the merge, so the empty string is the only typo here that is safe.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Dana",
+          "lastName": "Whitfield-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Dana",
+          "lastName": "Whitfield-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Send the parameter with no value. Nothing is merged and nothing is simulated."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto?whatIf=",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "BAD_REQUEST",
+              "text": "The request is invalid."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Both records survive, confirming the request was refused before anything was written."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000002"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000002,
+          "firstName": "Dana",
+          "lastName": "Whitfield-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Dana",
+          "formalSalutation": "Dana Whitfield-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Dana Whitfield-{scope}",
+          "formalEnvelopeName": "Dana Whitfield-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    }
+  ]
+}

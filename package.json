@@ -1,0 +1,17 @@
+{
+  "name": "van-openapi-behaviors",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "openapi-typescript openapi.json -o tests/harness/schema.d.ts",
+    "behaviors": "vitest run",
+    "inject": "tsx scripts/inject-examples.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "openapi-typescript": "^7.9.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
