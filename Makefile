@@ -14,14 +14,14 @@ AUTH     := default_user:$(NGP_API_KEY_SANDBOX)|1
 # - negative_data_rejection is off: the API tolerantly ignores unknown fields.
 CHECKS := status_code_conformance,content_type_conformance,response_schema_conformance
 
-.PHONY: validate fuzz discrepancies serve clean types behaviors behaviors-all inject inject-check
+.PHONY: lint fuzz discrepancies serve clean types behaviors behaviors-all inject inject-check
 
 ## Lint the spec structurally
-validate:
+lint:
 	uvx --from openapi-spec-validator openapi-spec-validator $(SPEC)
 
 ## Property-based fuzz of the spec against the sandbox API
-fuzz: validate
+fuzz: lint
 	uvx schemathesis run $(SPEC) \
 		--url $(BASE_URL) \
 		--auth "$(AUTH)" \

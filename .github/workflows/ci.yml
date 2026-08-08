@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
 
-      - name: Validate the spec structurally
-        run: make validate
+      - name: Lint the spec structurally
+        run: make lint
 
       - name: DISCREPANCIES.md is up to date with the spec
         run: |
