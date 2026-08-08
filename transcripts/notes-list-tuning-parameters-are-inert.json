@@ -1,0 +1,221 @@
+{
+  "id": "notes-list-tuning-parameters-are-inert",
+  "title": "$orderby and $expand are validated, then change nothing",
+  "claim": "`$orderby=CreatedDate desc` and `$expand=noteDetails` both pass validation and both return a body identical to the plain request — the sort never reorders and the expand never populates `contactHistory`. Values outside the accepted sets are refused with INVALID_PARAMETER, so the parameters are checked strictly and then ignored.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1notes/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "A person with one note to list."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Prudence",
+          "lastName": "Ashby-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes",
+        "body": {
+          "text": "Interested in canvassing.",
+          "isViewRestricted": false
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {}
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Interested in canvassing.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Descending sort: accepted, and the body comes back identical to the plain call."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes?%24orderby=CreatedDate+desc"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Interested in canvassing.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "The one accepted $expand value: also identical, contactHistory still null."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes?%24expand=noteDetails"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Interested in canvassing.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Anything outside the accepted sets is refused, not ignored."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes?%24orderby=Text"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "'Text' is not a valid argument for the '$orderby' parameter",
+              "properties": [
+                "$orderby"
+              ],
+              "hint": "The only valid orderby properties are: 'CreatedDate', 'IsPinned'"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes?%24expand=contactHistory"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "'contactHistory' is not a valid argument for the '$expand' parameter",
+              "properties": [
+                "$expand"
+              ],
+              "hint": "The only valid expand section is: 'noteDetails'"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

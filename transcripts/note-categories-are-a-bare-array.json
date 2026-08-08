@@ -1,0 +1,51 @@
+{
+  "id": "note-categories-are-a-bare-array",
+  "title": "Note categories come back as a bare array that ignores paging",
+  "claim": "The list is a bare JSON array, not the pagination envelope, and query parameters like `$top` are ignored rather than applied or rejected. The sandbox committee has no categories opted in, so the empty array is all it can answer.",
+  "spec": [
+    "#/paths/~1notes~1categories/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "No envelope: the body itself is the array."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/notes/categories",
+        "url": "/notes/categories"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Paging parameters are accepted and ignored — the response is identical."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/notes/categories",
+        "url": "/notes/categories?%24top=1&%24skip=5"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "search-requires-a-search-parameter",
+  "title": "At least one search parameter must be set, and filters don't count",
+  "claim": "A request with no search parameter is refused outright — even one that sets paging or filter parameters. `contactMode` is a filter, not a search parameter, so it alone does not satisfy the requirement either.",
+  "spec": [
+    "#/paths/~1people/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Paging alone is not a search."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people",
+        "url": "/people?%24top=5"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "This endpoint requires at least one search parameter to be set.",
+              "properties": [
+                "All Arguments"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "contactMode filters results but does not count as a search parameter."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people",
+        "url": "/people?contactMode=Person"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "This endpoint requires at least one search parameter to be set.",
+              "properties": [
+                "All Arguments"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

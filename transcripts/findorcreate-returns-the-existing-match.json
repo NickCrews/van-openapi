@@ -1,0 +1,77 @@
+{
+  "id": "findorcreate-returns-the-existing-match",
+  "title": "Above the match threshold, findOrCreate returns the existing person",
+  "claim": "Name plus email clears the minimum match combination, so the existing person comes back as a 302 match stub with a Location header, and nothing is written.",
+  "spec": [
+    "#/paths/~1people~1findOrCreate/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "The person is already in the database."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Marisol",
+          "lastName": "Vega-{scope}",
+          "emails": [
+            {
+              "email": "marisol.vega-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "findOrCreate with the same name and email: found, not created."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/findOrCreate",
+        "url": "/people/findOrCreate",
+        "body": {
+          "firstName": "Marisol",
+          "lastName": "Vega-{scope}",
+          "emails": [
+            {
+              "email": "marisol.vega-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}

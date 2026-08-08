@@ -1,0 +1,95 @@
+{
+  "id": "note-create-is-silent",
+  "title": "Creating a note returns nothing — the id has to be read back",
+  "claim": "Success is a bare 204: no body, no Location header, no noteId. The only way to learn the new id is GET /people/{vanId}/notes. The read-back also shows `isPinned` was accepted and ignored, and that an uncategorized note reads as the `{noteCategoryId: 0, name: null}` stub.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1notes/post",
+    "#/paths/~1people~1{vanId}~1notes/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Lucinda",
+          "lastName": "Farrow-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Create a note, asking for a pin the API will ignore."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes",
+        "body": {
+          "text": "Spoke at the door; wants a yard sign.",
+          "isViewRestricted": false,
+          "isPinned": true
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {}
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Reading the list back is the only way to learn the noteId."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Spoke at the door; wants a yard sign.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "survey-questions-list-is-an-empty-page-here",
+  "title": "The list arrives in the pagination envelope — empty in this committee",
+  "claim": "Survey questions come back in the standard `{items, count, nextPageLink}` envelope. The sandbox committee has no survey questions (and none can be created — every `type` is rejected), so the empty page is the only response this database can produce.",
+  "spec": [
+    "#/paths/~1surveyQuestions/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "No filters: the default is Active questions, of which this committee has none."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/surveyQuestions",
+        "url": "/surveyQuestions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [],
+          "nextPageLink": null,
+          "count": 0
+        }
+      }
+    }
+  ]
+}

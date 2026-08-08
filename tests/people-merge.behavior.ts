@@ -11,6 +11,144 @@ function errorText(body: unknown): string | undefined {
 
 behavior(
   {
+    id: "merge-deletes-secondary-and-answers-with-primary",
+    title: "A merge keeps the primary, deletes the secondary, and answers with the survivor",
+    claim:
+      "The secondary named in the path is merged into the primary named in the body. The 200 " +
+      "carries the primary's vanId — the survivor, not the id from the path — with a Location " +
+      "pointing at it, and the secondary answers 404 from then on.",
+    spec: ["#/paths/~1people~1{vanId}~1mergeInto/put"],
+  },
+  async ({ van, scope, comment }) => {
+    comment("Two duplicates of one person. The primary survives; the secondary is consumed.");
+    const primary = await van.create({ firstName: "Lena", lastName: `Voss-${scope}` });
+    const secondary = await van.create({ firstName: "Lena", lastName: `Voss-${scope}` });
+
+    comment("The secondary goes in the path; the body names the primary that survives.");
+    const merged = await van.put(
+      "/people/{vanId}/mergeInto",
+      { vanId: primary },
+      { params: { vanId: secondary } },
+    );
+
+    expect(merged.status).toBe(200);
+    expect(merged.body).toEqual({ vanId: primary });
+    expect(merged.headers.get("location")).toContain(`/people/${primary}`);
+
+    comment("The primary is still there under its own vanId.");
+    const survivor = await van.get("/people/{vanId}", { params: { vanId: primary } });
+    expect(survivor.status).toBe(200);
+    expect(survivor.body).toMatchObject({ vanId: primary });
+
+    comment("The secondary is not, and never will be — merges cannot be undone.");
+    const consumed = await van.get("/people/{vanId}", { params: { vanId: secondary } });
+    expect(consumed.status).toBe(404);
+  },
+);
+
+behavior(
+  {
+    id: "merge-keeps-primary-values-and-fills-its-gaps",
+    title: "Conflicting fields keep the primary's value; the primary's gaps fill from the secondary",
+    claim:
+      "Scalar fields the two people disagree on keep the primary's value, and fields the " +
+      "primary left empty are filled in from the secondary — so the primary can come out of " +
+      "a merge holding more data than it went in with.",
+    spec: ["#/paths/~1people~1{vanId}~1mergeInto/put"],
+  },
+  async ({ van, scope, comment }) => {
+    comment(
+      "The two disagree on firstName, and the primary lacks the middleName and occupation " +
+        "the secondary holds.",
+    );
+    const primary = await van.create({ firstName: "Beatriz", lastName: `Fontaine-${scope}` });
+    const secondary = await van.create({
+      firstName: "Bea",
+      middleName: "Lucia",
+      lastName: `Fontaine-${scope}`,
+      occupation: "Archivist",
+    });
+
+    const merged = await van.put(
+      "/people/{vanId}/mergeInto",
+      { vanId: primary },
+      { params: { vanId: secondary } },
+    );
+    expect(merged.status).toBe(200);
+
+    comment(
+      "The disputed firstName kept the primary's value; the middleName and occupation the " +
+        "primary lacked were filled in from the secondary.",
+    );
+    const person = await van.get("/people/{vanId}", { params: { vanId: primary } });
+    expect(person.status).toBe(200);
+    expect(person.body).toMatchObject({
+      firstName: "Beatriz",
+      middleName: "Lucia",
+      occupation: "Archivist",
+    });
+  },
+);
+
+behavior(
+  {
+    id: "merge-combines-emails-and-moves-reachability",
+    title: "Emails are combined onto the primary, and shared ones are not doubled",
+    claim:
+      "The two people's emails are pooled onto the primary. An address both held is collapsed " +
+      "to one entry — matched case-insensitively, keeping the primary's copy — and an email " +
+      "that belonged only to the secondary now resolves to the primary through POST /people/find.",
+    spec: ["#/paths/~1people~1{vanId}~1mergeInto/put"],
+  },
+  async ({ van, scope, comment }) => {
+    comment(
+      "Each person holds one email of their own, plus one they share — spelled with " +
+        "different case on each side.",
+    );
+    const primaryOnly = `fern.primary-${scope}@example.com`;
+    const secondaryOnly = `fern.secondary-${scope}@example.com`;
+    const shared = `fern.shared-${scope}@example.com`;
+    const primary = await van.create({
+      firstName: "Fern",
+      lastName: `Aldana-${scope}`,
+      emails: [{ email: primaryOnly }, { email: shared }],
+    });
+    const secondary = await van.create({
+      firstName: "Fern",
+      lastName: `Aldana-${scope}`,
+      emails: [{ email: secondaryOnly }, { email: `FERN.SHARED-${scope}@example.com` }],
+    });
+
+    const merged = await van.put(
+      "/people/{vanId}/mergeInto",
+      { vanId: primary },
+      { params: { vanId: secondary } },
+    );
+    expect(merged.status).toBe(200);
+
+    comment(
+      "Three emails, not four: the shared address collapsed to a single entry, in the " +
+        "primary's spelling.",
+    );
+    const person = await van.get("/people/{vanId}", {
+      params: { vanId: primary },
+      query: { $expand: "emails" },
+    });
+    expect(person.status).toBe(200);
+    const emails = ((person.body as { emails?: { email: string }[] }).emails ?? [])
+      .map((e) => e.email)
+      .sort();
+    expect(emails).toEqual([primaryOnly, secondaryOnly, shared].sort());
+
+    comment("Reachability moved too: the secondary's own email now finds the primary.");
+    const found = await van.post("/people/find", { emails: [{ email: secondaryOnly }] });
+    expect(found.status).toBe(302);
+    expect(found.body).toEqual({ vanId: primary, status: "Matched" });
+  },
+);
+
+behavior(
+  {
     id: "merge-whatif-requires-literal-true",
     title: "whatIf only simulates for the literal string 'true'",
     claim:
@@ -34,7 +172,7 @@ behavior(
 
     comment(
       "Ask for a simulation with whatIf=yes — truthy in every language a caller might " +
-        "write this in. The 200 below is exactly what a real simulation returns.",
+      "write this in. The 200 below is exactly what a real simulation returns.",
     );
     const merge = await van.put(
       "/people/{vanId}/mergeInto",
@@ -46,7 +184,7 @@ behavior(
 
     comment(
       "But nothing was simulated. The secondary is gone for good — only the literal " +
-        "string `true` suppresses the write.",
+      "string `true` suppresses the write.",
     );
     const gone = await van.get("/people/{vanId}", { params: { vanId: secondary } });
     expect(gone.status).toBe(404);
@@ -176,7 +314,7 @@ behavior(
 
     comment(
       "Simulate the merge, so the refusal is the only thing this behavior can possibly do. " +
-        "The kinds are checked before anything else about the pair.",
+      "The kinds are checked before anything else about the pair.",
     );
     const res = await van.put(
       "/people/{vanId}/mergeInto",
@@ -229,7 +367,7 @@ behavior(
 
     comment(
       "An id that never existed is refused too, but with different text. That difference " +
-        "is the only way to tell the two apart — GET /people/{vanId} answers 404 for both.",
+      "is the only way to tell the two apart — GET /people/{vanId} answers 404 for both.",
     );
     const neverExisted = await van.put(
       "/people/{vanId}/mergeInto",

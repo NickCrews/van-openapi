@@ -203,6 +203,181 @@
                         }
                       ]
                     }
+                  },
+                  "person-collections-null-until-expanded/1": {
+                    "summary": "Without $expand, every collection is null — including the email we just wrote.",
+                    "description": "Emails, phones and addresses come back null — not empty — unless the request names them in $expand. Expanded, a section the person actually has is an array of entries and a section they lack is an empty array, so null always means 'not requested', never 'none'.",
+                    "x-transcript": "person-collections-null-until-expanded",
+                    "value": {
+                      "vanId": 100000001,
+                      "firstName": "Nadia",
+                      "lastName": "Okonkwo",
+                      "middleName": null,
+                      "suffix": null,
+                      "title": null,
+                      "sourceFileTitle": null,
+                      "sourceFileFirstName": null,
+                      "sourceFileMiddleName": null,
+                      "sourceFileLastName": null,
+                      "sourceFileSuffix": null,
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "organizationContactCommonName": null,
+                      "organizationContactOfficialName": null,
+                      "salutation": "Nadia",
+                      "formalSalutation": "Nadia Okonkwo",
+                      "additionalSalutation": null,
+                      "preferredPronoun": null,
+                      "pronouns": null,
+                      "namePronunciation": null,
+                      "envelopeName": "Nadia Okonkwo",
+                      "formalEnvelopeName": "Nadia Okonkwo",
+                      "additionalEnvelopeName": null,
+                      "contactMethodPreferenceCode": null,
+                      "contactMethodPreferenceId": null,
+                      "contactMethodPreferenceName": null,
+                      "assistantName": null,
+                      "nickname": null,
+                      "website": null,
+                      "professionalSuffix": null,
+                      "party": null,
+                      "employer": null,
+                      "occupation": null,
+                      "jobTitle": null,
+                      "sex": null,
+                      "dateOfBirth": null,
+                      "isDeceased": false,
+                      "dateCreated": "2026-01-01T00:00:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "selfReportedRace": null,
+                      "selfReportedEthnicity": null,
+                      "selfReportedRaces": null,
+                      "selfReportedEthnicities": null,
+                      "selfReportedGenders": null,
+                      "selfReportedSexualOrientations": null,
+                      "selfReportedLanguagePreference": null,
+                      "selfReportedLanguagePreferences": null,
+                      "emails": null,
+                      "phones": null,
+                      "addresses": null,
+                      "recordedAddresses": null,
+                      "pollingLocation": null,
+                      "earlyVoteLocation": null,
+                      "identifiers": null,
+                      "codes": null,
+                      "customFields": null,
+                      "primaryCustomField": null,
+                      "contributionSummary": null,
+                      "suppressions": null,
+                      "caseworkCases": null,
+                      "caseworkIssues": null,
+                      "caseworkStories": null,
+                      "notes": null,
+                      "scores": null,
+                      "customProperties": null,
+                      "electionRecords": null,
+                      "membershipStatus": null,
+                      "organizationRoles": null,
+                      "districts": null,
+                      "surveyQuestionResponses": null,
+                      "finderNumber": null,
+                      "biographyImageUrl": null,
+                      "biographyText": null,
+                      "biographyHtml": null,
+                      "primaryContact": null
+                    }
+                  },
+                  "person-collections-null-until-expanded/2": {
+                    "summary": "Expanded, the email appears and the phones the person lacks are [] rather than null.",
+                    "description": "Emails, phones and addresses come back null — not empty — unless the request names them in $expand. Expanded, a section the person actually has is an array of entries and a section they lack is an empty array, so null always means 'not requested', never 'none'.",
+                    "x-transcript": "person-collections-null-until-expanded",
+                    "value": {
+                      "vanId": 100000001,
+                      "firstName": "Nadia",
+                      "lastName": "Okonkwo",
+                      "middleName": null,
+                      "suffix": null,
+                      "title": null,
+                      "sourceFileTitle": null,
+                      "sourceFileFirstName": null,
+                      "sourceFileMiddleName": null,
+                      "sourceFileLastName": null,
+                      "sourceFileSuffix": null,
+                      "contactSource": "API",
+                      "contactMode": "Person",
+                      "organizationContactCommonName": null,
+                      "organizationContactOfficialName": null,
+                      "salutation": "Nadia",
+                      "formalSalutation": "Nadia Okonkwo",
+                      "additionalSalutation": null,
+                      "preferredPronoun": null,
+                      "pronouns": null,
+                      "namePronunciation": null,
+                      "envelopeName": "Nadia Okonkwo",
+                      "formalEnvelopeName": "Nadia Okonkwo",
+                      "additionalEnvelopeName": null,
+                      "contactMethodPreferenceCode": null,
+                      "contactMethodPreferenceId": null,
+                      "contactMethodPreferenceName": null,
+                      "assistantName": null,
+                      "nickname": null,
+                      "website": null,
+                      "professionalSuffix": null,
+                      "party": null,
+                      "employer": null,
+                      "occupation": null,
+                      "jobTitle": null,
+                      "sex": null,
+                      "dateOfBirth": null,
+                      "isDeceased": false,
+                      "dateCreated": "2026-01-01T00:00:00Z",
+                      "dateAcquired": "0001-01-01T00:00:00Z",
+                      "selfReportedRace": null,
+                      "selfReportedEthnicity": null,
+                      "selfReportedRaces": null,
+                      "selfReportedEthnicities": null,
+                      "selfReportedGenders": null,
+                      "selfReportedSexualOrientations": null,
+                      "selfReportedLanguagePreference": null,
+                      "selfReportedLanguagePreferences": null,
+                      "emails": [
+                        {
+                          "type": "P",
+                          "email": "nadia.okonkwo@example.com",
+                          "dateCreated": "2026-01-01T00:00:00Z",
+                          "isPreferred": true,
+                          "isSubscribed": true,
+                          "subscriptionStatus": "S"
+                        }
+                      ],
+                      "phones": [],
+                      "addresses": null,
+                      "recordedAddresses": null,
+                      "pollingLocation": null,
+                      "earlyVoteLocation": null,
+                      "identifiers": null,
+                      "codes": null,
+                      "customFields": null,
+                      "primaryCustomField": null,
+                      "contributionSummary": null,
+                      "suppressions": null,
+                      "caseworkCases": null,
+                      "caseworkIssues": null,
+                      "caseworkStories": null,
+                      "notes": null,
+                      "scores": null,
+                      "customProperties": null,
+                      "electionRecords": null,
+                      "membershipStatus": null,
+                      "organizationRoles": null,
+                      "districts": null,
+                      "surveyQuestionResponses": null,
+                      "finderNumber": null,
+                      "biographyImageUrl": null,
+                      "biographyText": null,
+                      "biographyHtml": null,
+                      "primaryContact": null
+                    }
                   }
                 }
               },
@@ -238,12 +413,32 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Related collections are null until $expand asks for them",
+            "source": "# Emails, phones and addresses come back null — not empty — unless the\n# request names them in $expand. Expanded, a section the person actually has\n# is an array of entries and a section they lack is an empty array, so null\n# always means 'not requested', never 'none'.\n\n# A person with one email and nothing else.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Nadia\",\n    \"lastName\": \"Okonkwo\",\n    \"emails\": [\n      {\n        \"email\": \"nadia.okonkwo@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Without $expand, every collection is null — including the email we just\n# wrote.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Nadia\",\n#   \"lastName\": \"Okonkwo\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Nadia\",\n#   \"formalSalutation\": \"Nadia Okonkwo\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Nadia Okonkwo\",\n#   \"formalEnvelopeName\": \"Nadia Okonkwo\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# Expanded, the email appears and the phones the person lacks are [] rather\n# than null.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=emails%2Cphones' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Nadia\",\n#   \"lastName\": \"Okonkwo\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Nadia\",\n#   \"formalSalutation\": \"Nadia Okonkwo\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Nadia Okonkwo\",\n#   \"formalEnvelopeName\": \"Nadia Okonkwo\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": [\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"nadia.okonkwo@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": true,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     }\n#   ],\n#   \"phones\": [],\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "person-collections-null-until-expanded"
+          },
+          {
+            "lang": "Shell",
+            "label": "$expand values are policed, and two valid ones are refused here",
+            "source": "# A value outside the documented set is refused with INVALID_PARAMETER and a\n# hint listing every valid value. Two values inside the set are still\n# refused in a My Campaign context: `scores` with 403 and `pollingLocation`\n# with 400.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Emeka\",\n    \"lastName\": \"Adeyemi\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# An invented section. The hint in the refusal is the authoritative list.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=frisbees' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"'frisbees' is not a valid argument for the '$expand' parameter\",\n#       \"properties\": [\n#         \"$expand\"\n#       ],\n#       \"hint\": \"The only valid expand sections are: 'contributionHistory', 'addresses', 'phones', 'emails', 'codes', 'customFields', 'externalIds', 'preferences', 'recordedAddresses', 'reportedDemographics', 'suppressions', 'cases', 'customProperties', 'districts', 'electionRecords', 'membershipStatuses', 'notes', 'organizationRoles', 'scores', 'disclosureFieldValues', 'primaryContact', 'pollingLocation', 'biography'\"\n#     }\n#   ]\n# }\n\n# `scores` is in the valid set, but this context is refused it outright.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=scores' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 403\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"FORBIDDEN\",\n#       \"text\": \"May not request 'scores'\"\n#     }\n#   ]\n# }\n\n# `pollingLocation` is also in the set, and also refused — but as a 400.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=pollingLocation' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"BAD_REQUEST\",\n#       \"text\": \"May not request 'pollingLocation' in this context\"\n#     }\n#   ]\n# }",
+            "x-transcript": "person-expand-set-is-policed"
+          },
+          {
+            "lang": "Shell",
+            "label": "Unknown ids 404 with the envelope; a non-integer id gets HTML",
+            "source": "# An unknown, zero or negative vanId returns the standard 404 error\n# envelope. A path segment that is not an integer never reaches the handler\n# — the route does not match, and the answer is an HTML 404 page instead.\n\n# An id no record has ever had.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/2147483646' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }\n\n# Zero is refused the same way.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/0' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }\n\n# A non-integer segment matches no route: HTML, not the JSON envelope.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/abc' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\"/>\r\n<title>404 - File or directory not found.</title>\r\n<style type=\"text/css\">\r\n<!--\r\nbody{margin:0;font-size:.7em;font-family:Verdana, Arial, Helvetica, sans-serif;background:#EEEEEE;}\r\nfieldset{padding:0 15px 10px 15px;} \r\nh1{font-size:2.4em;margin:0;color:#FFF;}\r\nh2{font-size:1.7em;margin:0;color:#CC0000;} \r\nh3{font-size:1.2em;margin:10px 0 0 0;color:#000000;} \r\n#header{width:96%;margin:0 0 0 0;padding:6px 2% 6px 2%;font-family:\"trebuchet MS\", Verdana, sans-serif;color:#FFF;\r\nbackground-color:#555555;}\r\n#content{margin:0 0 0 2%;position:relative;}\r\n.content-container{background:#FFF;width:96%;margin-top:8px;padding:10px;position:relative;}\r\n-->\r\n</style>\r\n</head>\r\n<body>\r\n<div id=\"header\"><h1>Server Error</h1></div>\r\n<div id=\"content\">\r\n <div class=\"content-container\"><fieldset>\r\n  <h2>404 - File or directory not found.</h2>\r\n  <h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>\r\n </fieldset></div>\r\n</div>\r\n</body>\r\n</html>\r\n",
+            "x-transcript": "person-unknown-ids-404-two-ways"
+          }
+        ]
       },
       "post": {
         "operationId": "updatePerson",
         "summary": "Update an existing person",
-        "description": "Merges the payload into an existing person record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The update is not idempotent for contact methods: sending the same email twice adds it twice.\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
+        "description": "Merges the payload into an existing person record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The append is idempotent for an identical value: re-sending an email address the person already has — in a later update or twice in one body — does not create a second entry (observed via $expand=emails, 2026-08-08).\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
         "x-provenance": {
           "lastProbed": "2026-08-03",
           "note": "Merge semantics confirmed by updating only middleName on a person and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
@@ -289,6 +484,52 @@
                         "type": "W"
                       }
                     ]
+                  }
+                },
+                "update-appends-contact-methods/1": {
+                  "summary": "Update with a second address. The first is not replaced — the list grows.",
+                  "description": "Emails, phones and addresses in an update are added to what is already there; there is no way to remove one through this endpoint. The append is idempotent for an identical value: re-sending an email the person already has does not create a second entry.",
+                  "x-transcript": "update-appends-contact-methods",
+                  "value": {
+                    "emails": [
+                      {
+                        "email": "imani.o@example.org"
+                      }
+                    ]
+                  }
+                },
+                "update-appends-contact-methods/2": {
+                  "summary": "Send the second address again, unchanged. Nothing is duplicated: still two entries.",
+                  "description": "Emails, phones and addresses in an update are added to what is already there; there is no way to remove one through this endpoint. The append is idempotent for an identical value: re-sending an email the person already has does not create a second entry.",
+                  "x-transcript": "update-appends-contact-methods",
+                  "value": {
+                    "emails": [
+                      {
+                        "email": "imani.o@example.org"
+                      }
+                    ]
+                  }
+                },
+                "update-empty-body-is-accepted-and-unknown-ids-404/1": {
+                  "summary": "An update that updates nothing. Accepted all the same.",
+                  "description": "`{}` is accepted and answered with the same 302 as a real update, changing nothing. The failure mode is the id, not the body: an unknown vanId returns 404 whatever the payload says.",
+                  "x-transcript": "update-empty-body-is-accepted-and-unknown-ids-404",
+                  "value": {}
+                },
+                "update-empty-body-is-accepted-and-unknown-ids-404/2": {
+                  "summary": "A perfectly good payload aimed at an id nobody has: 404.",
+                  "description": "`{}` is accepted and answered with the same 302 as a real update, changing nothing. The failure mode is the id, not the body: an unknown vanId returns 404 whatever the payload says.",
+                  "x-transcript": "update-empty-body-is-accepted-and-unknown-ids-404",
+                  "value": {
+                    "firstName": "Nobody"
+                  }
+                },
+                "update-merges-fields-and-answers-with-a-stub": {
+                  "summary": "An update merges the payload and answers 302 with a match stub",
+                  "description": "The payload is merged into the record: fields in the body are overwritten, fields left out keep their values. The response is a 302 whose Location points back at the person and whose body is the same match stub find returns — not the updated person.",
+                  "x-transcript": "update-merges-fields-and-answers-with-a-stub",
+                  "value": {
+                    "firstName": "Cora"
                   }
                 }
               }
@@ -340,6 +581,44 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
+                },
+                "examples": {
+                  "update-appends-contact-methods/1": {
+                    "summary": "Update with a second address. The first is not replaced — the list grows.",
+                    "description": "Emails, phones and addresses in an update are added to what is already there; there is no way to remove one through this endpoint. The append is idempotent for an identical value: re-sending an email the person already has does not create a second entry.",
+                    "x-transcript": "update-appends-contact-methods",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-appends-contact-methods/2": {
+                    "summary": "Send the second address again, unchanged. Nothing is duplicated: still two entries.",
+                    "description": "Emails, phones and addresses in an update are added to what is already there; there is no way to remove one through this endpoint. The append is idempotent for an identical value: re-sending an email the person already has does not create a second entry.",
+                    "x-transcript": "update-appends-contact-methods",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-empty-body-is-accepted-and-unknown-ids-404/1": {
+                    "summary": "An update that updates nothing. Accepted all the same.",
+                    "description": "`{}` is accepted and answered with the same 302 as a real update, changing nothing. The failure mode is the id, not the body: an unknown vanId returns 404 whatever the payload says.",
+                    "x-transcript": "update-empty-body-is-accepted-and-unknown-ids-404",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-merges-fields-and-answers-with-a-stub": {
+                    "summary": "An update merges the payload and answers 302 with a match stub",
+                    "description": "The payload is merged into the record: fields in the body are overwritten, fields left out keep their values. The response is a 302 whose Location points back at the person and whose body is the same match stub find returns — not the updated person.",
+                    "x-transcript": "update-merges-fields-and-answers-with-a-stub",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  }
                 }
               }
             },
@@ -368,7 +647,27 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Contact methods are appended, never replaced — and identical ones dedupe",
+            "source": "# Emails, phones and addresses in an update are added to what is already\n# there; there is no way to remove one through this endpoint. The append is\n# idempotent for an identical value: re-sending an email the person already\n# has does not create a second entry.\n\nPEOPLE_BODY='{\n  \"emails\": [\n    {\n      \"email\": \"imani.o@example.org\"\n    }\n  ]\n}'\n\n# A person with one email address.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Imani\",\n    \"lastName\": \"Oyelaran\",\n    \"emails\": [\n      {\n        \"email\": \"imani.oyelaran@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Update with a second address. The first is not replaced — the list grows.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$PEOPLE_BODY\"\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=emails' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Imani\",\n#   \"lastName\": \"Oyelaran\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Imani\",\n#   \"formalSalutation\": \"Imani Oyelaran\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Imani Oyelaran\",\n#   \"formalEnvelopeName\": \"Imani Oyelaran\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": [\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"imani.oyelaran@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": false,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     },\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"imani.o@example.org\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": true,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     }\n#   ],\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# Send the second address again, unchanged. Nothing is duplicated: still two\n# entries.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$PEOPLE_BODY\"\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=emails' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Imani\",\n#   \"lastName\": \"Oyelaran\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Imani\",\n#   \"formalSalutation\": \"Imani Oyelaran\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Imani Oyelaran\",\n#   \"formalEnvelopeName\": \"Imani Oyelaran\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": [\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"imani.oyelaran@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": false,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     },\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"imani.o@example.org\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": true,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     }\n#   ],\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "update-appends-contact-methods"
+          },
+          {
+            "lang": "Shell",
+            "label": "An empty body is a successful no-op; an unknown vanId is 404",
+            "source": "# `{}` is accepted and answered with the same 302 as a real update, changing\n# nothing. The failure mode is the id, not the body: an unknown vanId\n# returns 404 whatever the payload says.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Otis\",\n    \"lastName\": \"Renwick\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# An update that updates nothing. Accepted all the same.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{}\n  {}'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# The record is untouched.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Otis\",\n#   \"lastName\": \"Renwick\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Otis\",\n#   \"formalSalutation\": \"Otis Renwick\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Otis Renwick\",\n#   \"formalEnvelopeName\": \"Otis Renwick\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# A perfectly good payload aimed at an id nobody has: 404.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/2147483646' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Nobody\"\n  }'\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "update-empty-body-is-accepted-and-unknown-ids-404"
+          },
+          {
+            "lang": "Shell",
+            "label": "An update merges the payload and answers 302 with a match stub",
+            "source": "# The payload is merged into the record: fields in the body are overwritten,\n# fields left out keep their values. The response is a 302 whose Location\n# points back at the person and whose body is the same match stub find\n# returns — not the updated person.\n\n# A person whose first name is about to change.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Corazon\",\n    \"lastName\": \"Ellsworth\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Send only the new first name.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Cora\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# The first name changed; the last name, absent from the body, survived.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Cora\",\n#   \"lastName\": \"Ellsworth\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Cora\",\n#   \"formalSalutation\": \"Cora Ellsworth\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Cora Ellsworth\",\n#   \"formalEnvelopeName\": \"Cora Ellsworth\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "update-merges-fields-and-answers-with-a-stub"
+          }
+        ]
       }
     },
     "/people": {
@@ -785,6 +1084,204 @@
                       "nextPageLink": "https://api.securevan.com:443/v4/people?lastName=Testperson&$top=1&$skip=1",
                       "count": 120
                     }
+                  },
+                  "search-is-a-case-insensitive-prefix-match/1": {
+                    "summary": "A lowercase prefix of the first name is enough.",
+                    "description": "Matching runs from the start of the field, ignoring case: `wilhel` finds Wilhelmina, `helmina` finds nothing. Hits come back as full person records in the pagination envelope, with collections null unless $expand asks for them.",
+                    "x-transcript": "search-is-a-case-insensitive-prefix-match",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 100000001,
+                          "firstName": "Wilhelmina",
+                          "lastName": "Prefixling",
+                          "middleName": null,
+                          "suffix": null,
+                          "title": null,
+                          "sourceFileTitle": null,
+                          "sourceFileFirstName": null,
+                          "sourceFileMiddleName": null,
+                          "sourceFileLastName": null,
+                          "sourceFileSuffix": null,
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "organizationContactCommonName": null,
+                          "organizationContactOfficialName": null,
+                          "salutation": null,
+                          "formalSalutation": null,
+                          "additionalSalutation": null,
+                          "preferredPronoun": null,
+                          "pronouns": null,
+                          "namePronunciation": null,
+                          "envelopeName": null,
+                          "formalEnvelopeName": null,
+                          "additionalEnvelopeName": null,
+                          "contactMethodPreferenceCode": null,
+                          "contactMethodPreferenceId": null,
+                          "contactMethodPreferenceName": null,
+                          "assistantName": null,
+                          "nickname": null,
+                          "website": null,
+                          "professionalSuffix": null,
+                          "party": null,
+                          "employer": null,
+                          "occupation": null,
+                          "jobTitle": null,
+                          "sex": null,
+                          "dateOfBirth": null,
+                          "isDeceased": false,
+                          "dateCreated": "2026-01-01T00:00:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "selfReportedRace": null,
+                          "selfReportedEthnicity": null,
+                          "selfReportedRaces": null,
+                          "selfReportedEthnicities": null,
+                          "selfReportedGenders": null,
+                          "selfReportedSexualOrientations": null,
+                          "selfReportedLanguagePreference": null,
+                          "selfReportedLanguagePreferences": null,
+                          "emails": null,
+                          "phones": null,
+                          "addresses": null,
+                          "recordedAddresses": null,
+                          "pollingLocation": null,
+                          "earlyVoteLocation": null,
+                          "identifiers": null,
+                          "codes": null,
+                          "customFields": null,
+                          "primaryCustomField": null,
+                          "contributionSummary": null,
+                          "suppressions": null,
+                          "caseworkCases": null,
+                          "caseworkIssues": null,
+                          "caseworkStories": null,
+                          "notes": null,
+                          "scores": null,
+                          "customProperties": null,
+                          "electionRecords": null,
+                          "membershipStatus": null,
+                          "organizationRoles": null,
+                          "districts": null,
+                          "surveyQuestionResponses": null,
+                          "finderNumber": null,
+                          "biographyImageUrl": null,
+                          "biographyText": null,
+                          "biographyHtml": null,
+                          "primaryContact": null
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "search-is-a-case-insensitive-prefix-match/2": {
+                    "summary": "The same characters from the middle of the name match nothing: prefix, not contains.",
+                    "description": "Matching runs from the start of the field, ignoring case: `wilhel` finds Wilhelmina, `helmina` finds nothing. Hits come back as full person records in the pagination envelope, with collections null unless $expand asks for them.",
+                    "x-transcript": "search-is-a-case-insensitive-prefix-match",
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
+                  },
+                  "search-phone-must-be-bare-digits/1": {
+                    "summary": "Bare 10 digits: found.",
+                    "description": "The comparison is against the stored 10-digit string, so `(907) 555-0137` is accepted as valid input and then silently matches no one. There is no error to catch — a formatted number just looks like a person who is not there.",
+                    "x-transcript": "search-phone-must-be-bare-digits",
+                    "value": {
+                      "items": [
+                        {
+                          "vanId": 100000001,
+                          "firstName": "Dashiell",
+                          "lastName": "Dialtest",
+                          "middleName": null,
+                          "suffix": null,
+                          "title": null,
+                          "sourceFileTitle": null,
+                          "sourceFileFirstName": null,
+                          "sourceFileMiddleName": null,
+                          "sourceFileLastName": null,
+                          "sourceFileSuffix": null,
+                          "contactSource": "API",
+                          "contactMode": "Person",
+                          "organizationContactCommonName": null,
+                          "organizationContactOfficialName": null,
+                          "salutation": null,
+                          "formalSalutation": null,
+                          "additionalSalutation": null,
+                          "preferredPronoun": null,
+                          "pronouns": null,
+                          "namePronunciation": null,
+                          "envelopeName": null,
+                          "formalEnvelopeName": null,
+                          "additionalEnvelopeName": null,
+                          "contactMethodPreferenceCode": null,
+                          "contactMethodPreferenceId": null,
+                          "contactMethodPreferenceName": null,
+                          "assistantName": null,
+                          "nickname": null,
+                          "website": null,
+                          "professionalSuffix": null,
+                          "party": null,
+                          "employer": null,
+                          "occupation": null,
+                          "jobTitle": null,
+                          "sex": null,
+                          "dateOfBirth": null,
+                          "isDeceased": false,
+                          "dateCreated": "2026-01-01T00:00:00Z",
+                          "dateAcquired": "0001-01-01T00:00:00Z",
+                          "selfReportedRace": null,
+                          "selfReportedEthnicity": null,
+                          "selfReportedRaces": null,
+                          "selfReportedEthnicities": null,
+                          "selfReportedGenders": null,
+                          "selfReportedSexualOrientations": null,
+                          "selfReportedLanguagePreference": null,
+                          "selfReportedLanguagePreferences": null,
+                          "emails": null,
+                          "phones": null,
+                          "addresses": null,
+                          "recordedAddresses": null,
+                          "pollingLocation": null,
+                          "earlyVoteLocation": null,
+                          "identifiers": null,
+                          "codes": null,
+                          "customFields": null,
+                          "primaryCustomField": null,
+                          "contributionSummary": null,
+                          "suppressions": null,
+                          "caseworkCases": null,
+                          "caseworkIssues": null,
+                          "caseworkStories": null,
+                          "notes": null,
+                          "scores": null,
+                          "customProperties": null,
+                          "electionRecords": null,
+                          "membershipStatus": null,
+                          "organizationRoles": null,
+                          "districts": null,
+                          "surveyQuestionResponses": null,
+                          "finderNumber": null,
+                          "biographyImageUrl": null,
+                          "biographyText": null,
+                          "biographyHtml": null,
+                          "primaryContact": null
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "search-phone-must-be-bare-digits/2": {
+                    "summary": "The same number formatted: accepted, no error — and no results.",
+                    "description": "The comparison is against the stored 10-digit string, so `(907) 555-0137` is accepted as valid input and then silently matches no one. There is no error to catch — a formatted number just looks like a person who is not there.",
+                    "x-transcript": "search-phone-must-be-bare-digits",
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
                   }
                 }
               }
@@ -880,6 +1377,38 @@
                         }
                       ]
                     }
+                  },
+                  "search-requires-a-search-parameter/1": {
+                    "summary": "Paging alone is not a search.",
+                    "description": "A request with no search parameter is refused outright — even one that sets paging or filter parameters. `contactMode` is a filter, not a search parameter, so it alone does not satisfy the requirement either.",
+                    "x-transcript": "search-requires-a-search-parameter",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "This endpoint requires at least one search parameter to be set.",
+                          "properties": [
+                            "All Arguments"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "search-requires-a-search-parameter/2": {
+                    "summary": "contactMode filters results but does not count as a search parameter.",
+                    "description": "A request with no search parameter is refused outright — even one that sets paging or filter parameters. `contactMode` is a filter, not a search parameter, so it alone does not satisfy the requirement either.",
+                    "x-transcript": "search-requires-a-search-parameter",
+                    "value": {
+                      "errors": [
+                        {
+                          "code": "INVALID_PARAMETER",
+                          "text": "This endpoint requires at least one search parameter to be set.",
+                          "properties": [
+                            "All Arguments"
+                          ]
+                        }
+                      ]
+                    }
                   }
                 }
               }
@@ -897,7 +1426,27 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Text criteria match case-insensitive prefixes, never substrings",
+            "source": "# Matching runs from the start of the field, ignoring case: `wilhel` finds\n# Wilhelmina, `helmina` finds nothing. Hits come back as full person records\n# in the pagination envelope, with collections null unless $expand asks for\n# them.\n\n# One person to search for. The scoped last name keeps other data out of the\n# results.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Wilhelmina\",\n    \"lastName\": \"Prefixling\",\n    \"emails\": [\n      {\n        \"email\": \"wilhelmina.prefixling@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# A lowercase prefix of the first name is enough.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?firstName=wilhel&lastName=Prefixling' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"vanId\": 100000001,\n#       \"firstName\": \"Wilhelmina\",\n#       \"lastName\": \"Prefixling\",\n#       \"middleName\": null,\n#       \"suffix\": null,\n#       \"title\": null,\n#       \"sourceFileTitle\": null,\n#       \"sourceFileFirstName\": null,\n#       \"sourceFileMiddleName\": null,\n#       \"sourceFileLastName\": null,\n#       \"sourceFileSuffix\": null,\n#       \"contactSource\": \"API\",\n#       \"contactMode\": \"Person\",\n#       \"organizationContactCommonName\": null,\n#       \"organizationContactOfficialName\": null,\n#       \"salutation\": null,\n#       \"formalSalutation\": null,\n#       \"additionalSalutation\": null,\n#       \"preferredPronoun\": null,\n#       \"pronouns\": null,\n#       \"namePronunciation\": null,\n#       \"envelopeName\": null,\n#       \"formalEnvelopeName\": null,\n#       \"additionalEnvelopeName\": null,\n#       \"contactMethodPreferenceCode\": null,\n#       \"contactMethodPreferenceId\": null,\n#       \"contactMethodPreferenceName\": null,\n#       \"assistantName\": null,\n#       \"nickname\": null,\n#       \"website\": null,\n#       \"professionalSuffix\": null,\n#       \"party\": null,\n#       \"employer\": null,\n#       \"occupation\": null,\n#       \"jobTitle\": null,\n#       \"sex\": null,\n#       \"dateOfBirth\": null,\n#       \"isDeceased\": false,\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#       \"selfReportedRace\": null,\n#       \"selfReportedEthnicity\": null,\n#       \"selfReportedRaces\": null,\n#       \"selfReportedEthnicities\": null,\n#       \"selfReportedGenders\": null,\n#       \"selfReportedSexualOrientations\": null,\n#       \"selfReportedLanguagePreference\": null,\n#       \"selfReportedLanguagePreferences\": null,\n#       \"emails\": null,\n#       \"phones\": null,\n#       \"addresses\": null,\n#       \"recordedAddresses\": null,\n#       \"pollingLocation\": null,\n#       \"earlyVoteLocation\": null,\n#       \"identifiers\": null,\n#       \"codes\": null,\n#       \"customFields\": null,\n#       \"primaryCustomField\": null,\n#       \"contributionSummary\": null,\n#       \"suppressions\": null,\n#       \"caseworkCases\": null,\n#       \"caseworkIssues\": null,\n#       \"caseworkStories\": null,\n#       \"notes\": null,\n#       \"scores\": null,\n#       \"customProperties\": null,\n#       \"electionRecords\": null,\n#       \"membershipStatus\": null,\n#       \"organizationRoles\": null,\n#       \"districts\": null,\n#       \"surveyQuestionResponses\": null,\n#       \"finderNumber\": null,\n#       \"biographyImageUrl\": null,\n#       \"biographyText\": null,\n#       \"biographyHtml\": null,\n#       \"primaryContact\": null\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }\n\n# The same characters from the middle of the name match nothing: prefix, not\n# contains.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?firstName=helmina&lastName=Prefixling' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [],\n#   \"nextPageLink\": null,\n#   \"count\": 0\n# }",
+            "x-transcript": "search-is-a-case-insensitive-prefix-match"
+          },
+          {
+            "lang": "Shell",
+            "label": "Only a bare 10-digit phone number finds anyone",
+            "source": "# The comparison is against the stored 10-digit string, so `(907) 555-0137`\n# is accepted as valid input and then silently matches no one. There is no\n# error to catch — a formatted number just looks like a person who is not\n# there.\n\n# A person reachable at one phone number.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Dashiell\",\n    \"lastName\": \"Dialtest\",\n    \"phones\": [\n      {\n        \"phoneNumber\": \"9075550137\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Bare 10 digits: found.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?lastName=Dialtest&phoneNumber=9075550137' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"vanId\": 100000001,\n#       \"firstName\": \"Dashiell\",\n#       \"lastName\": \"Dialtest\",\n#       \"middleName\": null,\n#       \"suffix\": null,\n#       \"title\": null,\n#       \"sourceFileTitle\": null,\n#       \"sourceFileFirstName\": null,\n#       \"sourceFileMiddleName\": null,\n#       \"sourceFileLastName\": null,\n#       \"sourceFileSuffix\": null,\n#       \"contactSource\": \"API\",\n#       \"contactMode\": \"Person\",\n#       \"organizationContactCommonName\": null,\n#       \"organizationContactOfficialName\": null,\n#       \"salutation\": null,\n#       \"formalSalutation\": null,\n#       \"additionalSalutation\": null,\n#       \"preferredPronoun\": null,\n#       \"pronouns\": null,\n#       \"namePronunciation\": null,\n#       \"envelopeName\": null,\n#       \"formalEnvelopeName\": null,\n#       \"additionalEnvelopeName\": null,\n#       \"contactMethodPreferenceCode\": null,\n#       \"contactMethodPreferenceId\": null,\n#       \"contactMethodPreferenceName\": null,\n#       \"assistantName\": null,\n#       \"nickname\": null,\n#       \"website\": null,\n#       \"professionalSuffix\": null,\n#       \"party\": null,\n#       \"employer\": null,\n#       \"occupation\": null,\n#       \"jobTitle\": null,\n#       \"sex\": null,\n#       \"dateOfBirth\": null,\n#       \"isDeceased\": false,\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#       \"selfReportedRace\": null,\n#       \"selfReportedEthnicity\": null,\n#       \"selfReportedRaces\": null,\n#       \"selfReportedEthnicities\": null,\n#       \"selfReportedGenders\": null,\n#       \"selfReportedSexualOrientations\": null,\n#       \"selfReportedLanguagePreference\": null,\n#       \"selfReportedLanguagePreferences\": null,\n#       \"emails\": null,\n#       \"phones\": null,\n#       \"addresses\": null,\n#       \"recordedAddresses\": null,\n#       \"pollingLocation\": null,\n#       \"earlyVoteLocation\": null,\n#       \"identifiers\": null,\n#       \"codes\": null,\n#       \"customFields\": null,\n#       \"primaryCustomField\": null,\n#       \"contributionSummary\": null,\n#       \"suppressions\": null,\n#       \"caseworkCases\": null,\n#       \"caseworkIssues\": null,\n#       \"caseworkStories\": null,\n#       \"notes\": null,\n#       \"scores\": null,\n#       \"customProperties\": null,\n#       \"electionRecords\": null,\n#       \"membershipStatus\": null,\n#       \"organizationRoles\": null,\n#       \"districts\": null,\n#       \"surveyQuestionResponses\": null,\n#       \"finderNumber\": null,\n#       \"biographyImageUrl\": null,\n#       \"biographyText\": null,\n#       \"biographyHtml\": null,\n#       \"primaryContact\": null\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }\n\n# The same number formatted: accepted, no error — and no results.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?lastName=Dialtest&phoneNumber=%28907%29+555-0137' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [],\n#   \"nextPageLink\": null,\n#   \"count\": 0\n# }",
+            "x-transcript": "search-phone-must-be-bare-digits"
+          },
+          {
+            "lang": "Shell",
+            "label": "At least one search parameter must be set, and filters don't count",
+            "source": "# A request with no search parameter is refused outright — even one that\n# sets paging or filter parameters. `contactMode` is a filter, not a search\n# parameter, so it alone does not satisfy the requirement either.\n\n# Paging alone is not a search.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?%24top=5' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"This endpoint requires at least one search parameter to be set.\",\n#       \"properties\": [\n#         \"All Arguments\"\n#       ]\n#     }\n#   ]\n# }\n\n# contactMode filters results but does not count as a search parameter.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?contactMode=Person' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"This endpoint requires at least one search parameter to be set.\",\n#       \"properties\": [\n#         \"All Arguments\"\n#       ]\n#     }\n#   ]\n# }",
+            "x-transcript": "search-requires-a-search-parameter"
+          }
+        ]
       }
     },
     "/people/find": {
@@ -1503,6 +2052,35 @@
                       }
                     ]
                   }
+                },
+                "empty-bodies-create-blank-people": {
+                  "summary": "An empty body creates a blank person record",
+                  "description": "Every field is optional, including the name, so `{}` is a valid payload on both create endpoints: create answers 201 Stored, and findOrCreate — with no criteria to match on — answers 201 UnmatchedStored. Each call leaves a nameless person record behind.",
+                  "x-transcript": "empty-bodies-create-blank-people",
+                  "value": {}
+                },
+                "findorcreate-below-threshold-creates-a-duplicate": {
+                  "summary": "Below the match threshold, findOrCreate quietly creates a duplicate",
+                  "description": "A name alone never reaches the minimum match combination, so no match is attempted: the payload is stored as a brand-new person record even though the person is already in the database. There is no 'unmatched' to inspect — the no-match case is the create case.",
+                  "x-transcript": "findorcreate-below-threshold-creates-a-duplicate",
+                  "value": {
+                    "firstName": "Harriet",
+                    "lastName": "Duplicata"
+                  }
+                },
+                "findorcreate-returns-the-existing-match": {
+                  "summary": "Above the match threshold, findOrCreate returns the existing person",
+                  "description": "Name plus email clears the minimum match combination, so the existing person comes back as a 302 match stub with a Location header, and nothing is written.",
+                  "x-transcript": "findorcreate-returns-the-existing-match",
+                  "value": {
+                    "firstName": "Marisol",
+                    "lastName": "Vega",
+                    "emails": [
+                      {
+                        "email": "marisol.vega@example.com"
+                      }
+                    ]
+                  }
                 }
               }
             }
@@ -1529,6 +2107,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonUnmatchedStored"
+                },
+                "examples": {
+                  "empty-bodies-create-blank-people": {
+                    "summary": "An empty body creates a blank person record",
+                    "description": "Every field is optional, including the name, so `{}` is a valid payload on both create endpoints: create answers 201 Stored, and findOrCreate — with no criteria to match on — answers 201 UnmatchedStored. Each call leaves a nameless person record behind.",
+                    "x-transcript": "empty-bodies-create-blank-people",
+                    "value": {
+                      "vanId": 100000002,
+                      "status": "UnmatchedStored"
+                    }
+                  },
+                  "findorcreate-below-threshold-creates-a-duplicate": {
+                    "summary": "Below the match threshold, findOrCreate quietly creates a duplicate",
+                    "description": "A name alone never reaches the minimum match combination, so no match is attempted: the payload is stored as a brand-new person record even though the person is already in the database. There is no 'unmatched' to inspect — the no-match case is the create case.",
+                    "x-transcript": "findorcreate-below-threshold-creates-a-duplicate",
+                    "value": {
+                      "vanId": 100000002,
+                      "status": "UnmatchedStored"
+                    }
+                  }
                 }
               }
             },
@@ -1553,6 +2151,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
+                },
+                "examples": {
+                  "findorcreate-returns-the-existing-match": {
+                    "summary": "Above the match threshold, findOrCreate returns the existing person",
+                    "description": "Name plus email clears the minimum match combination, so the existing person comes back as a 302 match stub with a Location header, and nothing is written.",
+                    "x-transcript": "findorcreate-returns-the-existing-match",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  }
                 }
               }
             },
@@ -1578,7 +2187,27 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "An empty body creates a blank person record",
+            "source": "# Every field is optional, including the name, so `{}` is a valid payload on\n# both create endpoints: create answers 201 Stored, and findOrCreate — with\n# no criteria to match on — answers 201 UnmatchedStored. Each call leaves a\n# nameless person record behind.\n\nCREATE_BODY='{}'\n\n# Create from nothing.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate from nothing: no criteria means no match, which means create.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"UnmatchedStored\"\n# }",
+            "x-transcript": "empty-bodies-create-blank-people"
+          },
+          {
+            "lang": "Shell",
+            "label": "Below the match threshold, findOrCreate quietly creates a duplicate",
+            "source": "# A name alone never reaches the minimum match combination, so no match is\n# attempted: the payload is stored as a brand-new person record even though\n# the person is already in the database. There is no 'unmatched' to inspect\n# — the no-match case is the create case.\n\n# The person is in the database, carrying identifiers a match could use.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Duplicata\",\n    \"emails\": [\n      {\n        \"email\": \"harriet.duplicata@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate with the name alone. Below the threshold, so: created, not\n# found.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Harriet\",\n    \"lastName\": \"Duplicata\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"UnmatchedStored\"\n# }\n\n# Both person records now exist under the same name.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people?lastName=Duplicata' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"vanId\": 100000001,\n#       \"firstName\": \"Harriet\",\n#       \"lastName\": \"Duplicata\",\n#       \"middleName\": null,\n#       \"suffix\": null,\n#       \"title\": null,\n#       \"sourceFileTitle\": null,\n#       \"sourceFileFirstName\": null,\n#       \"sourceFileMiddleName\": null,\n#       \"sourceFileLastName\": null,\n#       \"sourceFileSuffix\": null,\n#       \"contactSource\": \"API\",\n#       \"contactMode\": \"Person\",\n#       \"organizationContactCommonName\": null,\n#       \"organizationContactOfficialName\": null,\n#       \"salutation\": null,\n#       \"formalSalutation\": null,\n#       \"additionalSalutation\": null,\n#       \"preferredPronoun\": null,\n#       \"pronouns\": null,\n#       \"namePronunciation\": null,\n#       \"envelopeName\": null,\n#       \"formalEnvelopeName\": null,\n#       \"additionalEnvelopeName\": null,\n#       \"contactMethodPreferenceCode\": null,\n#       \"contactMethodPreferenceId\": null,\n#       \"contactMethodPreferenceName\": null,\n#       \"assistantName\": null,\n#       \"nickname\": null,\n#       \"website\": null,\n#       \"professionalSuffix\": null,\n#       \"party\": null,\n#       \"employer\": null,\n#       \"occupation\": null,\n#       \"jobTitle\": null,\n#       \"sex\": null,\n#       \"dateOfBirth\": null,\n#       \"isDeceased\": false,\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#       \"selfReportedRace\": null,\n#       \"selfReportedEthnicity\": null,\n#       \"selfReportedRaces\": null,\n#       \"selfReportedEthnicities\": null,\n#       \"selfReportedGenders\": null,\n#       \"selfReportedSexualOrientations\": null,\n#       \"selfReportedLanguagePreference\": null,\n#       \"selfReportedLanguagePreferences\": null,\n#       \"emails\": null,\n#       \"phones\": null,\n#       \"addresses\": null,\n#       \"recordedAddresses\": null,\n#       \"pollingLocation\": null,\n#       \"earlyVoteLocation\": null,\n#       \"identifiers\": null,\n#       \"codes\": null,\n#       \"customFields\": null,\n#       \"primaryCustomField\": null,\n#       \"contributionSummary\": null,\n#       \"suppressions\": null,\n#       \"caseworkCases\": null,\n#       \"caseworkIssues\": null,\n#       \"caseworkStories\": null,\n#       \"notes\": null,\n#       \"scores\": null,\n#       \"customProperties\": null,\n#       \"electionRecords\": null,\n#       \"membershipStatus\": null,\n#       \"organizationRoles\": null,\n#       \"districts\": null,\n#       \"surveyQuestionResponses\": null,\n#       \"finderNumber\": null,\n#       \"biographyImageUrl\": null,\n#       \"biographyText\": null,\n#       \"biographyHtml\": null,\n#       \"primaryContact\": null\n#     },\n#     {\n#       \"vanId\": 100000002,\n#       \"firstName\": \"Harriet\",\n#       \"lastName\": \"Duplicata\",\n#       \"middleName\": null,\n#       \"suffix\": null,\n#       \"title\": null,\n#       \"sourceFileTitle\": null,\n#       \"sourceFileFirstName\": null,\n#       \"sourceFileMiddleName\": null,\n#       \"sourceFileLastName\": null,\n#       \"sourceFileSuffix\": null,\n#       \"contactSource\": \"API\",\n#       \"contactMode\": \"Person\",\n#       \"organizationContactCommonName\": null,\n#       \"organizationContactOfficialName\": null,\n#       \"salutation\": null,\n#       \"formalSalutation\": null,\n#       \"additionalSalutation\": null,\n#       \"preferredPronoun\": null,\n#       \"pronouns\": null,\n#       \"namePronunciation\": null,\n#       \"envelopeName\": null,\n#       \"formalEnvelopeName\": null,\n#       \"additionalEnvelopeName\": null,\n#       \"contactMethodPreferenceCode\": null,\n#       \"contactMethodPreferenceId\": null,\n#       \"contactMethodPreferenceName\": null,\n#       \"assistantName\": null,\n#       \"nickname\": null,\n#       \"website\": null,\n#       \"professionalSuffix\": null,\n#       \"party\": null,\n#       \"employer\": null,\n#       \"occupation\": null,\n#       \"jobTitle\": null,\n#       \"sex\": null,\n#       \"dateOfBirth\": null,\n#       \"isDeceased\": false,\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#       \"selfReportedRace\": null,\n#       \"selfReportedEthnicity\": null,\n#       \"selfReportedRaces\": null,\n#       \"selfReportedEthnicities\": null,\n#       \"selfReportedGenders\": null,\n#       \"selfReportedSexualOrientations\": null,\n#       \"selfReportedLanguagePreference\": null,\n#       \"selfReportedLanguagePreferences\": null,\n#       \"emails\": null,\n#       \"phones\": null,\n#       \"addresses\": null,\n#       \"recordedAddresses\": null,\n#       \"pollingLocation\": null,\n#       \"earlyVoteLocation\": null,\n#       \"identifiers\": null,\n#       \"codes\": null,\n#       \"customFields\": null,\n#       \"primaryCustomField\": null,\n#       \"contributionSummary\": null,\n#       \"suppressions\": null,\n#       \"caseworkCases\": null,\n#       \"caseworkIssues\": null,\n#       \"caseworkStories\": null,\n#       \"notes\": null,\n#       \"scores\": null,\n#       \"customProperties\": null,\n#       \"electionRecords\": null,\n#       \"membershipStatus\": null,\n#       \"organizationRoles\": null,\n#       \"districts\": null,\n#       \"surveyQuestionResponses\": null,\n#       \"finderNumber\": null,\n#       \"biographyImageUrl\": null,\n#       \"biographyText\": null,\n#       \"biographyHtml\": null,\n#       \"primaryContact\": null\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 2\n# }",
+            "x-transcript": "findorcreate-below-threshold-creates-a-duplicate"
+          },
+          {
+            "lang": "Shell",
+            "label": "Above the match threshold, findOrCreate returns the existing person",
+            "source": "# Name plus email clears the minimum match combination, so the existing\n# person comes back as a 302 match stub with a Location header, and nothing\n# is written.\n\nCREATE_BODY='{\n  \"firstName\": \"Marisol\",\n  \"lastName\": \"Vega\",\n  \"emails\": [\n    {\n      \"email\": \"marisol.vega@example.com\"\n    }\n  ]\n}'\n\n# The person is already in the database.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate with the same name and email: found, not created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "findorcreate-returns-the-existing-match"
+          }
+        ]
       }
     },
     "/people/create": {
@@ -1627,6 +2256,49 @@
                       }
                     ]
                   }
+                },
+                "create-never-deduplicates/1": {
+                  "summary": "Create a person.",
+                  "description": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
+                  "x-transcript": "create-never-deduplicates",
+                  "value": {
+                    "firstName": "Beatrix",
+                    "lastName": "Falkner",
+                    "emails": [
+                      {
+                        "email": "beatrix.falkner@example.com"
+                      }
+                    ]
+                  }
+                },
+                "create-never-deduplicates/2": {
+                  "summary": "Create them again, byte for byte. Nothing objects: a duplicate is born.",
+                  "description": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
+                  "x-transcript": "create-never-deduplicates",
+                  "value": {
+                    "firstName": "Beatrix",
+                    "lastName": "Falkner",
+                    "emails": [
+                      {
+                        "email": "beatrix.falkner@example.com"
+                      }
+                    ]
+                  }
+                },
+                "create-with-a-vanid-matches-instead": {
+                  "summary": "A vanId in the body is the one thing that stops a create",
+                  "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+                  "x-transcript": "create-with-a-vanid-matches-instead",
+                  "value": {
+                    "vanId": 100000001,
+                    "firstName": "Soren"
+                  }
+                },
+                "empty-bodies-create-blank-people": {
+                  "summary": "An empty body creates a blank person record",
+                  "description": "Every field is optional, including the name, so `{}` is a valid payload on both create endpoints: create answers 201 Stored, and findOrCreate — with no criteria to match on — answers 201 UnmatchedStored. Each call leaves a nameless person record behind.",
+                  "x-transcript": "empty-bodies-create-blank-people",
+                  "value": {}
                 }
               }
             }
@@ -1680,6 +2352,33 @@
                       "vanId": 102714580,
                       "status": "Stored"
                     }
+                  },
+                  "create-never-deduplicates/1": {
+                    "summary": "Create a person.",
+                    "description": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
+                    "x-transcript": "create-never-deduplicates",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Stored"
+                    }
+                  },
+                  "create-never-deduplicates/2": {
+                    "summary": "Create them again, byte for byte. Nothing objects: a duplicate is born.",
+                    "description": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
+                    "x-transcript": "create-never-deduplicates",
+                    "value": {
+                      "vanId": 100000002,
+                      "status": "Stored"
+                    }
+                  },
+                  "empty-bodies-create-blank-people": {
+                    "summary": "An empty body creates a blank person record",
+                    "description": "Every field is optional, including the name, so `{}` is a valid payload on both create endpoints: create answers 201 Stored, and findOrCreate — with no criteria to match on — answers 201 UnmatchedStored. Each call leaves a nameless person record behind.",
+                    "x-transcript": "empty-bodies-create-blank-people",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Stored"
+                    }
                   }
                 }
               }
@@ -1705,6 +2404,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PersonMatched"
+                },
+                "examples": {
+                  "create-with-a-vanid-matches-instead": {
+                    "summary": "A vanId in the body is the one thing that stops a create",
+                    "description": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+                    "x-transcript": "create-with-a-vanid-matches-instead",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  }
                 }
               }
             },
@@ -1730,7 +2440,27 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "An identical payload creates a second person record",
+            "source": "# No de-duplication happens: posting a payload identical to an existing\n# person's — same name, same email — returns 201 with a fresh vanId, and\n# both person records now exist.\n\nCREATE_BODY='{\n  \"firstName\": \"Beatrix\",\n  \"lastName\": \"Falkner\",\n  \"emails\": [\n    {\n      \"email\": \"beatrix.falkner@example.com\"\n    }\n  ]\n}'\n\n# Create a person.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Create them again, byte for byte. Nothing objects: a duplicate is born.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }",
+            "x-transcript": "create-never-deduplicates"
+          },
+          {
+            "lang": "Shell",
+            "label": "A vanId in the body is the one thing that stops a create",
+            "source": "# When the body carries a vanId that exists, nothing is created: the answer\n# is the same 302 match stub findOrCreate gives, with a Location pointing at\n# the existing person. This is the only way this endpoint declines to create\n# a person record.\n\n# An existing person to name in the body.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Soren\",\n    \"lastName\": \"Lindqvist\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# A create request that names them. No record is created.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001,\n    \"firstName\": \"Soren\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "create-with-a-vanid-matches-instead"
+          },
+          {
+            "lang": "Shell",
+            "label": "An empty body creates a blank person record",
+            "source": "# Every field is optional, including the name, so `{}` is a valid payload on\n# both create endpoints: create answers 201 Stored, and findOrCreate — with\n# no criteria to match on — answers 201 UnmatchedStored. Each call leaves a\n# nameless person record behind.\n\nCREATE_BODY='{}'\n\n# Create from nothing.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# findOrCreate from nothing: no criteria means no match, which means create.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/findOrCreate' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"UnmatchedStored\"\n# }",
+            "x-transcript": "empty-bodies-create-blank-people"
+          }
+        ]
       }
     },
     "/people/{vanId}/mergeInto": {
@@ -1782,10 +2512,34 @@
                 "$ref": "#/components/schemas/PersonMergeInput"
               },
               "examples": {
+                "merge-combines-emails-and-moves-reachability": {
+                  "summary": "Emails are combined onto the primary, and shared ones are not doubled",
+                  "description": "The two people's emails are pooled onto the primary. An address both held is collapsed to one entry — matched case-insensitively, keeping the primary's copy — and an email that belonged only to the secondary now resolves to the primary through POST /people/find.",
+                  "x-transcript": "merge-combines-emails-and-moves-reachability",
+                  "value": {
+                    "vanId": 100000001
+                  }
+                },
+                "merge-deletes-secondary-and-answers-with-primary": {
+                  "summary": "A merge keeps the primary, deletes the secondary, and answers with the survivor",
+                  "description": "The secondary named in the path is merged into the primary named in the body. The 200 carries the primary's vanId — the survivor, not the id from the path — with a Location pointing at it, and the secondary answers 404 from then on.",
+                  "x-transcript": "merge-deletes-secondary-and-answers-with-primary",
+                  "value": {
+                    "vanId": 100000001
+                  }
+                },
                 "merge-empty-whatif-is-rejected": {
                   "summary": "An empty whatIf is rejected outright",
                   "description": "`?whatIf=` is the one value that neither simulates nor merges: it is refused with a bare BAD_REQUEST. Every other non-empty value performs the merge, so the empty string is the only typo here that is safe.",
                   "x-transcript": "merge-empty-whatif-is-rejected",
+                  "value": {
+                    "vanId": 100000001
+                  }
+                },
+                "merge-keeps-primary-values-and-fills-its-gaps": {
+                  "summary": "Conflicting fields keep the primary's value; the primary's gaps fill from the secondary",
+                  "description": "Scalar fields the two people disagree on keep the primary's value, and fields the primary left empty are filled in from the secondary — so the primary can come out of a merge holding more data than it went in with.",
+                  "x-transcript": "merge-keeps-primary-values-and-fills-its-gaps",
                   "value": {
                     "vanId": 100000001
                   }
@@ -1866,6 +2620,30 @@
                   "$ref": "#/components/schemas/PersonMergeResult"
                 },
                 "examples": {
+                  "merge-combines-emails-and-moves-reachability": {
+                    "summary": "Emails are combined onto the primary, and shared ones are not doubled",
+                    "description": "The two people's emails are pooled onto the primary. An address both held is collapsed to one entry — matched case-insensitively, keeping the primary's copy — and an email that belonged only to the secondary now resolves to the primary through POST /people/find.",
+                    "x-transcript": "merge-combines-emails-and-moves-reachability",
+                    "value": {
+                      "vanId": 100000001
+                    }
+                  },
+                  "merge-deletes-secondary-and-answers-with-primary": {
+                    "summary": "A merge keeps the primary, deletes the secondary, and answers with the survivor",
+                    "description": "The secondary named in the path is merged into the primary named in the body. The 200 carries the primary's vanId — the survivor, not the id from the path — with a Location pointing at it, and the secondary answers 404 from then on.",
+                    "x-transcript": "merge-deletes-secondary-and-answers-with-primary",
+                    "value": {
+                      "vanId": 100000001
+                    }
+                  },
+                  "merge-keeps-primary-values-and-fills-its-gaps": {
+                    "summary": "Conflicting fields keep the primary's value; the primary's gaps fill from the secondary",
+                    "description": "Scalar fields the two people disagree on keep the primary's value, and fields the primary left empty are filled in from the secondary — so the primary can come out of a merge holding more data than it went in with.",
+                    "x-transcript": "merge-keeps-primary-values-and-fills-its-gaps",
+                    "value": {
+                      "vanId": 100000001
+                    }
+                  },
                   "merge-whatif-requires-literal-true": {
                     "summary": "whatIf only simulates for the literal string 'true'",
                     "description": "Only the exact value `true` simulates. Every other non-empty value — including `1` and `yes` — is read as false and performs the merge for real, and the response is identical either way, so nothing in it reveals which one happened.",
@@ -2024,9 +2802,27 @@
         "x-codeSamples": [
           {
             "lang": "Shell",
+            "label": "Emails are combined onto the primary, and shared ones are not doubled",
+            "source": "# The two people's emails are pooled onto the primary. An address both held\n# is collapsed to one entry — matched case-insensitively, keeping the\n# primary's copy — and an email that belonged only to the secondary now\n# resolves to the primary through POST /people/find.\n\n# Each person holds one email of their own, plus one they share — spelled\n# with different case on each side.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Fern\",\n    \"lastName\": \"Aldana\",\n    \"emails\": [\n      {\n        \"email\": \"fern.primary@example.com\"\n      },\n      {\n        \"email\": \"fern.shared@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Fern\",\n    \"lastName\": \"Aldana\",\n    \"emails\": [\n      {\n        \"email\": \"fern.secondary@example.com\"\n      },\n      {\n        \"email\": \"FERN.SHARED@example.com\"\n      }\n    ]\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# Three emails, not four: the shared address collapsed to a single entry, in\n# the primary's spelling.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=emails' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Fern\",\n#   \"lastName\": \"Aldana\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Fern\",\n#   \"formalSalutation\": \"Fern Aldana\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Fern Aldana\",\n#   \"formalEnvelopeName\": \"Fern Aldana\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": [\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"fern.primary@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": false,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     },\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"fern.shared@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": true,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     },\n#     {\n#       \"type\": \"P\",\n#       \"email\": \"fern.secondary@example.com\",\n#       \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#       \"isPreferred\": false,\n#       \"isSubscribed\": true,\n#       \"subscriptionStatus\": \"S\"\n#     }\n#   ],\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# Reachability moved too: the secondary's own email now finds the primary.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/find' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"emails\": [\n      {\n        \"email\": \"fern.secondary@example.com\"\n      }\n    ]\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }",
+            "x-transcript": "merge-combines-emails-and-moves-reachability"
+          },
+          {
+            "lang": "Shell",
+            "label": "A merge keeps the primary, deletes the secondary, and answers with the survivor",
+            "source": "# The secondary named in the path is merged into the primary named in the\n# body. The 200 carries the primary's vanId — the survivor, not the id from\n# the path — with a Location pointing at it, and the secondary answers 404\n# from then on.\n\nCREATE_BODY='{\n  \"firstName\": \"Lena\",\n  \"lastName\": \"Voss\"\n}'\n\n# Two duplicates of one person. The primary survives; the secondary is\n# consumed.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# The secondary goes in the path; the body names the primary that survives.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# The primary is still there under its own vanId.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Lena\",\n#   \"lastName\": \"Voss\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Lena\",\n#   \"formalSalutation\": \"Lena Voss\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Lena Voss\",\n#   \"formalEnvelopeName\": \"Lena Voss\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# The secondary is not, and never will be — merges cannot be undone.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000002' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }",
+            "x-transcript": "merge-deletes-secondary-and-answers-with-primary"
+          },
+          {
+            "lang": "Shell",
             "label": "An empty whatIf is rejected outright",
             "source": "# `?whatIf=` is the one value that neither simulates nor merges: it is\n# refused with a bare BAD_REQUEST. Every other non-empty value performs the\n# merge, so the empty string is the only typo here that is safe.\n\nCREATE_BODY='{\n  \"firstName\": \"Dana\",\n  \"lastName\": \"Whitfield\"\n}'\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d \"$CREATE_BODY\"\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\n# Send the parameter with no value. Nothing is merged and nothing is\n# simulated.\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto?whatIf=' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"BAD_REQUEST\",\n#       \"text\": \"The request is invalid.\"\n#     }\n#   ]\n# }\n\n# Both records survive, confirming the request was refused before anything\n# was written.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000002' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000002,\n#   \"firstName\": \"Dana\",\n#   \"lastName\": \"Whitfield\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Dana\",\n#   \"formalSalutation\": \"Dana Whitfield\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Dana Whitfield\",\n#   \"formalEnvelopeName\": \"Dana Whitfield\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
             "x-transcript": "merge-empty-whatif-is-rejected"
+          },
+          {
+            "lang": "Shell",
+            "label": "Conflicting fields keep the primary's value; the primary's gaps fill from the secondary",
+            "source": "# Scalar fields the two people disagree on keep the primary's value, and\n# fields the primary left empty are filled in from the secondary — so the\n# primary can come out of a merge holding more data than it went in with.\n\n# The two disagree on firstName, and the primary lacks the middleName and\n# occupation the secondary holds.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Beatriz\",\n    \"lastName\": \"Fontaine\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Bea\",\n    \"middleName\": \"Lucia\",\n    \"lastName\": \"Fontaine\",\n    \"occupation\": \"Archivist\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000002\n# {\n#   \"vanId\": 100000002,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X PUT 'https://api.securevan.com/v4/people/100000002/mergeInto' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"vanId\": 100000001\n  }'\n# → 200  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001\n# }\n\n# The disputed firstName kept the primary's value; the middleName and\n# occupation the primary lacked were filled in from the secondary.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Beatriz\",\n#   \"lastName\": \"Fontaine\",\n#   \"middleName\": \"Lucia\",\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Beatriz\",\n#   \"formalSalutation\": \"Beatriz Fontaine\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Beatriz L. Fontaine\",\n#   \"formalEnvelopeName\": \"Beatriz L. Fontaine\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": \"Archivist\",\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "merge-keeps-primary-values-and-fills-its-gaps"
           },
           {
             "lang": "Shell",
@@ -2146,6 +2942,123 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NoteList"
+                },
+                "examples": {
+                  "note-create-is-silent": {
+                    "summary": "Creating a note returns nothing — the id has to be read back",
+                    "description": "Success is a bare 204: no body, no Location header, no noteId. The only way to learn the new id is GET /people/{vanId}/notes. The read-back also shows `isPinned` was accepted and ignored, and that an uncategorized note reads as the `{noteCategoryId: 0, name: null}` stub.",
+                    "x-transcript": "note-create-is-silent",
+                    "value": {
+                      "items": [
+                        {
+                          "contactHistory": null,
+                          "noteId": 100000002,
+                          "text": "Spoke at the door; wants a yard sign.",
+                          "isViewRestricted": false,
+                          "category": {
+                            "noteCategoryId": 0,
+                            "name": null
+                          },
+                          "createdDate": "2026-01-01T00:00:00Z",
+                          "isPinned": false
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "notes-list-tuning-parameters-are-inert/1": {
+                    "summary": "$orderby and $expand are validated, then change nothing",
+                    "description": "`$orderby=CreatedDate desc` and `$expand=noteDetails` both pass validation and both return a body identical to the plain request — the sort never reorders and the expand never populates `contactHistory`. Values outside the accepted sets are refused with INVALID_PARAMETER, so the parameters are checked strictly and then ignored.",
+                    "x-transcript": "notes-list-tuning-parameters-are-inert",
+                    "value": {
+                      "items": [
+                        {
+                          "contactHistory": null,
+                          "noteId": 100000002,
+                          "text": "Interested in canvassing.",
+                          "isViewRestricted": false,
+                          "category": {
+                            "noteCategoryId": 0,
+                            "name": null
+                          },
+                          "createdDate": "2026-01-01T00:00:00Z",
+                          "isPinned": false
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "notes-list-tuning-parameters-are-inert/2": {
+                    "summary": "Descending sort: accepted, and the body comes back identical to the plain call.",
+                    "description": "`$orderby=CreatedDate desc` and `$expand=noteDetails` both pass validation and both return a body identical to the plain request — the sort never reorders and the expand never populates `contactHistory`. Values outside the accepted sets are refused with INVALID_PARAMETER, so the parameters are checked strictly and then ignored.",
+                    "x-transcript": "notes-list-tuning-parameters-are-inert",
+                    "value": {
+                      "items": [
+                        {
+                          "contactHistory": null,
+                          "noteId": 100000002,
+                          "text": "Interested in canvassing.",
+                          "isViewRestricted": false,
+                          "category": {
+                            "noteCategoryId": 0,
+                            "name": null
+                          },
+                          "createdDate": "2026-01-01T00:00:00Z",
+                          "isPinned": false
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "notes-list-tuning-parameters-are-inert/3": {
+                    "summary": "The one accepted $expand value: also identical, contactHistory still null.",
+                    "description": "`$orderby=CreatedDate desc` and `$expand=noteDetails` both pass validation and both return a body identical to the plain request — the sort never reorders and the expand never populates `contactHistory`. Values outside the accepted sets are refused with INVALID_PARAMETER, so the parameters are checked strictly and then ignored.",
+                    "x-transcript": "notes-list-tuning-parameters-are-inert",
+                    "value": {
+                      "items": [
+                        {
+                          "contactHistory": null,
+                          "noteId": 100000002,
+                          "text": "Interested in canvassing.",
+                          "isViewRestricted": false,
+                          "category": {
+                            "noteCategoryId": 0,
+                            "name": null
+                          },
+                          "createdDate": "2026-01-01T00:00:00Z",
+                          "isPinned": false
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  },
+                  "restricted-notes-vanish-from-the-api": {
+                    "summary": "A view-restricted note can be written but never read back",
+                    "description": "`isViewRestricted: true` is accepted with the same 204 as any other note, and the note is then withheld from API keys entirely: absent from items and not counted in count, so every note the API ever shows has the flag false.",
+                    "x-transcript": "restricted-notes-vanish-from-the-api",
+                    "value": {
+                      "items": [
+                        {
+                          "contactHistory": null,
+                          "noteId": 100000002,
+                          "text": "Volunteered at the phone bank.",
+                          "isViewRestricted": false,
+                          "category": {
+                            "noteCategoryId": 0,
+                            "name": null
+                          },
+                          "createdDate": "2026-01-01T00:00:00Z",
+                          "isPinned": false
+                        }
+                      ],
+                      "nextPageLink": null,
+                      "count": 1
+                    }
+                  }
                 }
               },
               "text/html": {
@@ -2173,7 +3086,27 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Creating a note returns nothing — the id has to be read back",
+            "source": "# Success is a bare 204: no body, no Location header, no noteId. The only\n# way to learn the new id is GET /people/{vanId}/notes. The read-back also\n# shows `isPinned` was accepted and ignored, and that an uncategorized note\n# reads as the `{noteCategoryId: 0, name: null}` stub.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Lucinda\",\n    \"lastName\": \"Farrow\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Create a note, asking for a pin the API will ignore.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Spoke at the door; wants a yard sign.\",\n    \"isViewRestricted\": false,\n    \"isPinned\": true\n  }'\n# → 204\n\n# Reading the list back is the only way to learn the noteId.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Spoke at the door; wants a yard sign.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }",
+            "x-transcript": "note-create-is-silent"
+          },
+          {
+            "lang": "Shell",
+            "label": "$orderby and $expand are validated, then change nothing",
+            "source": "# `$orderby=CreatedDate desc` and `$expand=noteDetails` both pass validation\n# and both return a body identical to the plain request — the sort never\n# reorders and the expand never populates `contactHistory`. Values outside\n# the accepted sets are refused with INVALID_PARAMETER, so the parameters\n# are checked strictly and then ignored.\n\n# A person with one note to list.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Prudence\",\n    \"lastName\": \"Ashby\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Interested in canvassing.\",\n    \"isViewRestricted\": false\n  }'\n# → 204\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Interested in canvassing.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }\n\n# Descending sort: accepted, and the body comes back identical to the plain\n# call.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes?%24orderby=CreatedDate+desc' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Interested in canvassing.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }\n\n# The one accepted $expand value: also identical, contactHistory still null.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes?%24expand=noteDetails' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Interested in canvassing.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }\n\n# Anything outside the accepted sets is refused, not ignored.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes?%24orderby=Text' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"'Text' is not a valid argument for the '$orderby' parameter\",\n#       \"properties\": [\n#         \"$orderby\"\n#       ],\n#       \"hint\": \"The only valid orderby properties are: 'CreatedDate', 'IsPinned'\"\n#     }\n#   ]\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes?%24expand=contactHistory' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"'contactHistory' is not a valid argument for the '$expand' parameter\",\n#       \"properties\": [\n#         \"$expand\"\n#       ],\n#       \"hint\": \"The only valid expand section is: 'noteDetails'\"\n#     }\n#   ]\n# }",
+            "x-transcript": "notes-list-tuning-parameters-are-inert"
+          },
+          {
+            "lang": "Shell",
+            "label": "A view-restricted note can be written but never read back",
+            "source": "# `isViewRestricted: true` is accepted with the same 204 as any other note,\n# and the note is then withheld from API keys entirely: absent from items\n# and not counted in count, so every note the API ever shows has the flag\n# false.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Barnaby\",\n    \"lastName\": \"Quill\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# One ordinary note, one restricted. Both are accepted identically.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Volunteered at the phone bank.\",\n    \"isViewRestricted\": false\n  }'\n# → 204\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Do not publish this.\",\n    \"isViewRestricted\": true\n  }'\n# → 204\n\n# The list has one note. The restricted one is not hidden — it is simply not\n# there.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Volunteered at the phone bank.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }",
+            "x-transcript": "restricted-notes-vanish-from-the-api"
+          }
+        ]
       },
       "post": {
         "operationId": "createPersonNote",
@@ -2233,6 +3166,34 @@
                       "dateCanvassed": "2026-08-01T00:00:00Z"
                     }
                   }
+                },
+                "note-create-is-silent": {
+                  "summary": "Creating a note returns nothing — the id has to be read back",
+                  "description": "Success is a bare 204: no body, no Location header, no noteId. The only way to learn the new id is GET /people/{vanId}/notes. The read-back also shows `isPinned` was accepted and ignored, and that an uncategorized note reads as the `{noteCategoryId: 0, name: null}` stub.",
+                  "x-transcript": "note-create-is-silent",
+                  "value": {
+                    "text": "Spoke at the door; wants a yard sign.",
+                    "isViewRestricted": false,
+                    "isPinned": true
+                  }
+                },
+                "restricted-notes-vanish-from-the-api/1": {
+                  "summary": "One ordinary note, one restricted. Both are accepted identically.",
+                  "description": "`isViewRestricted: true` is accepted with the same 204 as any other note, and the note is then withheld from API keys entirely: absent from items and not counted in count, so every note the API ever shows has the flag false.",
+                  "x-transcript": "restricted-notes-vanish-from-the-api",
+                  "value": {
+                    "text": "Volunteered at the phone bank.",
+                    "isViewRestricted": false
+                  }
+                },
+                "restricted-notes-vanish-from-the-api/2": {
+                  "summary": "A view-restricted note can be written but never read back",
+                  "description": "`isViewRestricted: true` is accepted with the same 204 as any other note, and the note is then withheld from API keys entirely: absent from items and not counted in count, so every note the API ever shows has the flag false.",
+                  "x-transcript": "restricted-notes-vanish-from-the-api",
+                  "value": {
+                    "text": "Do not publish this.",
+                    "isViewRestricted": true
+                  }
                 }
               }
             }
@@ -2269,7 +3230,21 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Creating a note returns nothing — the id has to be read back",
+            "source": "# Success is a bare 204: no body, no Location header, no noteId. The only\n# way to learn the new id is GET /people/{vanId}/notes. The read-back also\n# shows `isPinned` was accepted and ignored, and that an uncategorized note\n# reads as the `{noteCategoryId: 0, name: null}` stub.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Lucinda\",\n    \"lastName\": \"Farrow\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Create a note, asking for a pin the API will ignore.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Spoke at the door; wants a yard sign.\",\n    \"isViewRestricted\": false,\n    \"isPinned\": true\n  }'\n# → 204\n\n# Reading the list back is the only way to learn the noteId.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Spoke at the door; wants a yard sign.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }",
+            "x-transcript": "note-create-is-silent"
+          },
+          {
+            "lang": "Shell",
+            "label": "A view-restricted note can be written but never read back",
+            "source": "# `isViewRestricted: true` is accepted with the same 204 as any other note,\n# and the note is then withheld from API keys entirely: absent from items\n# and not counted in count, so every note the API ever shows has the flag\n# false.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Barnaby\",\n    \"lastName\": \"Quill\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# One ordinary note, one restricted. Both are accepted identically.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Volunteered at the phone bank.\",\n    \"isViewRestricted\": false\n  }'\n# → 204\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"text\": \"Do not publish this.\",\n    \"isViewRestricted\": true\n  }'\n# → 204\n\n# The list has one note. The restricted one is not hidden — it is simply not\n# there.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001/notes' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [\n#     {\n#       \"contactHistory\": null,\n#       \"noteId\": 100000002,\n#       \"text\": \"Volunteered at the phone bank.\",\n#       \"isViewRestricted\": false,\n#       \"category\": {\n#         \"noteCategoryId\": 0,\n#         \"name\": null\n#       },\n#       \"createdDate\": \"2026-01-01T00:00:00Z\",\n#       \"isPinned\": false\n#     }\n#   ],\n#   \"nextPageLink\": null,\n#   \"count\": 1\n# }",
+            "x-transcript": "restricted-notes-vanish-from-the-api"
+          }
+        ]
       }
     },
     "/people/{vanId}/notes/{noteId}": {
@@ -2419,6 +3394,18 @@
                   "empty": {
                     "summary": "No categories opted in (sandbox)",
                     "value": []
+                  },
+                  "note-categories-are-a-bare-array/1": {
+                    "summary": "No envelope: the body itself is the array.",
+                    "description": "The list is a bare JSON array, not the pagination envelope, and query parameters like `$top` are ignored rather than applied or rejected. The sandbox committee has no categories opted in, so the empty array is all it can answer.",
+                    "x-transcript": "note-categories-are-a-bare-array",
+                    "value": []
+                  },
+                  "note-categories-are-a-bare-array/2": {
+                    "summary": "Paging parameters are accepted and ignored — the response is identical.",
+                    "description": "The list is a bare JSON array, not the pagination envelope, and query parameters like `$top` are ignored rather than applied or rejected. The sandbox committee has no categories opted in, so the empty array is all it can answer.",
+                    "x-transcript": "note-categories-are-a-bare-array",
+                    "value": []
                   }
                 }
               }
@@ -2439,7 +3426,15 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "Note categories come back as a bare array that ignores paging",
+            "source": "# The list is a bare JSON array, not the pagination envelope, and query\n# parameters like `$top` are ignored rather than applied or rejected. The\n# sandbox committee has no categories opted in, so the empty array is all it\n# can answer.\n\n# No envelope: the body itself is the array.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/notes/categories' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# []\n\n# Paging parameters are accepted and ignored — the response is identical.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/notes/categories?%24top=1&%24skip=5' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# []",
+            "x-transcript": "note-categories-are-a-bare-array"
+          }
+        ]
       }
     },
     "/notes/categories/{noteCategoryId}": {
@@ -2512,7 +3507,15 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "An unknown category 404s with the envelope; a non-int32 id gets HTML",
+            "source": "# Only ids in the int32 range route to the handler, which answers the\n# standard 404 envelope for a category that does not exist. An id above\n# 2147483647 matches no route at all and gets IIS's HTML 404 page instead —\n# a different content type, not just a different body.\n\n# A well-formed id that names no category — this committee has none at all.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/notes/categories/10' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"NOT_FOUND\",\n#       \"text\": \"The specified resource cannot be found.\"\n#     }\n#   ]\n# }\n\n# One past int32: the route no longer matches, and IIS answers with an HTML\n# page.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/notes/categories/2147483648' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 404\n# <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\"/>\r\n<title>404 - File or directory not found.</title>\r\n<style type=\"text/css\">\r\n<!--\r\nbody{margin:0;font-size:.7em;font-family:Verdana, Arial, Helvetica, sans-serif;background:#EEEEEE;}\r\nfieldset{padding:0 15px 10px 15px;} \r\nh1{font-size:2.4em;margin:0;color:#FFF;}\r\nh2{font-size:1.7em;margin:0;color:#CC0000;} \r\nh3{font-size:1.2em;margin:10px 0 0 0;color:#000000;} \r\n#header{width:96%;margin:0 0 0 0;padding:6px 2% 6px 2%;font-family:\"trebuchet MS\", Verdana, sans-serif;color:#FFF;\r\nbackground-color:#555555;}\r\n#content{margin:0 0 0 2%;position:relative;}\r\n.content-container{background:#FFF;width:96%;margin-top:8px;padding:10px;position:relative;}\r\n-->\r\n</style>\r\n</head>\r\n<body>\r\n<div id=\"header\"><h1>Server Error</h1></div>\r\n<div id=\"content\">\r\n <div class=\"content-container\"><fieldset>\r\n  <h2>404 - File or directory not found.</h2>\r\n  <h3>The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.</h3>\r\n </fieldset></div>\r\n</div>\r\n</body>\r\n</html>\r\n",
+            "x-transcript": "note-category-404s-come-in-two-shapes"
+          }
+        ]
       }
     },
     "/notes/categoryTypes": {
@@ -2709,6 +3712,16 @@
                       "nextPageLink": null,
                       "count": 1
                     }
+                  },
+                  "survey-questions-list-is-an-empty-page-here": {
+                    "summary": "The list arrives in the pagination envelope — empty in this committee",
+                    "description": "Survey questions come back in the standard `{items, count, nextPageLink}` envelope. The sandbox committee has no survey questions (and none can be created — every `type` is rejected), so the empty page is the only response this database can produce.",
+                    "x-transcript": "survey-questions-list-is-an-empty-page-here",
+                    "value": {
+                      "items": [],
+                      "nextPageLink": null,
+                      "count": 0
+                    }
                   }
                 }
               }
@@ -2729,7 +3742,21 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "The list arrives in the pagination envelope — empty in this committee",
+            "source": "# Survey questions come back in the standard `{items, count, nextPageLink}`\n# envelope. The sandbox committee has no survey questions (and none can be\n# created — every `type` is rejected), so the empty page is the only\n# response this database can produce.\n\n# No filters: the default is Active questions, of which this committee has\n# none.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/surveyQuestions' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"items\": [],\n#   \"nextPageLink\": null,\n#   \"count\": 0\n# }",
+            "x-transcript": "survey-questions-list-is-an-empty-page-here"
+          },
+          {
+            "lang": "Shell",
+            "label": "$top is bounded 1–200, and the API's own hint says so",
+            "source": "# A `$top` outside 1–200 is refused with INVALID_PARAMETER, and the refusal\n# states the real bounds — maximum 200 in the text, default 50 in the hint —\n# contradicting the official docs' claimed default of 40.\n\n# One over the maximum. The refusal itself is where the true bounds come\n# from.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/surveyQuestions?%24top=201' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"'$top' must be less than or equal to the maximum result size for this end point: 200\",\n#       \"properties\": [\n#         \"$top\"\n#       ],\n#       \"hint\": \"If no '$top' parameter is specified, a default top size of 50 will be used.\"\n#     }\n#   ]\n# }\n\n# Zero is out of range on the other side.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/surveyQuestions?%24top=0' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 400\n# {\n#   \"errors\": [\n#     {\n#       \"code\": \"INVALID_PARAMETER\",\n#       \"text\": \"'$top' must be greater than '0'.\",\n#       \"properties\": [\n#         \"$top\"\n#       ]\n#     }\n#   ]\n# }",
+            "x-transcript": "survey-questions-top-bounds-come-from-the-api"
+          }
+        ]
       }
     },
     "/echoes": {
@@ -2764,6 +3791,20 @@
                     "message": "slow reply",
                     "delayInMilliseconds": 500
                   }
+                },
+                "echo-round-trips-the-message/1": {
+                  "summary": "The cheapest possible proof that the base URL, auth header and mode are right.",
+                  "description": "The posted message is echoed back exactly, alongside `dateSent`, the server's own clock. Every request field is optional — an empty body is a valid connectivity check and comes back with `message: null`.",
+                  "x-transcript": "echo-round-trips-the-message",
+                  "value": {
+                    "message": "Anybody out there?"
+                  }
+                },
+                "echo-round-trips-the-message/2": {
+                  "summary": "No field is required. An empty body echoes back a null message.",
+                  "description": "The posted message is echoed back exactly, alongside `dateSent`, the server's own clock. Every request field is optional — an empty body is a valid connectivity check and comes back with `message: null`.",
+                  "x-transcript": "echo-round-trips-the-message",
+                  "value": {}
                 }
               }
             }
@@ -2785,6 +3826,26 @@
                       "dateSent": "2026-08-03T16:47:29.8973257Z",
                       "delayInMilliseconds": null
                     }
+                  },
+                  "echo-round-trips-the-message/1": {
+                    "summary": "The cheapest possible proof that the base URL, auth header and mode are right.",
+                    "description": "The posted message is echoed back exactly, alongside `dateSent`, the server's own clock. Every request field is optional — an empty body is a valid connectivity check and comes back with `message: null`.",
+                    "x-transcript": "echo-round-trips-the-message",
+                    "value": {
+                      "message": "Anybody out there?",
+                      "dateSent": "2026-01-01T00:00:00Z",
+                      "delayInMilliseconds": null
+                    }
+                  },
+                  "echo-round-trips-the-message/2": {
+                    "summary": "No field is required. An empty body echoes back a null message.",
+                    "description": "The posted message is echoed back exactly, alongside `dateSent`, the server's own clock. Every request field is optional — an empty body is a valid connectivity check and comes back with `message: null`.",
+                    "x-transcript": "echo-round-trips-the-message",
+                    "value": {
+                      "message": null,
+                      "dateSent": "2026-01-01T00:00:00Z",
+                      "delayInMilliseconds": null
+                    }
                   }
                 }
               }
@@ -2802,7 +3863,15 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "The message comes back verbatim, stamped with server time",
+            "source": "# The posted message is echoed back exactly, alongside `dateSent`, the\n# server's own clock. Every request field is optional — an empty body is a\n# valid connectivity check and comes back with `message: null`.\n\n# The cheapest possible proof that the base URL, auth header and mode are\n# right.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/echoes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"message\": \"Anybody out there?\"\n  }'\n# → 200\n# {\n#   \"message\": \"Anybody out there?\",\n#   \"dateSent\": \"2026-01-01T00:00:00Z\",\n#   \"delayInMilliseconds\": null\n# }\n\n# No field is required. An empty body echoes back a null message.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/echoes' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{}\n  {}'\n# → 200\n# {\n#   \"message\": null,\n#   \"dateSent\": \"2026-01-01T00:00:00Z\",\n#   \"delayInMilliseconds\": null\n# }",
+            "x-transcript": "echo-round-trips-the-message"
+          }
+        ]
       }
     }
   },

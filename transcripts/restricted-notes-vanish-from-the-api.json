@@ -1,0 +1,111 @@
+{
+  "id": "restricted-notes-vanish-from-the-api",
+  "title": "A view-restricted note can be written but never read back",
+  "claim": "`isViewRestricted: true` is accepted with the same 204 as any other note, and the note is then withheld from API keys entirely: absent from items and not counted in count, so every note the API ever shows has the flag false.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1notes/post",
+    "#/paths/~1people~1{vanId}~1notes/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Barnaby",
+          "lastName": "Quill-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "One ordinary note, one restricted. Both are accepted identically."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes",
+        "body": {
+          "text": "Volunteered at the phone bank.",
+          "isViewRestricted": false
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {}
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes",
+        "body": {
+          "text": "Do not publish this.",
+          "isViewRestricted": true
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {}
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "The list has one note. The restricted one is not hidden — it is simply not there."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Volunteered at the phone bank.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    }
+  ]
+}

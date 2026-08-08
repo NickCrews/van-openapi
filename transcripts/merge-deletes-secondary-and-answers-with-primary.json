@@ -1,0 +1,213 @@
+{
+  "id": "merge-deletes-secondary-and-answers-with-primary",
+  "title": "A merge keeps the primary, deletes the secondary, and answers with the survivor",
+  "claim": "The secondary named in the path is merged into the primary named in the body. The 200 carries the primary's vanId — the survivor, not the id from the path — with a Location pointing at it, and the secondary answers 404 from then on.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Two duplicates of one person. The primary survives; the secondary is consumed."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Lena",
+          "lastName": "Voss-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Lena",
+          "lastName": "Voss-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "The secondary goes in the path; the body names the primary that survives."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "The primary is still there under its own vanId."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Lena",
+          "lastName": "Voss-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Lena",
+          "formalSalutation": "Lena Voss-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Lena Voss-{scope}",
+          "formalEnvelopeName": "Lena Voss-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "The secondary is not, and never will be — merges cannot be undone."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000002"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "NOT_FOUND",
+              "text": "The specified resource cannot be found."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

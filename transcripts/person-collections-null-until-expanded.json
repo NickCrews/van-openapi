@@ -1,0 +1,247 @@
+{
+  "id": "person-collections-null-until-expanded",
+  "title": "Related collections are null until $expand asks for them",
+  "claim": "Emails, phones and addresses come back null — not empty — unless the request names them in $expand. Expanded, a section the person actually has is an array of entries and a section they lack is an empty array, so null always means 'not requested', never 'none'.",
+  "spec": [
+    "#/paths/~1people~1{vanId}/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "A person with one email and nothing else."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Nadia",
+          "lastName": "Okonkwo-{scope}",
+          "emails": [
+            {
+              "email": "nadia.okonkwo-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Without $expand, every collection is null — including the email we just wrote."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Nadia",
+          "lastName": "Okonkwo-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Nadia",
+          "formalSalutation": "Nadia Okonkwo-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Nadia Okonkwo-{scope}",
+          "formalEnvelopeName": "Nadia Okonkwo-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Expanded, the email appears and the phones the person lacks are [] rather than null."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001?%24expand=emails%2Cphones"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Nadia",
+          "lastName": "Okonkwo-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Nadia",
+          "formalSalutation": "Nadia Okonkwo-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Nadia Okonkwo-{scope}",
+          "formalEnvelopeName": "Nadia Okonkwo-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": [
+            {
+              "type": "P",
+              "email": "nadia.okonkwo-{scope}@example.com",
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "isPreferred": true,
+              "isSubscribed": true,
+              "subscriptionStatus": "S"
+            }
+          ],
+          "phones": [],
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    }
+  ]
+}

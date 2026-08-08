@@ -1,0 +1,62 @@
+{
+  "id": "empty-bodies-create-blank-people",
+  "title": "An empty body creates a blank person record",
+  "claim": "Every field is optional, including the name, so `{}` is a valid payload on both create endpoints: create answers 201 Stored, and findOrCreate — with no criteria to match on — answers 201 UnmatchedStored. Each call leaves a nameless person record behind.",
+  "spec": [
+    "#/paths/~1people~1create/post",
+    "#/paths/~1people~1findOrCreate/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Create from nothing."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {}
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "findOrCreate from nothing: no criteria means no match, which means create."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/findOrCreate",
+        "url": "/people/findOrCreate",
+        "body": {}
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "UnmatchedStored"
+        }
+      }
+    }
+  ]
+}

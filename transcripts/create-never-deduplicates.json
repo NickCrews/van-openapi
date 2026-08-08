@@ -1,0 +1,77 @@
+{
+  "id": "create-never-deduplicates",
+  "title": "An identical payload creates a second person record",
+  "claim": "No de-duplication happens: posting a payload identical to an existing person's — same name, same email — returns 201 with a fresh vanId, and both person records now exist.",
+  "spec": [
+    "#/paths/~1people~1create/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Create a person."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Beatrix",
+          "lastName": "Falkner-{scope}",
+          "emails": [
+            {
+              "email": "beatrix.falkner-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Create them again, byte for byte. Nothing objects: a duplicate is born."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Beatrix",
+          "lastName": "Falkner-{scope}",
+          "emails": [
+            {
+              "email": "beatrix.falkner-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    }
+  ]
+}

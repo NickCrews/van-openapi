@@ -1,0 +1,254 @@
+{
+  "id": "merge-combines-emails-and-moves-reachability",
+  "title": "Emails are combined onto the primary, and shared ones are not doubled",
+  "claim": "The two people's emails are pooled onto the primary. An address both held is collapsed to one entry — matched case-insensitively, keeping the primary's copy — and an email that belonged only to the secondary now resolves to the primary through POST /people/find.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1mergeInto/put"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "Each person holds one email of their own, plus one they share — spelled with different case on each side."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Fern",
+          "lastName": "Aldana-{scope}",
+          "emails": [
+            {
+              "email": "fern.primary-{scope}@example.com"
+            },
+            {
+              "email": "fern.shared-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Fern",
+          "lastName": "Aldana-{scope}",
+          "emails": [
+            {
+              "email": "fern.secondary-{scope}@example.com"
+            },
+            {
+              "email": "FERN.SHARED-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/mergeInto",
+        "url": "/people/100000002/mergeInto",
+        "body": {
+          "vanId": 100000001
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Three emails, not four: the shared address collapsed to a single entry, in the primary's spelling."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001?%24expand=emails"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Fern",
+          "lastName": "Aldana-{scope}",
+          "middleName": null,
+          "suffix": null,
+          "title": null,
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Fern",
+          "formalSalutation": "Fern Aldana-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Fern Aldana-{scope}",
+          "formalEnvelopeName": "Fern Aldana-{scope}",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": null,
+          "employer": null,
+          "occupation": null,
+          "jobTitle": null,
+          "sex": null,
+          "dateOfBirth": null,
+          "isDeceased": false,
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": [
+            {
+              "type": "P",
+              "email": "fern.primary-{scope}@example.com",
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "isPreferred": false,
+              "isSubscribed": true,
+              "subscriptionStatus": "S"
+            },
+            {
+              "type": "P",
+              "email": "fern.shared-{scope}@example.com",
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "isPreferred": true,
+              "isSubscribed": true,
+              "subscriptionStatus": "S"
+            },
+            {
+              "type": "P",
+              "email": "fern.secondary-{scope}@example.com",
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "isPreferred": false,
+              "isSubscribed": true,
+              "subscriptionStatus": "S"
+            }
+          ],
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Reachability moved too: the secondary's own email now finds the primary."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/find",
+        "url": "/people/find",
+        "body": {
+          "emails": [
+            {
+              "email": "fern.secondary-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}

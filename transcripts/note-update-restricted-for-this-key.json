@@ -1,0 +1,145 @@
+{
+  "id": "note-update-restricted-for-this-key",
+  "title": "Updating a note is refused for this key, before the note is looked up",
+  "claim": "Every request from the research key is refused with 403 FORBIDDEN whether or not the note exists, so the success path documented for this operation comes from the official docs alone.",
+  "spec": [
+    "#/paths/~1people~1{vanId}~1notes~1{noteId}/put"
+  ],
+  "render": false,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "A real person with a real note, so the 403 cannot be blamed on a missing target."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Ezra",
+          "lastName": "Thistlewood-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes",
+        "body": {
+          "text": "Original text.",
+          "isViewRestricted": false
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {}
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}/notes",
+        "url": "/people/100000001/notes"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "contactHistory": null,
+              "noteId": 100000002,
+              "text": "Original text.",
+              "isViewRestricted": false,
+              "category": {
+                "noteCategoryId": 0,
+                "name": null
+              },
+              "createdDate": "2026-01-01T00:00:00Z",
+              "isPinned": false
+            }
+          ],
+          "nextPageLink": null,
+          "count": 1
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/notes/{noteId}",
+        "url": "/people/100000001/notes/100000002",
+        "body": {
+          "text": "Updated text."
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "FORBIDDEN",
+              "text": "Access to this action is restricted"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "A noteId that cannot exist is refused identically — the check runs first."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "PUT",
+        "path": "/people/{vanId}/notes/{noteId}",
+        "url": "/people/100000001/notes/2147483646",
+        "body": {
+          "text": "Updated text."
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "FORBIDDEN",
+              "text": "Access to this action is restricted"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

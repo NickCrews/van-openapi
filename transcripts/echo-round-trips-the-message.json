@@ -1,0 +1,63 @@
+{
+  "id": "echo-round-trips-the-message",
+  "title": "The message comes back verbatim, stamped with server time",
+  "claim": "The posted message is echoed back exactly, alongside `dateSent`, the server's own clock. Every request field is optional — an empty body is a valid connectivity check and comes back with `message: null`.",
+  "spec": [
+    "#/paths/~1echoes/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "The cheapest possible proof that the base URL, auth header and mode are right."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/echoes",
+        "url": "/echoes",
+        "body": {
+          "message": "Anybody out there?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": "Anybody out there?",
+          "dateSent": "2026-01-01T00:00:00Z",
+          "delayInMilliseconds": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "No field is required. An empty body echoes back a null message."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/echoes",
+        "url": "/echoes",
+        "body": {}
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "message": null,
+          "dateSent": "2026-01-01T00:00:00Z",
+          "delayInMilliseconds": null
+        }
+      }
+    }
+  ]
+}

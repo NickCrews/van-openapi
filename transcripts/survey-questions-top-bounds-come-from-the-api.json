@@ -1,0 +1,72 @@
+{
+  "id": "survey-questions-top-bounds-come-from-the-api",
+  "title": "$top is bounded 1–200, and the API's own hint says so",
+  "claim": "A `$top` outside 1–200 is refused with INVALID_PARAMETER, and the refusal states the real bounds — maximum 200 in the text, default 50 in the hint — contradicting the official docs' claimed default of 40.",
+  "spec": [
+    "#/paths/~1surveyQuestions/get"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "One over the maximum. The refusal itself is where the true bounds come from."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/surveyQuestions",
+        "url": "/surveyQuestions?%24top=201"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "'$top' must be less than or equal to the maximum result size for this end point: 200",
+              "properties": [
+                "$top"
+              ],
+              "hint": "If no '$top' parameter is specified, a default top size of 50 will be used."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Zero is out of range on the other side."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/surveyQuestions",
+        "url": "/surveyQuestions?%24top=0"
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "errors": [
+            {
+              "code": "INVALID_PARAMETER",
+              "text": "'$top' must be greater than '0'.",
+              "properties": [
+                "$top"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

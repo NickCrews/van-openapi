@@ -1,0 +1,253 @@
+{
+  "id": "findorcreate-below-threshold-creates-a-duplicate",
+  "title": "Below the match threshold, findOrCreate quietly creates a duplicate",
+  "claim": "A name alone never reaches the minimum match combination, so no match is attempted: the payload is stored as a brand-new person record even though the person is already in the database. There is no 'unmatched' to inspect — the no-match case is the create case.",
+  "spec": [
+    "#/paths/~1people~1findOrCreate/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "The person is in the database, carrying identifiers a match could use."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Duplicata-{scope}",
+          "emails": [
+            {
+              "email": "harriet.duplicata-{scope}@example.com"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "findOrCreate with the name alone. Below the threshold, so: created, not found."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/findOrCreate",
+        "url": "/people/findOrCreate",
+        "body": {
+          "firstName": "Harriet",
+          "lastName": "Duplicata-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000002"
+        },
+        "body": {
+          "vanId": 100000002,
+          "status": "UnmatchedStored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Both person records now exist under the same name."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people",
+        "url": "/people?lastName=Duplicata-{scope}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "items": [
+            {
+              "vanId": 100000001,
+              "firstName": "Harriet",
+              "lastName": "Duplicata-{scope}",
+              "middleName": null,
+              "suffix": null,
+              "title": null,
+              "sourceFileTitle": null,
+              "sourceFileFirstName": null,
+              "sourceFileMiddleName": null,
+              "sourceFileLastName": null,
+              "sourceFileSuffix": null,
+              "contactSource": "API",
+              "contactMode": "Person",
+              "organizationContactCommonName": null,
+              "organizationContactOfficialName": null,
+              "salutation": null,
+              "formalSalutation": null,
+              "additionalSalutation": null,
+              "preferredPronoun": null,
+              "pronouns": null,
+              "namePronunciation": null,
+              "envelopeName": null,
+              "formalEnvelopeName": null,
+              "additionalEnvelopeName": null,
+              "contactMethodPreferenceCode": null,
+              "contactMethodPreferenceId": null,
+              "contactMethodPreferenceName": null,
+              "assistantName": null,
+              "nickname": null,
+              "website": null,
+              "professionalSuffix": null,
+              "party": null,
+              "employer": null,
+              "occupation": null,
+              "jobTitle": null,
+              "sex": null,
+              "dateOfBirth": null,
+              "isDeceased": false,
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "dateAcquired": "0001-01-01T00:00:00Z",
+              "selfReportedRace": null,
+              "selfReportedEthnicity": null,
+              "selfReportedRaces": null,
+              "selfReportedEthnicities": null,
+              "selfReportedGenders": null,
+              "selfReportedSexualOrientations": null,
+              "selfReportedLanguagePreference": null,
+              "selfReportedLanguagePreferences": null,
+              "emails": null,
+              "phones": null,
+              "addresses": null,
+              "recordedAddresses": null,
+              "pollingLocation": null,
+              "earlyVoteLocation": null,
+              "identifiers": null,
+              "codes": null,
+              "customFields": null,
+              "primaryCustomField": null,
+              "contributionSummary": null,
+              "suppressions": null,
+              "caseworkCases": null,
+              "caseworkIssues": null,
+              "caseworkStories": null,
+              "notes": null,
+              "scores": null,
+              "customProperties": null,
+              "electionRecords": null,
+              "membershipStatus": null,
+              "organizationRoles": null,
+              "districts": null,
+              "surveyQuestionResponses": null,
+              "finderNumber": null,
+              "biographyImageUrl": null,
+              "biographyText": null,
+              "biographyHtml": null,
+              "primaryContact": null
+            },
+            {
+              "vanId": 100000002,
+              "firstName": "Harriet",
+              "lastName": "Duplicata-{scope}",
+              "middleName": null,
+              "suffix": null,
+              "title": null,
+              "sourceFileTitle": null,
+              "sourceFileFirstName": null,
+              "sourceFileMiddleName": null,
+              "sourceFileLastName": null,
+              "sourceFileSuffix": null,
+              "contactSource": "API",
+              "contactMode": "Person",
+              "organizationContactCommonName": null,
+              "organizationContactOfficialName": null,
+              "salutation": null,
+              "formalSalutation": null,
+              "additionalSalutation": null,
+              "preferredPronoun": null,
+              "pronouns": null,
+              "namePronunciation": null,
+              "envelopeName": null,
+              "formalEnvelopeName": null,
+              "additionalEnvelopeName": null,
+              "contactMethodPreferenceCode": null,
+              "contactMethodPreferenceId": null,
+              "contactMethodPreferenceName": null,
+              "assistantName": null,
+              "nickname": null,
+              "website": null,
+              "professionalSuffix": null,
+              "party": null,
+              "employer": null,
+              "occupation": null,
+              "jobTitle": null,
+              "sex": null,
+              "dateOfBirth": null,
+              "isDeceased": false,
+              "dateCreated": "2026-01-01T00:00:00Z",
+              "dateAcquired": "0001-01-01T00:00:00Z",
+              "selfReportedRace": null,
+              "selfReportedEthnicity": null,
+              "selfReportedRaces": null,
+              "selfReportedEthnicities": null,
+              "selfReportedGenders": null,
+              "selfReportedSexualOrientations": null,
+              "selfReportedLanguagePreference": null,
+              "selfReportedLanguagePreferences": null,
+              "emails": null,
+              "phones": null,
+              "addresses": null,
+              "recordedAddresses": null,
+              "pollingLocation": null,
+              "earlyVoteLocation": null,
+              "identifiers": null,
+              "codes": null,
+              "customFields": null,
+              "primaryCustomField": null,
+              "contributionSummary": null,
+              "suppressions": null,
+              "caseworkCases": null,
+              "caseworkIssues": null,
+              "caseworkStories": null,
+              "notes": null,
+              "scores": null,
+              "customProperties": null,
+              "electionRecords": null,
+              "membershipStatus": null,
+              "organizationRoles": null,
+              "districts": null,
+              "surveyQuestionResponses": null,
+              "finderNumber": null,
+              "biographyImageUrl": null,
+              "biographyText": null,
+              "biographyHtml": null,
+              "primaryContact": null
+            }
+          ],
+          "nextPageLink": null,
+          "count": 2
+        }
+      }
+    }
+  ]
+}

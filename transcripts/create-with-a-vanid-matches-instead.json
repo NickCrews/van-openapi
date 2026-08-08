@@ -1,0 +1,67 @@
+{
+  "id": "create-with-a-vanid-matches-instead",
+  "title": "A vanId in the body is the one thing that stops a create",
+  "claim": "When the body carries a vanId that exists, nothing is created: the answer is the same 302 match stub findOrCreate gives, with a Location pointing at the existing person. This is the only way this endpoint declines to create a person record.",
+  "spec": [
+    "#/paths/~1people~1create/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "An existing person to name in the body."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "firstName": "Soren",
+          "lastName": "Lindqvist-{scope}"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "A create request that names them. No record is created."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Soren"
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    }
+  ]
+}
