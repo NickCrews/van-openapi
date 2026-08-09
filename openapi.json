@@ -42,6 +42,64 @@
       "description": "Test endpoint for checking auth and connectivity. Writes nothing."
     }
   ],
+  "x-traps": [
+    {
+      "text": "Related collections are `null` unless `$expand` asks for them. A person with no `phones` key is not a person without phones. The `$expand` vocabulary differs between operations — `getPerson` accepts 23 sections, `searchPeople` only four.",
+      "see": [
+        "person-collections-null-until-expanded",
+        "person-expand-set-is-policed"
+      ]
+    },
+    {
+      "text": "`findPerson` returning 404 means \"no match\", not a broken route — and usually means the criteria fell short of the minimum combination rather than that the person is absent.",
+      "see": [
+        "findPerson",
+        "find-below-threshold-is-unmatched"
+      ]
+    },
+    {
+      "text": "Phone search wants bare 10 digits. `9072223333` matches; `(907) 222-3333` is accepted and then silently matches nobody.",
+      "see": [
+        "search-phone-must-be-bare-digits"
+      ]
+    },
+    {
+      "text": "Writes append contact methods, they never replace them. Updating a person with a phone adds a phone, so writing back a record you just read duplicates its contact methods.",
+      "see": [
+        "update-appends-contact-methods"
+      ]
+    },
+    {
+      "text": "`mergePerson` is irreversible, and `whatIf` only accepts the literal `true` — any other value is parsed as false and the merge happens for real.",
+      "see": [
+        "mergePerson",
+        "merge-whatif-requires-literal-true"
+      ]
+    },
+    {
+      "text": "Text matching is case-insensitive *prefix*, never substring: `helmina` does not find Wilhelmina.",
+      "see": [
+        "search-is-a-case-insensitive-prefix-match"
+      ]
+    },
+    {
+      "text": "A `vanId` in a request body overrides every other criterion, and on the create endpoints a plausible-looking id is echoed back as a match without ever being checked against the database.",
+      "see": [
+        "find-by-vanid-overrides-criteria",
+        "create-echoes-a-plausible-vanid-blindly"
+      ]
+    },
+    {
+      "text": "429 carries no `Retry-After`; the suggested wait appears only in the error text, and the limit is per API key across all endpoints.",
+      "see": []
+    },
+    {
+      "text": "There is no aggregate or count-by-attribute endpoint. The only total is `count` in the pagination envelope, which counts matches for a query you already had to specify — and every search parameter demands a value, so there is no \"all people\" query to count.",
+      "see": [
+        "searchPeople"
+      ]
+    }
+  ],
   "paths": {
     "/people/{vanId}": {
       "get": {
@@ -51,6 +109,23 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "get person",
+          "fetch person",
+          "read person",
+          "retrieve",
+          "by vanId",
+          "person details",
+          "full record",
+          "expand",
+          "phones",
+          "emails",
+          "addresses",
+          "custom fields",
+          "scores",
+          "districts"
+        ],
+        "x-task": "Read one person in full",
         "parameters": [
           {
             "name": "vanId",
@@ -446,6 +521,20 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "update",
+          "edit",
+          "modify",
+          "change",
+          "set field",
+          "add phone",
+          "add email",
+          "add address",
+          "append contact method",
+          "write",
+          "correct a record"
+        ],
+        "x-task": "Change fields, or add a phone / email / address",
         "parameters": [
           {
             "name": "vanId",
@@ -682,6 +771,23 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "search",
+          "list people",
+          "browse",
+          "enumerate",
+          "find by name",
+          "how many",
+          "count",
+          "total",
+          "filter",
+          "prefix match",
+          "paginate",
+          "lookup by city",
+          "lookup by zip",
+          "everyone named"
+        ],
+        "x-task": "Find people by loose criteria — name, city, ZIP, email",
         "parameters": [
           {
             "name": "firstName",
@@ -1462,6 +1568,17 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "match",
+          "identify",
+          "resolve identity",
+          "does this person exist",
+          "lookup by email",
+          "lookup by phone",
+          "check for duplicate",
+          "match without creating"
+        ],
+        "x-task": "Decide whether one specific person is already on file",
         "requestBody": {
           "required": true,
           "content": {
@@ -2005,6 +2122,17 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "upsert",
+          "match or create",
+          "get or create",
+          "signup",
+          "intake",
+          "add if missing",
+          "register a supporter",
+          "form submission"
+        ],
+        "x-task": "Create a person, reusing an existing record when there is one",
         "requestBody": {
           "required": true,
           "content": {
@@ -2252,6 +2380,16 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "create",
+          "add person",
+          "insert",
+          "new record",
+          "new contact",
+          "import one person",
+          "unconditional create"
+        ],
+        "x-task": "Create unconditionally, duplicates and all",
         "requestBody": {
           "required": true,
           "content": {
@@ -2583,6 +2721,17 @@
         "tags": [
           "People"
         ],
+        "x-keywords": [
+          "merge",
+          "dedupe",
+          "deduplicate",
+          "combine records",
+          "consolidate duplicates",
+          "delete a duplicate",
+          "whatIf",
+          "dry run"
+        ],
+        "x-task": "Collapse two records into one",
         "parameters": [
           {
             "name": "vanId",
@@ -2971,6 +3120,15 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "notes",
+          "list notes",
+          "read notes",
+          "comments",
+          "annotations",
+          "note history"
+        ],
+        "x-task": "Read the notes on a person",
         "parameters": [
           {
             "name": "vanId",
@@ -3221,6 +3379,16 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "add note",
+          "write note",
+          "leave a comment",
+          "annotate",
+          "log a call",
+          "contact history",
+          "record an interaction"
+        ],
+        "x-task": "Add a note to a person",
         "parameters": [
           {
             "name": "vanId",
@@ -3366,6 +3534,12 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "edit note",
+          "update note",
+          "change note text"
+        ],
+        "x-task": "Edit an existing note",
         "parameters": [
           {
             "name": "vanId",
@@ -3461,6 +3635,12 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "note categories",
+          "list categories",
+          "category ids"
+        ],
+        "x-task": "List the note categories this committee has",
         "responses": {
           "200": {
             "description": "All note categories in the context, as a bare array.",
@@ -3556,6 +3736,11 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "note category",
+          "category by id"
+        ],
+        "x-task": "Look up one note category by id",
         "parameters": [
           {
             "name": "noteCategoryId",
@@ -3637,6 +3822,11 @@
         "tags": [
           "Notes"
         ],
+        "x-keywords": [
+          "note category types",
+          "assignable types"
+        ],
+        "x-task": "List the note category types",
         "responses": {
           "200": {
             "description": "All note category types available in the context, as a bare array of strings.",
@@ -3695,6 +3885,14 @@
         "tags": [
           "Survey Questions"
         ],
+        "x-keywords": [
+          "survey questions",
+          "questions",
+          "canvass questions",
+          "script questions",
+          "responses"
+        ],
+        "x-task": "List survey questions",
         "parameters": [
           {
             "name": "statuses",
@@ -3873,6 +4071,16 @@
         "tags": [
           "Echoes"
         ],
+        "x-keywords": [
+          "echo",
+          "ping",
+          "health check",
+          "connectivity",
+          "test credentials",
+          "verify api key",
+          "smoke test"
+        ],
+        "x-task": "Check that credentials work",
         "requestBody": {
           "required": true,
           "content": {

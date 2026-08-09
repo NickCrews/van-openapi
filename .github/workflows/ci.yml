@@ -27,6 +27,9 @@ jobs:
           git diff --exit-code -- DISCREPANCIES.md \
             || { echo "::error::DISCREPANCIES.md is stale — run 'make discrepancies' and commit the result"; exit 1; }
 
+      - name: Agent docs are up to date with the spec, transcripts and STATUS.md
+        run: make agent-docs-check
+
       - name: docs/openapi.json still points at the spec
         run: |
           test "$(readlink docs/openapi.json)" = "../openapi.json" \

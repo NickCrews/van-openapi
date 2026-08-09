@@ -14,7 +14,7 @@ AUTH     := default_user:$(NGP_API_KEY_SANDBOX)|1
 # - negative_data_rejection is off: the API tolerantly ignores unknown fields.
 CHECKS := status_code_conformance,content_type_conformance,response_schema_conformance
 
-.PHONY: lint fuzz discrepancies serve clean types behaviors behaviors-all inject inject-check
+.PHONY: lint fuzz discrepancies serve clean types behaviors behaviors-all inject inject-check agent-docs agent-docs-check
 
 ## Lint the spec structurally
 lint:
@@ -50,6 +50,14 @@ behaviors: types
 ## Everything, including the slow behaviors
 behaviors-all: types
 	VAN_SLOW=1 npx vitest run
+
+## Regenerate the agent-browsable reference in the van-api skill
+agent-docs:
+	python3 scripts/agent_docs.py
+
+## CI gate: fail if the agent docs are stale with respect to their sources
+agent-docs-check:
+	python3 scripts/agent_docs.py --check
 
 ## Fold recorded transcripts into the spec as examples and code samples
 inject:
