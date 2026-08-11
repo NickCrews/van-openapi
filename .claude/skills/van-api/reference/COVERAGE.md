@@ -16,7 +16,7 @@ These have pages under `operations/`. Behavior in them has been probed.
 | People — find | `POST /people/find` | **validated** (incl. minimum match combinations) |
 | Survey Questions — list | `GET /surveyQuestions` | **validated** |
 | People — get by id | `GET /people/{vanId}` | **validated** (incl. stateful links from `/people/find`, and what `isBest`/`isPreferred` mean on each contact method) |
-| People — write | `POST /people/create`, `POST /people/findOrCreate`, `POST /people/{vanId}` (update) | **validated** |
+| People — write | `POST /people/create`, `POST /people/findOrCreate`, `POST /people/{vanId}` (update) | **validated** (incl. the full writeable scalar field set: the six fields gated behind `$expand=preferences`, the three accepted-and-discarded, and the two that need `contactMode: Organization`) |
 | People — search | `GET /people` (requires ≥1 search param; `GET /people/quickSearch` does **not** exist — 404 "No HTTP resource") | **validated** (incl. what each address/contact filter actually reads: `streetAddress`/`city`/`stateOrProvince`/`zipOrPostalCode` the Voting address only, `phoneNumber` the single best phone, `email` every address) |
 | People — merge | `PUT /people/{vanId}/mergeInto` | **validated** (sandbox key is permitted; `whatIf` parsing trap, contact-method dedup and preferred-email recomputation confirmed live) |
 | People — notes | `GET/POST /people/{vanId}/notes`, `GET/PUT/DELETE /people/{vanId}/notes/{noteId}` | **validated** (list + create; `PUT` spec'd from docs only and `GET`/`DELETE` by id left out — all three are `403 FORBIDDEN` "Access to this action is restricted" for the sandbox key) |

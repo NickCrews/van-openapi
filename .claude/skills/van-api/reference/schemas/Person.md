@@ -8,6 +8,8 @@ A person record: returned by GET /people/{vanId}, as the items of GET /people, a
 
 The properties listed below with no type were only ever observed as null, either because the section needs `$expand` or because the sandbox committee holds no such data. They are listed to document that the API returns them, but their shape is unverified.
 
+Six scalar fields are returned only under `$expand=preferences` — `nickname`, `website`, `jobTitle`, `contactMethodPreferenceCode`, `contactMethodPreferenceId`, `contactMethodPreferenceName` — so a write of any of them looks discarded on a plain read. `organizationContactCommonName` and `organizationContactOfficialName` are always returned, but hold a value only while `contactMode` is "Organization".
+
 | Property | Type | Notes |
 | --- | --- | --- |
 | `vanId` | integer |  |
@@ -25,7 +27,7 @@ The properties listed below with no type were only ever observed as null, either
 | `party` | string or null |  |
 | `employer` | string or null |  |
 | `occupation` | string or null |  |
-| `jobTitle` | string or null |  |
+| `jobTitle` | string or null | Null unless the request included $expand=preferences — unlike `employer` and `occupation`, which are always returned. |
 | `sex` | string or null | Always the uppercase one-letter code, even when the value was written in lowercase. One of: `M`, `F`, `None`. |
 | `dateOfBirth` | string (date-time) or null |  |
 | `partialDateOfBirth` | object or null | The birth date broken into components; null when dateOfBirth is null. Returned by both GET /people and GET /people/{vanId}. e.g. `{'year': 2001, 'month': 11, 'day': 23}` |
@@ -43,19 +45,19 @@ The properties listed below with no type were only ever observed as null, either
 | `sourceFileMiddleName` | any |  |
 | `sourceFileLastName` | any |  |
 | `sourceFileSuffix` | any |  |
-| `organizationContactCommonName` | any |  |
-| `organizationContactOfficialName` | any |  |
+| `organizationContactCommonName` | string or null | An organization's common name. Only stored while `contactMode` is "Organization" — written on a person-mode record it is silently discarded. |
+| `organizationContactOfficialName` | string or null | An organization's official name. Only stored while `contactMode` is "Organization" — written on a person-mode record it is silently discarded. |
 | `additionalSalutation` | any |  |
 | `preferredPronoun` | any |  |
 | `pronouns` | any |  |
 | `namePronunciation` | any |  |
 | `additionalEnvelopeName` | any |  |
-| `contactMethodPreferenceCode` | any |  |
-| `contactMethodPreferenceId` | any |  |
-| `contactMethodPreferenceName` | any |  |
+| `contactMethodPreferenceCode` | string or null | Null unless the request included $expand=preferences. The one-letter code that was written — see `contactMethodPreferenceCode` on PersonInput. |
+| `contactMethodPreferenceId` | integer or null | Null unless the request included $expand=preferences. The internal id of the preferred contact method, e.g. 2 for Email. |
+| `contactMethodPreferenceName` | string or null | Null unless the request included $expand=preferences. The code spelled out, e.g. "Email". |
 | `assistantName` | any |  |
-| `nickname` | any |  |
-| `website` | any |  |
+| `nickname` | string or null | Null unless the request included $expand=preferences. |
+| `website` | string or null | Null unless the request included $expand=preferences. |
 | `professionalSuffix` | any |  |
 | `selfReportedRace` | any |  |
 | `selfReportedEthnicity` | any |  |

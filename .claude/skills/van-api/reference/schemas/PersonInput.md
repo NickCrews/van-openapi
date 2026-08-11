@@ -6,35 +6,37 @@ Used directly by: [`updatePerson`](../operations/updatePerson.md), [`findOrCreat
 
 The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the "Match Candidate" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank person record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.
 
+Every scalar field here is writeable through POST /people/{vanId}, in one payload, with four exceptions to know about. `collectedLocationId`, `electionType` and `cycle` are accepted and then discarded — nothing the API returns ever carries them back. `organizationContactCommonName` and `organizationContactOfficialName` are stored only while `contactMode` is "Organization". `suffix` is matched against a lookup rather than stored verbatim. And `nickname`, `website`, `jobTitle` and `contactMethodPreferenceCode` do write, but read back only under `$expand=preferences`, so a plain round-trip makes them look dropped.
+
 | Property | Type | Notes |
 | --- | --- | --- |
 | `vanId` | integer or null | Id of an existing person record. When present (and not 0), everything else in the payload stops mattering to the match. The two endpoints treat an id that matches nothing differently: POST /people/create answers 302 Matched for any plausible id without ever checking it exists, and for an implausible id quietly creates from the other fields while still answering 302 Matched; POST /people/findOrCreate ignores an unknown id and runs its ordinary match on the rest of the payload. A vanId of 0 is ignored by both. See each operation's outcomes for the full picture. |
 | `firstName` | string or null |  |
 | `middleName` | string or null |  |
 | `lastName` | string or null |  |
-| `suffix` | string or null | Part of the name following the last name, e.g. "Jr.". |
+| `suffix` | string or null | Part of the name following the last name, e.g. "Jr.". Matched against a lookup rather than stored verbatim: case and punctuation are ignored, so "jr" and "Jr." both read back as "Jr". A value the lookup does not recognize, eg "Esq.", is neither stored nor refused — the write succeeds and the existing suffix is left standing. |
 | `title` | string or null | An honorific. |
 | `salutation` | string or null | Preferred greeting for correspondence. Derived from the name when not supplied. |
 | `envelopeName` | string or null | Preferred name for mailings. Derived from the name when not supplied. |
-| `nickname` | string or null |  |
-| `website` | string or null |  |
+| `nickname` | string or null | Written normally, but returned only under $expand=preferences. |
+| `website` | string or null | Written normally, but returned only under $expand=preferences. |
 | `party` | string or null | One-character party affiliation, e.g. "D". Only the length is checked — any single character is stored as given. |
-| `contactMethodPreferenceCode` | string or null | Preferred method of contact: `P` = phone, `E` = email, `M` = mail, `F` = fax, `S` = SMS. Any other value returns 400 "The specified condition was not met for 'contactMethodPreferenceCode'". One of: `P`, `E`, `M`, `F`, `S`, `None`. |
+| `contactMethodPreferenceCode` | string or null | Preferred method of contact: `P` = phone, `E` = email, `M` = mail, `F` = fax, `S` = SMS. Any other value returns 400 "The specified condition was not met for 'contactMethodPreferenceCode'". Written normally, but returned only under $expand=preferences. One of: `P`, `E`, `M`, `F`, `S`, `None`. |
 | `employer` | string or null | May not be available in every context. |
 | `occupation` | string or null | May not be available in every context. |
-| `jobTitle` | string or null | May not be available in every context. |
+| `jobTitle` | string or null | May not be available in every context. Written normally, but returned only under $expand=preferences — unlike employer and occupation. |
 | `sex` | string or null | Matched case-insensitively — "m" is accepted and stored as "M". Any other value returns 400 "The specified condition was not met for 'sex'". One of: `M`, `F`, `None`. |
 | `dateOfBirth` | string (date) or null | ISO 8601 date, which must fall in the 20th or 21st century — otherwise 400 "'dateOfBirth' must be in the 20th or 21st century.". A value that is not a parseable date is not an error: it is silently dropped and the person record stores null. e.g. `2001-11-23` |
-| `collectedLocationId` | integer or null | Location where the person's voter registration application was collected. |
-| `electionType` | string or null | Type of election registered for: `G` = General, `P` = Primary, `R` = Run-off, `PP` = Presidential Primary, `SP` = Special Primary, `SG` = Special General, `MP` = Municipal Primary, `MG` = Municipal General, `C` = Caucus, `O` = Other. Any other value returns 400 "Invalid Election Type". One of: `G`, `P`, `R`, `PP`, `SP`, `SG`, `MP`, `MG`, `C`, `O`, `None`. |
-| `cycle` | string or null | Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 "'cycle' must be 4 characters in length". e.g. `2024` |
+| `collectedLocationId` | integer or null | Location where the person's voter registration application was collected. Accepted and then discarded in a My Campaign context: no response this spec documents carries it back. |
+| `electionType` | string or null | Type of election registered for: `G` = General, `P` = Primary, `R` = Run-off, `PP` = Presidential Primary, `SP` = Special Primary, `SG` = Special General, `MP` = Municipal Primary, `MG` = Municipal General, `C` = Caucus, `O` = Other. Any other value returns 400 "Invalid Election Type". Accepted and then discarded in a My Campaign context: the value reaches no election record, and $expand=electionRecords stays empty. One of: `G`, `P`, `R`, `PP`, `SP`, `SG`, `MP`, `MG`, `C`, `O`, `None`. |
+| `cycle` | string or null | Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 "'cycle' must be 4 characters in length". Accepted and then discarded in a My Campaign context, like electionType. e.g. `2024` |
 | `emails` | array of [PersonEmailInput](../schemas/PersonEmailInput.md) or null | Appended to the person's existing addresses, not substituted for them. A bare object instead of an array is silently ignored. |
 | `phones` | array of [PersonPhoneInput](../schemas/PersonPhoneInput.md) or null | Appended to the person's existing numbers, not substituted for them. A bare object instead of an array is silently ignored. A null array entry returns 500. |
 | `addresses` | array of [PersonAddressInput](../schemas/PersonAddressInput.md) or null | Appended to the person's existing addresses, not substituted for them. A bare object instead of an array is silently ignored. |
 | `identifiers` | array of object or null | Known external identifiers. Writing a type the context does not recognize returns a clean 400; writing the valid type `dwid` returns 500 in a My Campaign context, so no successful write was ever observed. |
 | `customFieldValues` | array of object or null |  |
-| `organizationContactCommonName` | string or null | An organization's common name. Only applies to My Campaign databases with organizations-as-contacts enabled. |
-| `organizationContactOfficialName` | string or null | An organization's official name. Only applies to My Campaign databases with organizations-as-contacts enabled. |
+| `organizationContactCommonName` | string or null | An organization's common name. Stored only while contactMode is "Organization" — sent on a person-mode record it is silently discarded. Only applies to My Campaign databases with organizations-as-contacts enabled. |
+| `organizationContactOfficialName` | string or null | An organization's official name. Stored only while contactMode is "Organization" — sent on a person-mode record it is silently discarded. Only applies to My Campaign databases with organizations-as-contacts enabled. |
 | `contactMode` | string or null | Only applies to My Campaign databases with organizations-as-contacts enabled. One of: `Person`, `Organization`, `None`. |
 
 `*` = required.

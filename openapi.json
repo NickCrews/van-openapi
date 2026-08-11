@@ -51,6 +51,12 @@
       ]
     },
     {
+      "text": "Six scalar person fields — `nickname`, `website`, `jobTitle` and the three `contactMethodPreference*` fields — are also gated behind `$expand=preferences`. Write one and read the person back plainly and the write looks discarded.",
+      "see": [
+        "update-writes-every-scalar-field"
+      ]
+    },
+    {
       "text": "`findPerson` returning 404 means \"no match\", not a broken route — and usually means the criteria fell short of the minimum combination rather than that the person is absent.",
       "see": [
         "findPerson",
@@ -513,10 +519,10 @@
       "post": {
         "operationId": "updatePerson",
         "summary": "Update an existing person",
-        "description": "Merges the payload into an existing person record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The append is idempotent for an identical value: re-sending an email address the person already has — in a later update or twice in one body — does not create a second entry (observed via $expand=emails, 2026-08-08).\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.",
+        "description": "Merges the payload into an existing person record, addressed by id — no matching, no minimum-criteria threshold, and no chance of writing to the wrong duplicate. **This is the endpoint to write through once you have identified a person yourself** (e.g. from GET /people); POST /people/findOrCreate resolves ambiguity silently and creates duplicates below the match threshold.\n\nFields left out of the body keep their current values, and `emails`, `phones` and `addresses` are appended to what is already there rather than replacing it — there is no way to remove a contact method through this endpoint. The append is idempotent for an identical value: re-sending an email address the person already has — in a later update or twice in one body — does not create a second entry (observed via $expand=emails, 2026-08-08).\n\nOutcomes:\n\n- **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.\n- **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.\n- **An unknown, zero or negative vanId** — **404**.\n\nEvery scalar field in the payload is writeable here, and all of them can go in one request. Four caveats: `nickname`, `website`, `jobTitle` and `contactMethodPreferenceCode` are stored but read back only under `$expand=preferences`; `organizationContactCommonName` and `organizationContactOfficialName` are stored only while `contactMode` is \"Organization\"; `suffix` is normalized against a lookup, and an unrecognized value leaves the existing suffix standing; and `collectedLocationId`, `electionType` and `cycle` are accepted and then discarded outright.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Merge semantics confirmed by updating only middleName on a person and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported."
+          "lastProbed": "2026-08-10",
+          "note": "Merge semantics confirmed by updating only middleName on a person and observing firstName, lastName and employer survive; append semantics by adding a second email and seeing both returned, with isPreferred moving to the newer one. Not in the official docs' page index; the path comes from van-cli (people.ts update), which notes PUT is not supported. The writeable field set was swept on 2026-08-10: a blank person updated with every scalar field at once, then read back with and without $expand=preferences."
         },
         "tags": [
           "People"
@@ -620,6 +626,61 @@
                   "value": {
                     "firstName": "Cora"
                   }
+                },
+                "update-suffix-is-matched-against-a-lookup/1": {
+                  "summary": "Lowercase, with no period. Stored in the lookup's own spelling.",
+                  "description": "Unlike every other name part, `suffix` is not free text: it is matched case- and punctuation-insensitively against a known list, so \"jr\" and \"Jr.\" both read back as \"Jr\". A value the list does not recognize is neither stored nor refused — the request succeeds and the previous suffix is left standing.",
+                  "x-transcript": "update-suffix-is-matched-against-a-lookup",
+                  "value": {
+                    "suffix": "jr"
+                  }
+                },
+                "update-suffix-is-matched-against-a-lookup/2": {
+                  "summary": "An honorific the list does not hold. Accepted, and quietly ignored.",
+                  "description": "Unlike every other name part, `suffix` is not free text: it is matched case- and punctuation-insensitively against a known list, so \"jr\" and \"Jr.\" both read back as \"Jr\". A value the list does not recognize is neither stored nor refused — the request succeeds and the previous suffix is left standing.",
+                  "x-transcript": "update-suffix-is-matched-against-a-lookup",
+                  "value": {
+                    "suffix": "Esq."
+                  }
+                },
+                "update-writes-every-scalar-field/1": {
+                  "summary": "One update carrying every scalar field the payload documents.",
+                  "description": "Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization.",
+                  "x-transcript": "update-writes-every-scalar-field",
+                  "value": {
+                    "firstName": "Ottoline",
+                    "middleName": "Quill",
+                    "lastName": "Fieldwright",
+                    "suffix": "Jr.",
+                    "title": "Dr.",
+                    "salutation": "Hey Otto",
+                    "envelopeName": "O. Q. Fieldwright",
+                    "nickname": "Otto",
+                    "website": "https://ottoline.example",
+                    "party": "D",
+                    "contactMethodPreferenceCode": "E",
+                    "employer": "Ship Creek Group",
+                    "occupation": "Cartographer",
+                    "jobTitle": "Chief Mapper",
+                    "sex": "F",
+                    "dateOfBirth": "1985-03-04",
+                    "collectedLocationId": 12345,
+                    "electionType": "G",
+                    "cycle": "2024",
+                    "organizationContactCommonName": "Fieldwright Cartography",
+                    "organizationContactOfficialName": "Fieldwright Cartography LLC",
+                    "contactMode": "Person"
+                  }
+                },
+                "update-writes-every-scalar-field/2": {
+                  "summary": "The organization names were dropped too — the record is in Person mode. Send them again with contactMode Organization and they stick.",
+                  "description": "Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization.",
+                  "x-transcript": "update-writes-every-scalar-field",
+                  "value": {
+                    "contactMode": "Organization",
+                    "organizationContactCommonName": "Fieldwright Cartography",
+                    "organizationContactOfficialName": "Fieldwright Cartography LLC"
+                  }
                 }
               }
             }
@@ -707,6 +768,42 @@
                       "vanId": 100000001,
                       "status": "Matched"
                     }
+                  },
+                  "update-suffix-is-matched-against-a-lookup/1": {
+                    "summary": "Lowercase, with no period. Stored in the lookup's own spelling.",
+                    "description": "Unlike every other name part, `suffix` is not free text: it is matched case- and punctuation-insensitively against a known list, so \"jr\" and \"Jr.\" both read back as \"Jr\". A value the list does not recognize is neither stored nor refused — the request succeeds and the previous suffix is left standing.",
+                    "x-transcript": "update-suffix-is-matched-against-a-lookup",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-suffix-is-matched-against-a-lookup/2": {
+                    "summary": "An honorific the list does not hold. Accepted, and quietly ignored.",
+                    "description": "Unlike every other name part, `suffix` is not free text: it is matched case- and punctuation-insensitively against a known list, so \"jr\" and \"Jr.\" both read back as \"Jr\". A value the list does not recognize is neither stored nor refused — the request succeeds and the previous suffix is left standing.",
+                    "x-transcript": "update-suffix-is-matched-against-a-lookup",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-writes-every-scalar-field/1": {
+                    "summary": "One update carrying every scalar field the payload documents.",
+                    "description": "Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization.",
+                    "x-transcript": "update-writes-every-scalar-field",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
+                  },
+                  "update-writes-every-scalar-field/2": {
+                    "summary": "The organization names were dropped too — the record is in Person mode. Send them again with contactMode Organization and they stick.",
+                    "description": "Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization.",
+                    "x-transcript": "update-writes-every-scalar-field",
+                    "value": {
+                      "vanId": 100000001,
+                      "status": "Matched"
+                    }
                   }
                 }
               }
@@ -755,6 +852,18 @@
             "label": "An update merges the payload and answers 302 with a match stub",
             "source": "# The payload is merged into the record: fields in the body are overwritten,\n# fields left out keep their values. The response is a 302 whose Location\n# points back at the person and whose body is the same match stub find\n# returns — not the updated person.\n\n# A person whose first name is about to change.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Corazon\",\n    \"lastName\": \"Ellsworth\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Send only the new first name.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Cora\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# The first name changed; the last name, absent from the body, survived.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Cora\",\n#   \"lastName\": \"Ellsworth\",\n#   \"middleName\": null,\n#   \"suffix\": null,\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Cora\",\n#   \"formalSalutation\": \"Cora Ellsworth\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Cora Ellsworth\",\n#   \"formalEnvelopeName\": \"Cora Ellsworth\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
             "x-transcript": "update-merges-fields-and-answers-with-a-stub"
+          },
+          {
+            "lang": "Shell",
+            "label": "A suffix is matched against a lookup, not stored as written",
+            "source": "# Unlike every other name part, `suffix` is not free text: it is matched\n# case- and punctuation-insensitively against a known list, so \"jr\" and\n# \"Jr.\" both read back as \"Jr\". A value the list does not recognize is\n# neither stored nor refused — the request succeeds and the previous suffix\n# is left standing.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Thaddeus\",\n    \"lastName\": \"Suffixon\"\n  }'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# Lowercase, with no period. Stored in the lookup's own spelling.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"suffix\": \"jr\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Thaddeus\",\n#   \"lastName\": \"Suffixon\",\n#   \"middleName\": null,\n#   \"suffix\": \"Jr\",\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Thaddeus\",\n#   \"formalSalutation\": \"Thaddeus Suffixon\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Thaddeus Suffixon\",\n#   \"formalEnvelopeName\": \"Thaddeus Suffixon, Jr\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# An honorific the list does not hold. Accepted, and quietly ignored.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"suffix\": \"Esq.\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Thaddeus\",\n#   \"lastName\": \"Suffixon\",\n#   \"middleName\": null,\n#   \"suffix\": \"Jr\",\n#   \"title\": null,\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Thaddeus\",\n#   \"formalSalutation\": \"Thaddeus Suffixon\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Thaddeus Suffixon\",\n#   \"formalEnvelopeName\": \"Thaddeus Suffixon, Jr\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": null,\n#   \"employer\": null,\n#   \"occupation\": null,\n#   \"jobTitle\": null,\n#   \"sex\": null,\n#   \"dateOfBirth\": null,\n#   \"isDeceased\": false,\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "update-suffix-is-matched-against-a-lookup"
+          },
+          {
+            "lang": "Shell",
+            "label": "The whole scalar field set, written in one update",
+            "source": "# Every scalar field PersonInput documents is writeable through an update,\n# in a single payload: the name parts, the derived-by-default salutation and\n# envelopeName, nickname, website, party, sex, dateOfBirth, the three job\n# fields, contactMethodPreferenceCode and contactMode. Four of them —\n# nickname, website, jobTitle and contactMethodPreferenceCode — read back\n# null on a plain GET and only surface under `$expand=preferences`, so a\n# round-trip without it looks like the write was dropped. Three genuinely\n# are dropped: collectedLocationId, electionType and cycle are accepted and\n# leave no trace anywhere the API will show you. The organizationContact\n# names are conditional — discarded while the record is in Person mode,\n# stored once contactMode is Organization.\n\n# A blank person, so every field below arrives by way of the update.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/create' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{}\n  {}'\n# → 201  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Stored\"\n# }\n\n# One update carrying every scalar field the payload documents.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstName\": \"Ottoline\",\n    \"middleName\": \"Quill\",\n    \"lastName\": \"Fieldwright\",\n    \"suffix\": \"Jr.\",\n    \"title\": \"Dr.\",\n    \"salutation\": \"Hey Otto\",\n    \"envelopeName\": \"O. Q. Fieldwright\",\n    \"nickname\": \"Otto\",\n    \"website\": \"https://ottoline.example\",\n    \"party\": \"D\",\n    \"contactMethodPreferenceCode\": \"E\",\n    \"employer\": \"Ship Creek Group\",\n    \"occupation\": \"Cartographer\",\n    \"jobTitle\": \"Chief Mapper\",\n    \"sex\": \"F\",\n    \"dateOfBirth\": \"1985-03-04\",\n    \"collectedLocationId\": 12345,\n    \"electionType\": \"G\",\n    \"cycle\": \"2024\",\n    \"organizationContactCommonName\": \"Fieldwright Cartography\",\n    \"organizationContactOfficialName\": \"Fieldwright Cartography LLC\",\n    \"contactMode\": \"Person\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\n# Read it back plainly. Most of it landed — but nickname, website, jobTitle\n# and contactMethodPreferenceCode come back null, as if the write had been\n# ignored.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Ottoline\",\n#   \"lastName\": \"Fieldwright\",\n#   \"middleName\": \"Quill\",\n#   \"suffix\": \"Jr\",\n#   \"title\": \"Dr.\",\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Hey Otto\",\n#   \"formalSalutation\": \"Dr. Fieldwright\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"O. Q. Fieldwright\",\n#   \"formalEnvelopeName\": \"Dr. Ottoline Q. Fieldwright, Jr\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": \"D\",\n#   \"employer\": \"Ship Creek Group\",\n#   \"occupation\": \"Cartographer\",\n#   \"jobTitle\": null,\n#   \"sex\": \"F\",\n#   \"dateOfBirth\": \"1985-03-04T00:00:00Z\",\n#   \"isDeceased\": false,\n#   \"partialDateOfBirth\": {\n#     \"month\": 3,\n#     \"day\": 4,\n#     \"year\": 1985\n#   },\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# They did land. `$expand=preferences` is what makes those four readable.\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001?%24expand=preferences%2CelectionRecords' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Ottoline\",\n#   \"lastName\": \"Fieldwright\",\n#   \"middleName\": \"Quill\",\n#   \"suffix\": \"Jr\",\n#   \"title\": \"Dr.\",\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Person\",\n#   \"organizationContactCommonName\": null,\n#   \"organizationContactOfficialName\": null,\n#   \"salutation\": \"Hey Otto\",\n#   \"formalSalutation\": \"Dr. Fieldwright\",\n#   \"additionalSalutation\": null,\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"O. Q. Fieldwright\",\n#   \"formalEnvelopeName\": \"Dr. Ottoline Q. Fieldwright, Jr\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": \"E\",\n#   \"contactMethodPreferenceId\": 2,\n#   \"contactMethodPreferenceName\": \"Email\",\n#   \"assistantName\": null,\n#   \"nickname\": \"Otto\",\n#   \"website\": \"https://ottoline.example\",\n#   \"professionalSuffix\": null,\n#   \"party\": \"D\",\n#   \"employer\": \"Ship Creek Group\",\n#   \"occupation\": \"Cartographer\",\n#   \"jobTitle\": \"Chief Mapper\",\n#   \"sex\": \"F\",\n#   \"dateOfBirth\": \"1985-03-04T00:00:00Z\",\n#   \"isDeceased\": false,\n#   \"partialDateOfBirth\": {\n#     \"month\": 3,\n#     \"day\": 4,\n#     \"year\": 1985\n#   },\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": [],\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }\n\n# collectedLocationId, electionType and cycle are the ones really discarded:\n# the person record has nowhere to carry them, and the election records they\n# name stay empty.\n\n# The organization names were dropped too — the record is in Person mode.\n# Send them again with contactMode Organization and they stick.\n\ncurl -sS -X POST 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"contactMode\": \"Organization\",\n    \"organizationContactCommonName\": \"Fieldwright Cartography\",\n    \"organizationContactOfficialName\": \"Fieldwright Cartography LLC\"\n  }'\n# → 302  Location: https://api.securevan.com/v4/people/100000001\n# {\n#   \"vanId\": 100000001,\n#   \"status\": \"Matched\"\n# }\n\ncurl -sS -X GET 'https://api.securevan.com/v4/people/100000001' \\\n  -u \"app-name:$NGP_API_KEY|1\"\n# → 200\n# {\n#   \"vanId\": 100000001,\n#   \"firstName\": \"Ottoline\",\n#   \"lastName\": \"Fieldwright\",\n#   \"middleName\": \"Quill\",\n#   \"suffix\": \"Jr\",\n#   \"title\": \"Dr.\",\n#   \"sourceFileTitle\": null,\n#   \"sourceFileFirstName\": null,\n#   \"sourceFileMiddleName\": null,\n#   \"sourceFileLastName\": null,\n#   \"sourceFileSuffix\": null,\n#   \"contactSource\": \"API\",\n#   \"contactMode\": \"Organization\",\n#   \"organizationContactCommonName\": \"Fieldwright Cartography\",\n#   \"organizationContactOfficialName\": \"Fieldwright Cartography LLC\",\n#   \"salutation\": \"Hey Otto\",\n#   \"formalSalutation\": \"Friends\",\n#   \"additionalSalutation\": \"Fieldwright Cartography\",\n#   \"preferredPronoun\": null,\n#   \"pronouns\": null,\n#   \"namePronunciation\": null,\n#   \"envelopeName\": \"Fieldwright Cartography LLC\",\n#   \"formalEnvelopeName\": \"Fieldwright Cartography LLC\",\n#   \"additionalEnvelopeName\": null,\n#   \"contactMethodPreferenceCode\": null,\n#   \"contactMethodPreferenceId\": null,\n#   \"contactMethodPreferenceName\": null,\n#   \"assistantName\": null,\n#   \"nickname\": null,\n#   \"website\": null,\n#   \"professionalSuffix\": null,\n#   \"party\": \"D\",\n#   \"employer\": \"Ship Creek Group\",\n#   \"occupation\": \"Cartographer\",\n#   \"jobTitle\": null,\n#   \"sex\": \"F\",\n#   \"dateOfBirth\": \"1985-03-04T00:00:00Z\",\n#   \"isDeceased\": false,\n#   \"partialDateOfBirth\": {\n#     \"month\": 3,\n#     \"day\": 4,\n#     \"year\": 1985\n#   },\n#   \"dateCreated\": \"2026-01-01T00:00:00Z\",\n#   \"dateAcquired\": \"0001-01-01T00:00:00Z\",\n#   \"selfReportedRace\": null,\n#   \"selfReportedEthnicity\": null,\n#   \"selfReportedRaces\": null,\n#   \"selfReportedEthnicities\": null,\n#   \"selfReportedGenders\": null,\n#   \"selfReportedSexualOrientations\": null,\n#   \"selfReportedLanguagePreference\": null,\n#   \"selfReportedLanguagePreferences\": null,\n#   \"emails\": null,\n#   \"phones\": null,\n#   \"addresses\": null,\n#   \"recordedAddresses\": null,\n#   \"pollingLocation\": null,\n#   \"earlyVoteLocation\": null,\n#   \"identifiers\": null,\n#   \"codes\": null,\n#   \"customFields\": null,\n#   \"primaryCustomField\": null,\n#   \"contributionSummary\": null,\n#   \"suppressions\": null,\n#   \"caseworkCases\": null,\n#   \"caseworkIssues\": null,\n#   \"caseworkStories\": null,\n#   \"notes\": null,\n#   \"scores\": null,\n#   \"customProperties\": null,\n#   \"electionRecords\": null,\n#   \"membershipStatus\": null,\n#   \"organizationRoles\": null,\n#   \"districts\": null,\n#   \"surveyQuestionResponses\": null,\n#   \"finderNumber\": null,\n#   \"biographyImageUrl\": null,\n#   \"biographyText\": null,\n#   \"biographyHtml\": null,\n#   \"primaryContact\": null\n# }",
+            "x-transcript": "update-writes-every-scalar-field"
           }
         ]
       }
@@ -6034,10 +6143,10 @@
       },
       "PersonInput": {
         "type": "object",
-        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the \"Match Candidate\" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank person record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.",
+        "description": "The person payload shared by POST /people/create, POST /people/findOrCreate and POST /people/{vanId} — called the \"Match Candidate\" common model in the official docs. Every field is optional — an entirely empty body is accepted and creates a blank person record. On update the payload is merged, not replaced: fields left out keep their existing values, and emails, phones and addresses are appended rather than swapped.\n\nEvery scalar field here is writeable through POST /people/{vanId}, in one payload, with four exceptions to know about. `collectedLocationId`, `electionType` and `cycle` are accepted and then discarded — nothing the API returns ever carries them back. `organizationContactCommonName` and `organizationContactOfficialName` are stored only while `contactMode` is \"Organization\". `suffix` is matched against a lookup rather than stored verbatim. And `nickname`, `website`, `jobTitle` and `contactMethodPreferenceCode` do write, but read back only under `$expand=preferences`, so a plain round-trip makes them look dropped.",
         "x-provenance": {
-          "lastProbed": "2026-08-03",
-          "note": "Field list from the official docs' Match Candidate model; max lengths and the enforced/unenforced split established by probing POST /people/create with out-of-range values. Not modelled here, because the sandbox has no lookup values to write against and only the 400 path could be seen: pronouns, selfReportedRaces, selfReportedEthnicities, selfReportedGenders, selfReportedSexualOrientations and selfReportedLanguagePreference. Each takes an id that must exist in the context, e.g. 'reportedRaceId' is not a valid ReportedRace in this context."
+          "lastProbed": "2026-08-10",
+          "note": "Field list from the official docs' Match Candidate model; max lengths and the enforced/unenforced split established by probing POST /people/create with out-of-range values. Not modelled here, because the sandbox has no lookup values to write against and only the 400 path could be seen: pronouns, selfReportedRaces, selfReportedEthnicities, selfReportedGenders, selfReportedSexualOrientations and selfReportedLanguagePreference. Each takes an id that must exist in the context, e.g. 'reportedRaceId' is not a valid ReportedRace in this context. The writeable set was swept on 2026-08-10 by updating a blank person with every scalar field at once and reading the record back with and without $expand=preferences."
         },
         "properties": {
           "vanId": {
@@ -6077,7 +6186,7 @@
               "null"
             ],
             "maxLength": 50,
-            "description": "Part of the name following the last name, e.g. \"Jr.\"."
+            "description": "Part of the name following the last name, e.g. \"Jr.\". Matched against a lookup rather than stored verbatim: case and punctuation are ignored, so \"jr\" and \"Jr.\" both read back as \"Jr\". A value the lookup does not recognize, eg \"Esq.\", is neither stored nor refused — the write succeeds and the existing suffix is left standing."
           },
           "title": {
             "type": [
@@ -6108,14 +6217,16 @@
               "string",
               "null"
             ],
-            "maxLength": 50
+            "maxLength": 50,
+            "description": "Written normally, but returned only under $expand=preferences."
           },
           "website": {
             "type": [
               "string",
               "null"
             ],
-            "maxLength": 50
+            "maxLength": 50,
+            "description": "Written normally, but returned only under $expand=preferences."
           },
           "party": {
             "type": [
@@ -6142,7 +6253,7 @@
               "S",
               null
             ],
-            "description": "Preferred method of contact: `P` = phone, `E` = email, `M` = mail, `F` = fax, `S` = SMS. Any other value returns 400 \"The specified condition was not met for 'contactMethodPreferenceCode'\"."
+            "description": "Preferred method of contact: `P` = phone, `E` = email, `M` = mail, `F` = fax, `S` = SMS. Any other value returns 400 \"The specified condition was not met for 'contactMethodPreferenceCode'\". Written normally, but returned only under $expand=preferences."
           },
           "employer": {
             "type": [
@@ -6166,7 +6277,7 @@
               "null"
             ],
             "maxLength": 150,
-            "description": "May not be available in every context."
+            "description": "May not be available in every context. Written normally, but returned only under $expand=preferences — unlike employer and occupation."
           },
           "sex": {
             "type": [
@@ -6199,7 +6310,7 @@
               "integer",
               "null"
             ],
-            "description": "Location where the person's voter registration application was collected."
+            "description": "Location where the person's voter registration application was collected. Accepted and then discarded in a My Campaign context: no response this spec documents carries it back."
           },
           "electionType": {
             "type": [
@@ -6219,7 +6330,7 @@
               "O",
               null
             ],
-            "description": "Type of election registered for: `G` = General, `P` = Primary, `R` = Run-off, `PP` = Presidential Primary, `SP` = Special Primary, `SG` = Special General, `MP` = Municipal Primary, `MG` = Municipal General, `C` = Caucus, `O` = Other. Any other value returns 400 \"Invalid Election Type\"."
+            "description": "Type of election registered for: `G` = General, `P` = Primary, `R` = Run-off, `PP` = Presidential Primary, `SP` = Special Primary, `SG` = Special General, `MP` = Municipal Primary, `MG` = Municipal General, `C` = Caucus, `O` = Other. Any other value returns 400 \"Invalid Election Type\". Accepted and then discarded in a My Campaign context: the value reaches no election record, and $expand=electionRecords stays empty."
           },
           "cycle": {
             "type": [
@@ -6231,7 +6342,7 @@
             "examples": [
               "2024"
             ],
-            "description": "Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 \"'cycle' must be 4 characters in length\"."
+            "description": "Election year the person registered to vote, as a four-character numeric string. Any other length returns 400 \"'cycle' must be 4 characters in length\". Accepted and then discarded in a My Campaign context, like electionType."
           },
           "emails": {
             "type": [
@@ -6288,7 +6399,7 @@
               "null"
             ],
             "maxLength": 150,
-            "description": "An organization's common name. Only applies to My Campaign databases with organizations-as-contacts enabled."
+            "description": "An organization's common name. Stored only while contactMode is \"Organization\" — sent on a person-mode record it is silently discarded. Only applies to My Campaign databases with organizations-as-contacts enabled."
           },
           "organizationContactOfficialName": {
             "type": [
@@ -6296,7 +6407,7 @@
               "null"
             ],
             "maxLength": 150,
-            "description": "An organization's official name. Only applies to My Campaign databases with organizations-as-contacts enabled."
+            "description": "An organization's official name. Stored only while contactMode is \"Organization\" — sent on a person-mode record it is silently discarded. Only applies to My Campaign databases with organizations-as-contacts enabled."
           },
           "contactMode": {
             "type": [
@@ -6372,10 +6483,10 @@
       },
       "Person": {
         "type": "object",
-        "description": "A person record: returned by GET /people/{vanId}, as the items of GET /people, and as what a redirect-following client lands on after the write endpoints. A few fields read differently between get-by-id and search — see `formalSalutation` and `formalEnvelopeName`.\n\nThe properties listed below with no type were only ever observed as null, either because the section needs `$expand` or because the sandbox committee holds no such data. They are listed to document that the API returns them, but their shape is unverified.",
+        "description": "A person record: returned by GET /people/{vanId}, as the items of GET /people, and as what a redirect-following client lands on after the write endpoints. A few fields read differently between get-by-id and search — see `formalSalutation` and `formalEnvelopeName`.\n\nThe properties listed below with no type were only ever observed as null, either because the section needs `$expand` or because the sandbox committee holds no such data. They are listed to document that the API returns them, but their shape is unverified.\n\nSix scalar fields are returned only under `$expand=preferences` — `nickname`, `website`, `jobTitle`, `contactMethodPreferenceCode`, `contactMethodPreferenceId`, `contactMethodPreferenceName` — so a write of any of them looks discarded on a plain read. `organizationContactCommonName` and `organizationContactOfficialName` are always returned, but hold a value only while `contactMode` is \"Organization\".",
         "x-provenance": {
-          "lastProbed": "2026-08-04",
-          "note": "Field inventory observed live on a minimal API-created person; the untyped fields need a more fully populated person record to pin down. Nullability checked against a fully blank person record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null."
+          "lastProbed": "2026-08-10",
+          "note": "Field inventory observed live on a minimal API-created person; the untyped fields need a more fully populated person record to pin down. Nullability checked against a fully blank person record (created from {}, 2026-08-04): even there contactSource, contactMode, formalSalutation (\"Friend\"), formalEnvelopeName (\"Our Friend At\"), isDeceased, dateCreated and dateAcquired come back populated, while salutation and envelopeName are null. On 2026-08-10 the $expand=preferences group and the organization-name fields were pinned down by writing every scalar PersonInput field in one update and reading the record back with and without the expand."
         },
         "properties": {
           "vanId": {
@@ -6482,7 +6593,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Null unless the request included $expand=preferences — unlike `employer` and `occupation`, which are always returned."
           },
           "sex": {
             "type": [
@@ -6584,19 +6696,61 @@
           "sourceFileMiddleName": {},
           "sourceFileLastName": {},
           "sourceFileSuffix": {},
-          "organizationContactCommonName": {},
-          "organizationContactOfficialName": {},
+          "organizationContactCommonName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "An organization's common name. Only stored while `contactMode` is \"Organization\" — written on a person-mode record it is silently discarded."
+          },
+          "organizationContactOfficialName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "An organization's official name. Only stored while `contactMode` is \"Organization\" — written on a person-mode record it is silently discarded."
+          },
           "additionalSalutation": {},
           "preferredPronoun": {},
           "pronouns": {},
           "namePronunciation": {},
           "additionalEnvelopeName": {},
-          "contactMethodPreferenceCode": {},
-          "contactMethodPreferenceId": {},
-          "contactMethodPreferenceName": {},
+          "contactMethodPreferenceCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null unless the request included $expand=preferences. The one-letter code that was written — see `contactMethodPreferenceCode` on PersonInput."
+          },
+          "contactMethodPreferenceId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Null unless the request included $expand=preferences. The internal id of the preferred contact method, e.g. 2 for Email."
+          },
+          "contactMethodPreferenceName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null unless the request included $expand=preferences. The code spelled out, e.g. \"Email\"."
+          },
           "assistantName": {},
-          "nickname": {},
-          "website": {},
+          "nickname": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null unless the request included $expand=preferences."
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Null unless the request included $expand=preferences."
+          },
           "professionalSuffix": {},
           "selfReportedRace": {},
           "selfReportedEthnicity": {},

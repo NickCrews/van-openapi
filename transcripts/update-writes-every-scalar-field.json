@@ -1,0 +1,419 @@
+{
+  "id": "update-writes-every-scalar-field",
+  "title": "The whole scalar field set, written in one update",
+  "claim": "Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization.",
+  "spec": [
+    "#/paths/~1people~1{vanId}/post"
+  ],
+  "render": true,
+  "entries": [
+    {
+      "kind": "comment",
+      "text": "A blank person, so every field below arrives by way of the update."
+    },
+    {
+      "kind": "exchange",
+      "role": "setup",
+      "request": {
+        "method": "POST",
+        "path": "/people/create",
+        "url": "/people/create",
+        "body": {}
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Stored"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "One update carrying every scalar field the payload documents."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001",
+        "body": {
+          "firstName": "Ottoline",
+          "middleName": "Quill",
+          "lastName": "Fieldwright-{scope}",
+          "suffix": "Jr.",
+          "title": "Dr.",
+          "salutation": "Hey Otto",
+          "envelopeName": "O. Q. Fieldwright",
+          "nickname": "Otto",
+          "website": "https://ottoline.example",
+          "party": "D",
+          "contactMethodPreferenceCode": "E",
+          "employer": "Ship Creek Group",
+          "occupation": "Cartographer",
+          "jobTitle": "Chief Mapper",
+          "sex": "F",
+          "dateOfBirth": "1985-03-04",
+          "collectedLocationId": 12345,
+          "electionType": "G",
+          "cycle": "2024",
+          "organizationContactCommonName": "Fieldwright Cartography",
+          "organizationContactOfficialName": "Fieldwright Cartography LLC",
+          "contactMode": "Person"
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "Read it back plainly. Most of it landed — but nickname, website, jobTitle and contactMethodPreferenceCode come back null, as if the write had been ignored."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Ottoline",
+          "lastName": "Fieldwright-{scope}",
+          "middleName": "Quill",
+          "suffix": "Jr",
+          "title": "Dr.",
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Hey Otto",
+          "formalSalutation": "Dr. Fieldwright-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "O. Q. Fieldwright",
+          "formalEnvelopeName": "Dr. Ottoline Q. Fieldwright-{scope}, Jr",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": "D",
+          "employer": "Ship Creek Group",
+          "occupation": "Cartographer",
+          "jobTitle": null,
+          "sex": "F",
+          "dateOfBirth": "1985-03-04T00:00:00Z",
+          "isDeceased": false,
+          "partialDateOfBirth": {
+            "month": 3,
+            "day": 4,
+            "year": 1985
+          },
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "They did land. `$expand=preferences` is what makes those four readable."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001?%24expand=preferences%2CelectionRecords"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Ottoline",
+          "lastName": "Fieldwright-{scope}",
+          "middleName": "Quill",
+          "suffix": "Jr",
+          "title": "Dr.",
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Person",
+          "organizationContactCommonName": null,
+          "organizationContactOfficialName": null,
+          "salutation": "Hey Otto",
+          "formalSalutation": "Dr. Fieldwright-{scope}",
+          "additionalSalutation": null,
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "O. Q. Fieldwright",
+          "formalEnvelopeName": "Dr. Ottoline Q. Fieldwright-{scope}, Jr",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": "E",
+          "contactMethodPreferenceId": 2,
+          "contactMethodPreferenceName": "Email",
+          "assistantName": null,
+          "nickname": "Otto",
+          "website": "https://ottoline.example",
+          "professionalSuffix": null,
+          "party": "D",
+          "employer": "Ship Creek Group",
+          "occupation": "Cartographer",
+          "jobTitle": "Chief Mapper",
+          "sex": "F",
+          "dateOfBirth": "1985-03-04T00:00:00Z",
+          "isDeceased": false,
+          "partialDateOfBirth": {
+            "month": 3,
+            "day": 4,
+            "year": 1985
+          },
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": [],
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    },
+    {
+      "kind": "comment",
+      "text": "collectedLocationId, electionType and cycle are the ones really discarded: the person record has nowhere to carry them, and the election records they name stay empty."
+    },
+    {
+      "kind": "comment",
+      "text": "The organization names were dropped too — the record is in Person mode. Send them again with contactMode Organization and they stick."
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "POST",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001",
+        "body": {
+          "contactMode": "Organization",
+          "organizationContactCommonName": "Fieldwright Cartography",
+          "organizationContactOfficialName": "Fieldwright Cartography LLC"
+        }
+      },
+      "response": {
+        "status": 302,
+        "headers": {
+          "content-type": "application/json; charset=utf-8",
+          "location": "https://api.securevan.com/v4/people/100000001"
+        },
+        "body": {
+          "vanId": 100000001,
+          "status": "Matched"
+        }
+      }
+    },
+    {
+      "kind": "exchange",
+      "role": "subject",
+      "request": {
+        "method": "GET",
+        "path": "/people/{vanId}",
+        "url": "/people/100000001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "vanId": 100000001,
+          "firstName": "Ottoline",
+          "lastName": "Fieldwright-{scope}",
+          "middleName": "Quill",
+          "suffix": "Jr",
+          "title": "Dr.",
+          "sourceFileTitle": null,
+          "sourceFileFirstName": null,
+          "sourceFileMiddleName": null,
+          "sourceFileLastName": null,
+          "sourceFileSuffix": null,
+          "contactSource": "API",
+          "contactMode": "Organization",
+          "organizationContactCommonName": "Fieldwright Cartography",
+          "organizationContactOfficialName": "Fieldwright Cartography LLC",
+          "salutation": "Hey Otto",
+          "formalSalutation": "Friends",
+          "additionalSalutation": "Fieldwright Cartography",
+          "preferredPronoun": null,
+          "pronouns": null,
+          "namePronunciation": null,
+          "envelopeName": "Fieldwright Cartography LLC",
+          "formalEnvelopeName": "Fieldwright Cartography LLC",
+          "additionalEnvelopeName": null,
+          "contactMethodPreferenceCode": null,
+          "contactMethodPreferenceId": null,
+          "contactMethodPreferenceName": null,
+          "assistantName": null,
+          "nickname": null,
+          "website": null,
+          "professionalSuffix": null,
+          "party": "D",
+          "employer": "Ship Creek Group",
+          "occupation": "Cartographer",
+          "jobTitle": null,
+          "sex": "F",
+          "dateOfBirth": "1985-03-04T00:00:00Z",
+          "isDeceased": false,
+          "partialDateOfBirth": {
+            "month": 3,
+            "day": 4,
+            "year": 1985
+          },
+          "dateCreated": "2026-01-01T00:00:00Z",
+          "dateAcquired": "0001-01-01T00:00:00Z",
+          "selfReportedRace": null,
+          "selfReportedEthnicity": null,
+          "selfReportedRaces": null,
+          "selfReportedEthnicities": null,
+          "selfReportedGenders": null,
+          "selfReportedSexualOrientations": null,
+          "selfReportedLanguagePreference": null,
+          "selfReportedLanguagePreferences": null,
+          "emails": null,
+          "phones": null,
+          "addresses": null,
+          "recordedAddresses": null,
+          "pollingLocation": null,
+          "earlyVoteLocation": null,
+          "identifiers": null,
+          "codes": null,
+          "customFields": null,
+          "primaryCustomField": null,
+          "contributionSummary": null,
+          "suppressions": null,
+          "caseworkCases": null,
+          "caseworkIssues": null,
+          "caseworkStories": null,
+          "notes": null,
+          "scores": null,
+          "customProperties": null,
+          "electionRecords": null,
+          "membershipStatus": null,
+          "organizationRoles": null,
+          "districts": null,
+          "surveyQuestionResponses": null,
+          "finderNumber": null,
+          "biographyImageUrl": null,
+          "biographyText": null,
+          "biographyHtml": null,
+          "primaryContact": null
+        }
+      }
+    }
+  ]
+}

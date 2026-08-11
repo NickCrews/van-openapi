@@ -9,6 +9,8 @@ Update an existing person
 - **Contact methods are appended, never replaced — and identical ones dedupe** — Emails, phones and addresses in an update are added to what is already there; there is no way to remove one through this endpoint. The append is idempotent for an identical value: re-sending an email the person already has does not create a second entry. ([replay](../behaviors/update-appends-contact-methods.md))
 - **An empty body is a successful no-op; an unknown vanId is 404** — `{}` is accepted and answered with the same 302 as a real update, changing nothing. The failure mode is the id, not the body: an unknown vanId returns 404 whatever the payload says. ([replay](../behaviors/update-empty-body-is-accepted-and-unknown-ids-404.md))
 - **An update merges the payload and answers 302 with a match stub** — The payload is merged into the record: fields in the body are overwritten, fields left out keep their values. The response is a 302 whose Location points back at the person and whose body is the same match stub find returns — not the updated person. ([replay](../behaviors/update-merges-fields-and-answers-with-a-stub.md))
+- **A suffix is matched against a lookup, not stored as written** — Unlike every other name part, `suffix` is not free text: it is matched case- and punctuation-insensitively against a known list, so "jr" and "Jr." both read back as "Jr". A value the list does not recognize is neither stored nor refused — the request succeeds and the previous suffix is left standing. ([replay](../behaviors/update-suffix-is-matched-against-a-lookup.md))
+- **The whole scalar field set, written in one update** — Every scalar field PersonInput documents is writeable through an update, in a single payload: the name parts, the derived-by-default salutation and envelopeName, nickname, website, party, sex, dateOfBirth, the three job fields, contactMethodPreferenceCode and contactMode. Four of them — nickname, website, jobTitle and contactMethodPreferenceCode — read back null on a plain GET and only surface under `$expand=preferences`, so a round-trip without it looks like the write was dropped. Three genuinely are dropped: collectedLocationId, electionType and cycle are accepted and leave no trace anywhere the API will show you. The organizationContact names are conditional — discarded while the record is in Person mode, stored once contactMode is Organization. ([replay](../behaviors/update-writes-every-scalar-field.md))
 
 ## Behavior
 
@@ -21,6 +23,8 @@ Outcomes:
 - **The vanId exists** — **302 Found** with a `Location` header pointing back at `/people/{vanId}` and a match-stub body: the same shape POST /people/find returns, **not** the updated person.
 - **The body is empty (`{}`)** — accepted, answered the same **302**, and nothing changes.
 - **An unknown, zero or negative vanId** — **404**.
+
+Every scalar field in the payload is writeable here, and all of them can go in one request. Four caveats: `nickname`, `website`, `jobTitle` and `contactMethodPreferenceCode` are stored but read back only under `$expand=preferences`; `organizationContactCommonName` and `organizationContactOfficialName` are stored only while `contactMode` is "Organization"; `suffix` is normalized against a lookup, and an unrecognized value leaves the existing suffix standing; and `collectedLocationId`, `electionType` and `cycle` are accepted and then discarded outright.
 
 ## Example
 

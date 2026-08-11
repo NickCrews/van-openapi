@@ -75,3 +75,5 @@ read these only when you want the actual traffic.
 | [`update-appends-contact-methods`](behaviors/update-appends-contact-methods.md) | Contact methods are appended, never replaced — and identical ones dedupe |
 | [`update-empty-body-is-accepted-and-unknown-ids-404`](behaviors/update-empty-body-is-accepted-and-unknown-ids-404.md) | An empty body is a successful no-op; an unknown vanId is 404 |
 | [`update-merges-fields-and-answers-with-a-stub`](behaviors/update-merges-fields-and-answers-with-a-stub.md) | An update merges the payload and answers 302 with a match stub |
+| [`update-suffix-is-matched-against-a-lookup`](behaviors/update-suffix-is-matched-against-a-lookup.md) | A suffix is matched against a lookup, not stored as written |
+| [`update-writes-every-scalar-field`](behaviors/update-writes-every-scalar-field.md) | The whole scalar field set, written in one update |
